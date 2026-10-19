@@ -60,7 +60,7 @@ type Layout struct {
 	// losses and knock-outs, two bytes each, a gap of two, then injuries, runaways, sicknesses and resistance. The
 	// ranch's addresses are 0 where the game's map is not known, which is the whole of the PlayStation's.
 	Record                    uint32
-	Date, StartYear           uint32 // four bytes each: the weeks since the game began, and the year it began in
+	Date, Tournament          uint32 // four bytes each: the weeks since the game began, and the year of the first IMA-FIMBA tournament
 	Grade, House, Barn, Altar uint32 // a byte each
 	Unlocks                   uint32 // a byte for each main breed, by its code: 0 while it is locked
 	Energy                    uint32 // two bytes, signed, counted from the exe and not the RAM: an expedition's energy
@@ -106,7 +106,7 @@ var (
 		Money: 0x9A568, Items: 0x9A7EC, NextSale: 0x9A88E, ErrantryCD: 0x9A899, Input: 0x938AE,
 		Breeder: Text{Addr: 0x9A54A, Len: 24, Steam: true},
 		Record:  0x97A5E,
-		Date:    0x9A7D8, StartYear: 0x9A62C, Grade: 0x9A56C, House: 0x9A56D, Barn: 0x9A56E, Altar: 0x9A5FC,
+		Date:    0x9A7D8, Tournament: 0x9A62C, Grade: 0x9A56C, House: 0x9A56D, Barn: 0x9A56E, Altar: 0x9A5FC,
 		Unlocks: 0x9A936, Energy: 0x1DE8B84,
 	}
 )

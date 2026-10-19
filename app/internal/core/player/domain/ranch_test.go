@@ -8,15 +8,16 @@ import (
 )
 
 var _ = Describe("Ranch", func() {
-	at := func(weeks int) domain.Ranch { return domain.Ranch{Known: true, Date: weeks, StartYear: 1000} }
+	at := func(weeks int) domain.Ranch { return domain.Ranch{Known: true, Date: weeks} }
 
-	DescribeTable("reads the date as the game counts it: four weeks to a month, twelve months to a year",
+	DescribeTable("reads the date as the game counts it: from April of the year 1000, four weeks to a month, twelve to a year",
 		func(weeks int, want domain.Date) { Expect(at(weeks).Calendar()).To(Equal(want)) },
-		Entry("the first week", 0, domain.Date{Year: 1000, Month: 1, Week: 1}),
-		Entry("the fifth is the next month's first", 4, domain.Date{Year: 1000, Month: 2, Week: 1}),
-		Entry("the end of the first year", 47, domain.Date{Year: 1000, Month: 12, Week: 4}),
-		Entry("and the start of the second", 48, domain.Date{Year: 1001, Month: 1, Week: 1}),
-		Entry("week 155 is the fourth week of March, three years on", 155, domain.Date{Year: 1003, Month: 3, Week: 4}),
+		Entry("the first week of the game is April's", 0, domain.Date{Year: 1000, Month: 4, Week: 1}),
+		Entry("four weeks on is May's", 4, domain.Date{Year: 1000, Month: 5, Week: 1}),
+		Entry("the last week of the first year", 35, domain.Date{Year: 1000, Month: 12, Week: 4}),
+		Entry("and the first of the next", 36, domain.Date{Year: 1001, Month: 1, Week: 1}),
+		Entry("the last of that one", 83, domain.Date{Year: 1001, Month: 12, Week: 4}),
+		Entry("week 860 is March, week 1, of 1018: the reading that this was worked out from", 860, domain.Date{Year: 1018, Month: 3, Week: 1}),
 	)
 
 	It("writes a date as the game would: the year, the month and the week", func() {
@@ -28,12 +29,35 @@ var _ = Describe("Ranch", func() {
 		func(weeks, want int) {
 			Expect(at(weeks).WeeksUntil(domain.UpgradeMonth, domain.UpgradeWeek)).To(Equal(want))
 		},
-		Entry("from the very start, May week 4 is 19 weeks on", 0, 19),
-		Entry("on the day itself it is 0", 19, 0),
-		Entry("the week after, it is next year's", 20, 47),
-		Entry("in any year", 48+19, 0),
-		Entry("from the end of the year", 47, 20),
+		Entry("from the very start, in April, May week 4 is 7 weeks on", 0, 7),
+		Entry("on the day itself it is 0", 7, 0),
+		Entry("the week after, it is next year's", 8, 47),
+		Entry("in any year", 48+7, 0),
+		Entry("from the end of the year", 35, 20),
 	)
+
+	DescribeTable("finds the next IMA-FIMBA tournament: July, week 1, every 4 years from the year of the first",
+		func(weeks int, want domain.Date, wantWeeks int) {
+			r := at(weeks)
+			r.Tournament = 1003
+			when, away, ok := r.NextTournament()
+			Expect(ok).To(BeTrue())
+			Expect(when).To(Equal(want))
+			Expect(away).To(Equal(wantWeeks))
+		},
+		Entry("before the first one", 0, domain.Date{Year: 1003, Month: 7, Week: 1}, 156),
+		Entry("in March of the year after one, the next is 64 weeks away", 860, domain.Date{Year: 1019, Month: 7, Week: 1}, 64),
+		Entry("in March of the year of one, it is this year's", 908, domain.Date{Year: 1019, Month: 7, Week: 1}, 16),
+		Entry("on the day itself it is 0", 924, domain.Date{Year: 1019, Month: 7, Week: 1}, 0),
+		Entry("the week after it, it is four years on, less the week", 925, domain.Date{Year: 1023, Month: 7, Week: 1}, 191),
+	)
+
+	It("does not know when the tournament is where the game's year of the first was not read", func() {
+		_, _, ok := at(860).NextTournament()
+		Expect(ok).To(BeFalse())
+		_, _, ok = domain.Ranch{Date: 860, Tournament: 1003}.NextTournament()
+		Expect(ok).To(BeFalse(), "a ranch that is not known has no date")
+	})
 
 	DescribeTable("says what a facility's next upgrade is, or that there is none",
 		func(r domain.Ranch, f domain.Facility, want domain.Upgrade, ok bool) {

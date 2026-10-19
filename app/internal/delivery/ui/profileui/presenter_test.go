@@ -227,7 +227,7 @@ var _ = Describe("NewMonsterView", func() {
 		known := func(r player.Ranch, money int) func(*domain.Profile) {
 			return func(p *domain.Profile) { p.Player.Ranch, p.Player.Money = r, money }
 		}
-		ranch := player.Ranch{Known: true, Date: 155, StartYear: 1000, Grade: 6, House: 2, Barn: 1, Altar: 3}
+		ranch := player.Ranch{Known: true, Date: 191, Grade: 6, House: 2, Barn: 1, Altar: 3}
 
 		It("is not there when the game does not keep it", func() {
 			Expect(view(nil).Ranch).To(Equal(profileui.RanchView{}))
@@ -236,16 +236,25 @@ var _ = Describe("NewMonsterView", func() {
 		It("says the date, with the game's own count of weeks to check it by, and how long to the upgrade day", func() {
 			v := view(known(ranch, 1500)).Ranch
 			Expect(v.Known).To(BeTrue())
-			Expect(v.Date).To(Equal("Y1003 Mar wk 4 (week 155)"))
+			Expect(v.Date).To(Equal("Y1004 Mar wk 4 (week 191)"))
 			Expect(v.UpgradeDay).To(Equal("May wk 4, in 8 weeks"))
 		})
 
 		It("says this week on the upgrade day, and the week before it in the singular", func() {
 			day := ranch
-			day.Date = 19
+			day.Date = 7
 			Expect(view(known(day, 0)).Ranch.UpgradeDay).To(Equal("May wk 4, this week"))
-			day.Date = 18
+			day.Date = 6
 			Expect(view(known(day, 0)).Ranch.UpgradeDay).To(Equal("May wk 4, in 1 week"))
+		})
+
+		It("counts down to the IMA-FIMBA tournament where the year of the first was read, and is silent where it was not", func() {
+			read := ranch
+			read.Date, read.Tournament = 860, 1003
+			Expect(view(known(read, 0)).Ranch.Tournament).To(Equal("Y1019 Jul wk 1, in 64 weeks"))
+			read.Date = 924
+			Expect(view(known(read, 0)).Ranch.Tournament).To(Equal("Y1019 Jul wk 1, this week"))
+			Expect(view(known(ranch, 0)).Ranch.Tournament).To(BeEmpty())
 		})
 
 		It("lists the house, the stable and the altar: how far each is, and what its next step asks for", func() {
@@ -322,7 +331,7 @@ var _ = Describe("NewMonsterView", func() {
 	Describe("the expeditions", func() {
 		dated := func(weeks int, energy int, energyKnown bool) func(*domain.Profile) {
 			return func(p *domain.Profile) {
-				p.Player.Ranch = player.Ranch{Known: true, Date: weeks, StartYear: 1000, Energy: energy, EnergyKnown: energyKnown}
+				p.Player.Ranch = player.Ranch{Known: true, Date: weeks, Energy: energy, EnergyKnown: energyKnown}
 			}
 		}
 		names := func(v profileui.ExpeditionsView) []string {
@@ -364,7 +373,7 @@ var _ = Describe("NewMonsterView", func() {
 		})
 
 		It("puts the nearest first and says in how many weeks, when the date is known", func() {
-			v := view(dated(155, 0, false)).Expeditions // March, week 4
+			v := view(dated(191, 0, false)).Expeditions // March, week 4
 			Expect(names(v)).To(Equal([]string{
 				"Phoenix Volcano Adventure", "Kawrea Volcano (Dr. Talico)", "Parepare Jungle (Kavaro)", "Torles Mountains (Rovest)",
 			}))
@@ -375,7 +384,7 @@ var _ = Describe("NewMonsterView", func() {
 		})
 
 		It("says this week on the day, and the first expedition is the one that is made once", func() {
-			v := view(dated(20, 0, false)).Expeditions // June, week 1
+			v := view(dated(8, 0, false)).Expeditions // June, week 1
 			Expect(v.Trips[0].When).To(Equal("Jun wk 1, this week"))
 			Expect(v.Trips[0].Note).To(Equal("the first expedition: made once, and it unlocks the others"))
 			Expect(v.Trips[1].Note).To(BeEmpty())

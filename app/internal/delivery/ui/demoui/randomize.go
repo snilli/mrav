@@ -78,7 +78,7 @@ func randomize(rng *rand.Rand, genera []domain.Genus, m *monster.Monster, p *pla
 		}
 	}
 	p.Ranch = player.Ranch{
-		Known: true, Date: rng.IntN(8 * 48), StartYear: 1000, Grade: rng.IntN(11),
+		Known: true, Date: rng.IntN(8 * 48), Tournament: 1000 + rng.IntN(4), Grade: rng.IntN(11),
 		House: rng.IntN(player.MaxLevel(player.House) + 1), Barn: rng.IntN(player.MaxLevel(player.Barn) + 1),
 		Altar: rng.IntN(player.MaxLevel(player.Altar) + 1),
 		// an expedition's energy, which the game can take a little below nothing

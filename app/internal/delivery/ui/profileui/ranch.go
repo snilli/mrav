@@ -15,6 +15,7 @@ type RanchView struct {
 	Known      bool
 	Date       string // the date, with the game's own count of weeks beside it, to check it by
 	UpgradeDay string // when the game offers the upgrades, and how long to wait for it
+	Tournament string // when the next IMA-FIMBA tournament is, and how long to wait for it; empty where not known
 	Facilities []FacilityView
 	// The main breeds and whether each is unlocked, with the title of their list; none when the game does not say.
 	Breeds      []BreedView
@@ -45,6 +46,9 @@ func newRanchView(p domain.Profile) RanchView {
 		return RanchView{}
 	}
 	v := RanchView{Known: true, Date: fmt.Sprintf("%s (week %d)", r.Calendar(), r.Date), UpgradeDay: upgradeDay(r)}
+	if when, weeks, ok := r.NextTournament(); ok {
+		v.Tournament = when.String() + ", " + inWeeks(weeks)
+	}
 	for _, f := range []player.Facility{player.House, player.Barn, player.Altar} {
 		v.Facilities = append(v.Facilities, newFacilityView(f, p.Player))
 	}

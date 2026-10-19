@@ -74,6 +74,8 @@ type Dashboard struct {
 	nature                                        *ToneBox
 	loyalty, form, natureBase, lifeType, playType *widget.Label
 	prize, nextSale, drug, drugTip                *widget.Label
+	tournament                                    *widget.Label
+	tournamentRow                                 fyne.CanvasObject // hidden where the game's year of the first one was not read
 	fame, guts, arena, specials, like, dislike    *ToneBox
 	goldPeach, silverPeach, itemUsed, errantry    *Flag
 	cocoon                                        fyne.CanvasObject
@@ -133,6 +135,9 @@ func NewDashboard(svc profile.ProfileService) *Dashboard {
 	d.fatigueBar, d.stressBar, d.natureGauge, d.nature = NewMeter(), NewMeter(), NewGauge(), box()
 	d.loyalty, d.form, d.natureBase, d.lifeType, d.playType = label(), label(), label(), label(), label()
 	d.prize, d.nextSale, d.drug, d.drugTip = label(), label(), label(), label()
+	d.tournament = label()
+	d.tournamentRow = fact("IMA-FIMBA", d.tournament)
+	d.tournamentRow.Hide()
 	d.drugTip.Wrapping = fyne.TextWrapWord
 	d.drugTip.Hide()
 	d.fame, d.guts, d.arena, d.specials, d.like, d.dislike = box(), box(), box(), box(), box(), box()
@@ -211,6 +216,7 @@ func (d *Dashboard) buildVitals() fyne.CanvasObject {
 		pair(fact("Base Nature", d.natureBase), fact("Play Type", d.playType)),
 		pair(fact("Desired", d.like), fact("Undesired", d.dislike)),
 		pair(fact("Prize Money", d.prize), fact("Shop Sale in", d.nextSale)),
+		d.tournamentRow,
 		fact("Record", d.record),
 		fact("History", d.history),
 		fact("Aging Type", d.lifeType),
@@ -444,6 +450,8 @@ func (d *Dashboard) showRanch(r RanchView) {
 	setVisible(d.date, r.Known)
 	setVisible(d.ranchBody, r.Known)
 	d.date.SetText(r.Date)
+	d.tournament.SetText(r.Tournament)
+	setVisible(d.tournamentRow, r.Tournament != "")
 	d.ranchItem.Title = "Ranch · House & stable: " + r.UpgradeDay
 	d.ranchPanel.Refresh()
 	for i, f := range r.Facilities {

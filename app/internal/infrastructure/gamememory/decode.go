@@ -146,7 +146,7 @@ func decodePlayer(l Layout, mem Memory) (player.Player, error) {
 	}
 	if l.Date != 0 {
 		p.Ranch = player.Ranch{
-			Known: true, Date: r.i32(l.Date), StartYear: r.i32(l.StartYear), Grade: r.u8(l.Grade),
+			Known: true, Date: r.i32(l.Date), Tournament: r.i32(l.Tournament), Grade: r.u8(l.Grade),
 			House: r.u8(l.House), Barn: r.u8(l.Barn), Altar: r.u8(l.Altar),
 		}
 		for breed, unlocked := range r.read(l.Unlocks, player.BreedCount) {

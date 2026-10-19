@@ -95,16 +95,26 @@ var _ = Describe("Dashboard", func() {
 		// ranchProfile is the Pixie with a ranch of a game that keeps one, its gold and grade one short of a step.
 		ranchProfile := func() domain.Profile {
 			p := pixieProfile()
-			p.Player.Ranch = player.Ranch{Known: true, Date: 155, StartYear: 1000, Grade: 6, House: 2, Barn: 1, Altar: 3}
+			p.Player.Ranch = player.Ranch{Known: true, Date: 191, Grade: 6, House: 2, Barn: 1, Altar: 3}
 			return p
 		}
 
 		It("shows the date in the header with the game's count of weeks, and the panel of upgrades", func() {
 			d.apply(ranchProfile(), nil)
 			Expect(d.date.Visible()).To(BeTrue())
-			Expect(d.date.Text).To(Equal("Y1003 Mar wk 4 (week 155)"))
+			Expect(d.date.Text).To(Equal("Y1004 Mar wk 4 (week 191)"))
 			Expect(d.ranchBody.Visible()).To(BeTrue())
 			Expect(d.ranchItem.Title).To(Equal("Ranch · House & stable: May wk 4, in 8 weeks"))
+		})
+
+		It("shows the tournament's countdown among the vitals, and hides it where the year of the first was not read", func() {
+			d.apply(ranchProfile(), nil)
+			Expect(d.tournamentRow.Visible()).To(BeFalse())
+			p := ranchProfile()
+			p.Player.Ranch.Date, p.Player.Ranch.Tournament = 860, 1003
+			d.apply(p, nil)
+			Expect(d.tournamentRow.Visible()).To(BeTrue())
+			Expect(d.tournament.Text).To(Equal("Y1019 Jul wk 1, in 64 weeks"))
 		})
 
 		It("shows each facility: how far it is, what its next step costs, and where that step stands", func() {
@@ -165,7 +175,7 @@ var _ = Describe("Dashboard", func() {
 	Describe("the expeditions", func() {
 		dated := func() domain.Profile {
 			p := pixieProfile()
-			p.Player.Ranch = player.Ranch{Known: true, Date: 155, StartYear: 1000, Energy: -5, EnergyKnown: true}
+			p.Player.Ranch = player.Ranch{Known: true, Date: 191, Energy: -5, EnergyKnown: true}
 			return p
 		}
 
@@ -292,7 +302,7 @@ var _ = Describe("Dashboard", func() {
 		}
 		p := pixieProfile()
 		p.Player.Money = 20000
-		p.Player.Ranch = player.Ranch{Known: true, Date: 155, StartYear: 1000, Grade: 6, House: 2, Barn: 1, Altar: 1}
+		p.Player.Ranch = player.Ranch{Known: true, Date: 191, Grade: 6, House: 2, Barn: 1, Altar: 1}
 		names := []string{"Pixie", "Dragon", "Centaur", "ColorPandora", "Beaclon", "Henger", "Wracky", "Golem", "Zuum", "Durahan"}
 		for i := range player.BreedCount {
 			p.Breeds = append(p.Breeds, domain.BreedUnlock{Name: names[i%len(names)], Unlocked: i%3 != 0})

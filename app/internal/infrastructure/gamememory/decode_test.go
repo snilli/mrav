@@ -28,10 +28,10 @@ type addresses struct {
 	// From a Cheat Engine table for MR2DX, which MR2AV does not read. record is where wins are, with losses and
 	// knock-outs after it, then a gap, then injuries, runaways, sicknesses and resistance, two bytes each. The
 	// ranch's are known for Steam only.
-	record                                     uint32
-	date, startYear, grade, house, barn, altar uint32
-	unlocks                                    uint32 // a byte for each main breed, by its code: 1 when it is unlocked
-	energy                                     uint32 // where the expedition's energy is, counted from the exe, not the RAM
+	record                                      uint32
+	date, tournament, grade, house, barn, altar uint32
+	unlocks                                     uint32 // a byte for each main breed, by its code: 1 when it is unlocked
+	energy                                      uint32 // where the expedition's energy is, counted from the exe, not the RAM
 }
 
 var (
@@ -64,7 +64,7 @@ var (
 		name: 0x97B78, breeder: 0x9A54A,
 		money: 0x9A568, items: 0x9A7EC, nextSale: 0x9A88E, errantry: 0x9A899, input: 0x938AE,
 		record: 0x97A5E,
-		date:   0x9A7D8, startYear: 0x9A62C, grade: 0x9A56C, house: 0x9A56D, barn: 0x9A56E, altar: 0x9A5FC,
+		date:   0x9A7D8, tournament: 0x9A62C, grade: 0x9A56C, house: 0x9A56D, barn: 0x9A56E, altar: 0x9A5FC,
 		unlocks: 0x9A936,
 		energy:  0x1DE8B84,
 	}
@@ -198,7 +198,7 @@ func monsterImage(a addresses, name, breeder []byte) *image {
 	}
 	if a.date != 0 {
 		img.i32(a.date, 155)
-		img.i32(a.startYear, 1000)
+		img.i32(a.tournament, 1003)
 		img.u8(a.grade, 6)
 		img.u8(a.house, 2)
 		img.u8(a.barn, 1)
@@ -270,7 +270,7 @@ var _ = Describe("decode", func() {
 		Entry("MR2 on the PlayStation, which has no breeder name or ranch to read", ps1, ps1MR2AV, "", player.Ranch{}),
 		Entry("MR2DX on Steam", steam, steamMR2AV, "Bob",
 			player.Ranch{
-				Known: true, Date: 155, StartYear: 1000, Grade: 6, House: 2, Barn: 1, Altar: 3,
+				Known: true, Date: 155, Tournament: 1003, Grade: 6, House: 2, Barn: 1, Altar: 3,
 				Unlocked: [player.BreedCount]bool{0: true, 1: true, 36: true}, Energy: -5, EnergyKnown: true,
 			}),
 	)

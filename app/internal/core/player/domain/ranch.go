@@ -9,10 +9,13 @@ const (
 	weeksPerYear  = WeeksPerMonth * MonthsPerYear
 )
 
-// startWeek is the week of the year, counted from January's first week as 0, that the game's counter of weeks
-// begins in. Nothing read so far says which it is: January is a guess, so the date shown comes with the counter
-// itself, to be checked against the game's own.
-const startWeek = 0
+// The game's counter of weeks begins in the year firstYear, in the week of that year startWeek, counted from
+// January's first week as 0. Neither is read from the game: both were worked out from one date seen in it, 1018,
+// March, week 1, so the date shown comes with the counter itself, to be checked against the game's own.
+const (
+	firstYear = 1000
+	startWeek = 12 // April, week 1
+)
 
 // The gold that has to be on hand beyond the cost of an upgrade for the game to offer it, and when it offers it.
 const (
@@ -27,14 +30,14 @@ var MonthNames = [MonthsPerYear]string{"Jan", "Feb", "Mar", "Apr", "May", "Jun",
 // Ranch is what the game keeps of the ranch and its calendar. Only the Steam release is known to keep it where this
 // viewer can read it, so Known says whether the rest is real.
 type Ranch struct {
-	Known     bool
-	Date      int              // weeks since the game began
-	StartYear int              // the year the game began in
-	Grade     int              // the breeder's grade: 0 for Beginner, 1 to 9, and 10 for Master
-	House     int              // how many upgrades have been made: 0 to 4
-	Barn      int              // the stable: 0 to 2
-	Altar     int              // 0 for no altar, then 1 to 3
-	Unlocked  [BreedCount]bool // which main breeds the game has unlocked, by their codes
+	Known      bool
+	Date       int              // weeks since the game began
+	Tournament int              // the year of the first IMA-FIMBA tournament; 0 where it was not read
+	Grade      int              // the breeder's grade: 0 for Beginner, 1 to 9, and 10 for Master
+	House      int              // how many upgrades have been made: 0 to 4
+	Barn       int              // the stable: 0 to 2
+	Altar      int              // 0 for no altar, then 1 to 3
+	Unlocked   [BreedCount]bool // which main breeds the game has unlocked, by their codes
 
 	// Energy is what the game last kept as an expedition's energy, which it can take below nothing. Whether it is
 	// made of an expedition now is not known: the value stays after the expedition ends. EnergyKnown is false where
@@ -57,7 +60,7 @@ func (d Date) String() string {
 func (r Ranch) Calendar() Date {
 	w := r.Date + startWeek
 	return Date{
-		Year:  r.StartYear + w/weeksPerYear,
+		Year:  firstYear + w/weeksPerYear,
 		Month: w%weeksPerYear/WeeksPerMonth + 1,
 		Week:  w%WeeksPerMonth + 1,
 	}
@@ -69,6 +72,32 @@ func (r Ranch) WeeksUntil(month, week int) int {
 	now := (r.Date + startWeek) % weeksPerYear
 	target := (month-1)*WeeksPerMonth + week - 1
 	return (target - now + weeksPerYear) % weeksPerYear
+}
+
+// The IMA-FIMBA tournament is held in July, week 1, every fourth year from the year of the first.
+const (
+	TournamentMonth = 7
+	TournamentWeek  = 1
+	tournamentEvery = 4
+)
+
+// NextTournament is the tournament the calendar reaches next, and how many weeks away it is, 0 on the day. ok is
+// false where the year of the first was not read.
+func (r Ranch) NextTournament() (when Date, weeks int, ok bool) {
+	if !r.Known || r.Tournament == 0 {
+		return Date{}, 0, false
+	}
+	now := r.Calendar()
+	inYear := (r.Date + startWeek) % weeksPerYear
+	day := (TournamentMonth-1)*WeeksPerMonth + TournamentWeek - 1
+	for year := max(now.Year, r.Tournament); ; year++ {
+		if (year-r.Tournament)%tournamentEvery != 0 {
+			continue
+		}
+		if weeks = (year-now.Year)*weeksPerYear + day - inYear; weeks >= 0 {
+			return Date{Year: year, Month: TournamentMonth, Week: TournamentWeek}, weeks, true
+		}
+	}
 }
 
 // Facility is a part of the ranch that can be upgraded.
