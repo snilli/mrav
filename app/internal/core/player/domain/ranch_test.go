@@ -59,16 +59,17 @@ var _ = Describe("Ranch", func() {
 		Expect(ok).To(BeFalse(), "a ranch that is not known has no date")
 	})
 
-	DescribeTable("reads a tile of an expedition's map as its column and row: 32 to a row, the row first",
+	DescribeTable("reads a tile of an expedition's map as the game shows where the monster is: how far right and up of the start",
 		func(tile, x, y int) {
-			gotX, gotY := domain.Ranch{Tile: tile}.Spot()
+			gotX, gotY := domain.Ranch{Tile: tile}.Walked()
 			Expect([]int{gotX, gotY}).To(Equal([]int{x, y}))
 		},
-		Entry("column 15 of row 30", 975, 15, 30),
-		Entry("one step up is a row less", 943, 15, 29),
-		Entry("two steps up", 911, 15, 28),
-		Entry("one step right is a column more", 912, 16, 28),
-		Entry("the corner", 0, 0, 0),
+		Entry("the start, at column 15 of row 30 of the 32 to a row", 975, 0, 0),
+		Entry("one step up", 943, 0, 1),
+		Entry("two steps up", 911, 0, 2),
+		Entry("one step right too", 912, 1, 2),
+		Entry("a step left of the start", 974, -1, 0),
+		Entry("the corner", 0, -15, 30),
 	)
 
 	DescribeTable("says what a facility's next upgrade is, or that there is none",

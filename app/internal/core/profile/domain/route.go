@@ -189,12 +189,7 @@ func spotPoints(spots []Spot) []Point {
 // shortcut: whether the date holds still while a trip is made is not known; if it does not, the map goes away in
 // the middle of the trip, and the tile of the monster would have to be what decides.
 func (m ExpeditionMap) Here(r player.Ranch) bool {
-	if !r.Known || !r.WalkKnown {
-		return false
-	}
-	x, y := r.Spot()
-	at := Point{X: x, Y: y}
-	if !m.inside(at) || m.Tiles[m.index(at)] == Wall {
+	if _, ok := m.Stand(r); !ok {
 		return false
 	}
 	now := r.Calendar()
@@ -204,6 +199,21 @@ func (m ExpeditionMap) Here(r player.Ranch) bool {
 		}
 	}
 	return false
+}
+
+// Stand is the tile of the map that the monster last stood on, as far from the start of the map as it is from the
+// start of the trip, and whether that is a tile of the map that can be walked. It is not where the place of the
+// monster is not known.
+func (m ExpeditionMap) Stand(r player.Ranch) (Point, bool) {
+	if !r.Known || !r.WalkKnown {
+		return Point{}, false
+	}
+	right, up := r.Walked()
+	at := Point{X: m.Start.X + right, Y: m.Start.Y - up}
+	if !m.inside(at) || m.Tiles[m.index(at)] == Wall {
+		return Point{}, false
+	}
+	return at, true
 }
 
 func (m ExpeditionMap) index(p Point) int { return p.Y*m.Width + p.X }

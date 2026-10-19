@@ -8,6 +8,7 @@ import (
 	"slices"
 
 	monster "app/internal/core/monster/domain"
+	player "app/internal/core/player/domain"
 	"app/internal/core/profile/domain"
 	"app/internal/delivery/ui/profileui"
 )
@@ -15,10 +16,11 @@ import (
 // View is a map with the route to take on it, and what to say about it.
 type View struct {
 	Name         string
-	Summary      string        // what the monster brings to it, and what the route costs and is worth
-	Stops        []string      // the places to search, numbered in the order to go
-	Intelligence int           // the monster's, which says which gates it can find the way through
-	Marker       *domain.Point // the tile the monster stands on, when it is on the trip of this map; nil otherwise
+	Summary      string          // what the monster brings to it, and what the route costs and is worth
+	Stops        []string        // the places to search, numbered in the order to go
+	Intelligence int             // the monster's, which says which gates it can find the way through
+	Marker       *domain.Point   // the tile the monster stands on, when it is on the trip of this map; nil otherwise
+	Standing     []profileui.Box // what to say of the monster on the trip: its energy, where it is, its steps
 	Map          domain.ExpeditionMap
 	Route        domain.Route
 }
@@ -49,8 +51,8 @@ func NewView(p domain.Profile, m domain.ExpeditionMap) (View, error) {
 	left := false
 	ranch := p.Player.Ranch
 	if m.Here(ranch) {
-		x, y := ranch.Spot()
-		marker = &domain.Point{X: x, Y: y}
+		at, _ := m.Stand(ranch)
+		marker = &at
 		if left = ranch.EnergyKnown && ranch.Steps > 0 && ranch.Energy <= walker.Energy; left {
 			walker.Energy, walker.At = ranch.Energy, marker
 		}
@@ -65,9 +67,13 @@ func NewView(p domain.Profile, m domain.ExpeditionMap) (View, error) {
 		nature = "good"
 	}
 	v := View{Name: m.Name, Intelligence: walker.Intelligence, Marker: marker, Map: m, Route: route}
+	if marker != nil {
+		v.Standing = standing(ranch)
+	}
 	head := fmt.Sprintf("%d energy, ", walker.Energy)
 	if left {
-		head = fmt.Sprintf("%d energy left, from x %d, y %d, ", walker.Energy, marker.X, marker.Y)
+		x, y := ranch.Walked()
+		head = fmt.Sprintf("%d energy left, at X %d, Y %d, ", walker.Energy, x, y)
 	}
 	head += fmt.Sprintf("rocks break %d%%, INT %d, %s nature: ", round(walker.BreakChance*100), walker.Intelligence, nature)
 	if len(route.Spots) == 0 {
@@ -84,6 +90,30 @@ func NewView(p domain.Profile, m domain.ExpeditionMap) (View, error) {
 		v.Stops = append(v.Stops, fmt.Sprintf("%d. %s · %s", i+1, name, profileui.Gold(round(s.Value))))
 	}
 	return v, nil
+}
+
+// standing is what the game keeps of a monster on its trip, for boxes above the map: the energy that it has, coloured
+// by how near it is to running out, where it is as the game shows it, and the steps that it has made.
+func standing(r player.Ranch) []profileui.Box {
+	var boxes []profileui.Box
+	if r.EnergyKnown {
+		tone := profileui.ToneLightGreen
+		switch {
+		case r.Energy < 20:
+			tone = profileui.ToneOrangeRed
+		case r.Energy < 100:
+			tone = profileui.ToneOrange
+		}
+		boxes = append(boxes, profileui.Box{Text: fmt.Sprintf("Energy %d", r.Energy), Tone: tone})
+	}
+	x, y := r.Walked()
+	steps := fmt.Sprintf("%d steps", r.Steps)
+	if r.Steps == 1 {
+		steps = "1 step"
+	}
+	return append(boxes,
+		profileui.Box{Text: fmt.Sprintf("X %d · Y %d", x, y), Tone: profileui.ToneHotPink}, // the colour of its tile on the map
+		profileui.Box{Text: steps, Tone: profileui.ToneLightYellow})
 }
 
 // Title is the line that the panel of a view has when it is closed.

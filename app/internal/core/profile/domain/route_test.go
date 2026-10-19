@@ -203,8 +203,9 @@ var _ = Describe("PlanRoute", func() {
 	})
 
 	Describe("Here", func() {
-		// The trip of Parepare comes round in October, week 1: the date 24 of the game's count, and the tile 1 is the
-		// column 1 of the row 0.
+		// The trip of Parepare comes round in October, week 1: the date 24 of the game's count. Every trip starts on the
+		// tile 975 of the game's count, and one step right of it is the tile 976, which is one step right of the start
+		// of the map.
 		trip := func(rows ...string) domain.ExpeditionMap {
 			m := chart(value, rows...)
 			m.Name = "Parepare Jungle"
@@ -215,19 +216,35 @@ var _ = Describe("PlanRoute", func() {
 		}
 
 		It("is whether the week of the trip has come and the monster last stood on a tile of the map that it can walk", func() {
-			Expect(trip("S.A").Here(at(24, 1))).To(BeTrue())
+			Expect(trip("S.A").Here(at(24, 976))).To(BeTrue())
 		})
 
 		DescribeTable("is not, otherwise",
 			func(m domain.ExpeditionMap, r player.Ranch) { Expect(m.Here(r)).To(BeFalse()) },
-			Entry("in the week before", trip("S.A"), at(23, 1)),
-			Entry("in the week after", trip("S.A"), at(25, 1)),
-			Entry("with the tile on a wall", trip("S#A"), at(24, 1)),
-			Entry("with the tile outside the map", trip("S.A"), at(24, 5*32)),
-			Entry("where the place on the map is not known", trip("S.A"), player.Ranch{Known: true, Date: 24, Tile: 1}),
-			Entry("where the date is not known", trip("S.A"), player.Ranch{Tile: 1, WalkKnown: true}),
-			Entry("for a map that no trip is of", func() domain.ExpeditionMap { m := trip("S.A"); m.Name = "Nowhere"; return m }(), at(24, 1)),
+			Entry("in the week before", trip("S.A"), at(23, 976)),
+			Entry("in the week after", trip("S.A"), at(25, 976)),
+			Entry("with the tile on a wall", trip("S#A"), at(24, 976)),
+			Entry("with the tile outside the map", trip("S.A"), at(24, 25*32+15)),
+			Entry("where the place on the map is not known", trip("S.A"), player.Ranch{Known: true, Date: 24, Tile: 976}),
+			Entry("where the date is not known", trip("S.A"), player.Ranch{Tile: 976, WalkKnown: true}),
+			Entry("for a map that no trip is of", func() domain.ExpeditionMap { m := trip("S.A"); m.Name = "Nowhere"; return m }(), at(24, 976)),
 		)
+
+		It("stands the monster on the tile of the map that is as far from its start as the monster is from the start of the trip", func() {
+			m := trip("S.A")
+			at0, ok := m.Stand(at(24, 975))
+			Expect(ok).To(BeTrue())
+			Expect(at0).To(Equal(domain.Point{X: 0, Y: 0}))
+			at2, ok := m.Stand(at(24, 977))
+			Expect(ok).To(BeTrue())
+			Expect(at2).To(Equal(domain.Point{X: 2, Y: 0}))
+
+			up := chart(value, ".", ".", "S")
+			up.Name = "Parepare Jungle"
+			at1, ok := up.Stand(at(24, 943)) // a step up of the start
+			Expect(ok).To(BeTrue())
+			Expect(at1).To(Equal(domain.Point{X: 0, Y: 1}))
+		})
 	})
 
 	It("does not walk through a teleport, which leads somewhere at random", func() {

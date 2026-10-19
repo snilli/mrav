@@ -60,8 +60,8 @@ func newExpeditionsView(p domain.Profile) ExpeditionsView {
 		v.GameEnergy = fmt.Sprintf("Energy in the game now: %d (it stays after an expedition)", r.Energy)
 	}
 	if r.WalkKnown {
-		x, y := r.Spot()
-		v.GameWalk = fmt.Sprintf("Position in the game now: x %d, y %d · %d step", x, y, r.Steps)
+		x, y := r.Walked()
+		v.GameWalk = fmt.Sprintf("Position in the game now: X %d, Y %d · %d step", x, y, r.Steps)
 		if r.Steps != 1 {
 			v.GameWalk += "s"
 		}

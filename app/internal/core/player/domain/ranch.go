@@ -51,11 +51,19 @@ type Ranch struct {
 	WalkKnown   bool
 }
 
-// MapWidth is how many tiles are in a row of an expedition's map.
-const MapWidth = 32
+// The game counts the tiles of an expedition's map in rows of MapWidth, and every trip starts on the tile of column
+// StartColumn of row StartRow of that count: the maps are laid on it with their start there.
+const (
+	MapWidth    = 32
+	StartColumn = 15
+	StartRow    = 30
+)
 
-// Spot is the tile as a column and a row of the map: a row is 32 tiles, and a step up is a row less.
-func (r Ranch) Spot() (x, y int) { return r.Tile % MapWidth, r.Tile / MapWidth }
+// Walked is where the monster is as the game shows it on a trip: how far to the right of the start it is, and how
+// far up. Either can be below 0.
+func (r Ranch) Walked() (x, y int) {
+	return r.Tile%MapWidth - StartColumn, StartRow - r.Tile/MapWidth
+}
 
 // BreedCount is how many main breeds the game has, Pixie to Naga.
 const BreedCount = 38

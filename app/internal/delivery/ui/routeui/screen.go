@@ -54,6 +54,9 @@ var (
 	stopFill  = color.NRGBA{R: 50, G: 180, B: 50, A: 255} // a place that the route takes
 	spotFill  = color.NRGBA{R: 70, G: 110, B: 85, A: 255} // a place that it leaves out
 
+	// markerFill is the tile that the monster is on: the colour of the box that gives its place above the map.
+	markerFill = color.NRGBA{R: 255, G: 105, B: 180, A: 255}
+
 	gateFill     = color.NRGBA{R: 160, G: 200, B: 80, A: 255} // a gate that the monster can find the way through
 	shutFill     = color.NRGBA{R: 80, G: 92, B: 62, A: 255}   // a gate that it cannot
 	teleportFill = color.NRGBA{R: 160, G: 110, B: 210, A: 255}
@@ -132,8 +135,9 @@ func newTable(v View) (fyne.CanvasObject, []*cell) {
 		default:
 			c.bg.FillColor = floorFill
 		}
-		if v.Marker != nil && p == *v.Marker {
-			c.text.Text = "★" // where the monster is
+		if v.Marker != nil && p == *v.Marker { // where the monster is
+			c.bg.FillColor, c.text.Text, c.text.Color = markerFill, "★", color.Black
+			c.bg.StrokeColor, c.bg.StrokeWidth = color.White, 2
 		}
 		cells[i], objects[i] = c, c.object
 	}
@@ -142,13 +146,14 @@ func newTable(v View) (fyne.CanvasObject, []*cell) {
 
 // box is the panel of one map, closed until it is opened, with its title saying what the route is worth.
 type box struct {
-	name    string
-	panel   *widget.Accordion
-	item    *widget.AccordionItem
-	summary *widget.Label
-	stops   *widget.Label
-	credit  *widget.Label // where the map is from
-	cells   []*cell
+	name     string
+	panel    *widget.Accordion
+	item     *widget.AccordionItem
+	summary  *widget.Label
+	standing []*profileui.ToneBox // the energy, the place and the steps of the monster on the trip, above the map
+	stops    *widget.Label
+	credit   *widget.Label // where the map is from
+	cells    []*cell
 }
 
 func newBox(v View, open bool) *box {
@@ -166,7 +171,21 @@ func newBox(v View, open bool) *box {
 	table, b.cells = newTable(v)
 	key := profileui.Quiet(legend)
 	key.Wrapping = fyne.TextWrapWord
-	b.item = widget.NewAccordionItem(v.Title(), container.NewVBox(b.summary, table, key, b.stops, b.credit))
+	content := container.NewVBox()
+	if len(v.Standing) > 0 {
+		row := container.NewHBox()
+		for _, s := range v.Standing {
+			box := profileui.NewToneBox().Large()
+			box.Set(s)
+			b.standing = append(b.standing, box)
+			row.Add(box)
+		}
+		content.Add(row)
+	}
+	for _, o := range []fyne.CanvasObject{b.summary, table, key, b.stops, b.credit} {
+		content.Add(o)
+	}
+	b.item = widget.NewAccordionItem(v.Title(), content)
 	b.item.Open = open
 	b.panel = widget.NewAccordion(b.item)
 	return b
@@ -264,7 +283,11 @@ func (s *Screen) apply(maps []domain.ExpeditionMap, p domain.Profile, err error)
 	s.clear()
 	s.drawn = drawn
 	for _, v := range views {
-		b := newBox(v, open[v.Name])
+		was, known := open[v.Name]
+		if !known { // the panel of the trip that the monster is on opens when it appears, and the others do not
+			was = v.Marker != nil
+		}
+		b := newBox(v, was)
 		s.boxes = append(s.boxes, b)
 		s.list.Add(b.panel)
 	}

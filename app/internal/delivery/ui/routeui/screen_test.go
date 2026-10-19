@@ -144,7 +144,7 @@ var _ = Describe("Screen", func() {
 
 	Describe("in a game, not in the demo", func() {
 		// onTrip is a monster that last stood on the tile given, at the date given of the game's count: 24 is October,
-		// week 1, when the trip of Parepare comes round, and the tile 616 is the start of that map.
+		// week 1, when the trip of Parepare comes round, and the tile 975 is the start of every trip.
 		onTrip := func(date, tile int) domain.Profile {
 			p := monsterWith(420, 400, 600, 300, 0)
 			p.Player.Ranch = player.Ranch{Known: true, Date: date, Tile: tile, Steps: 2, WalkKnown: true}
@@ -160,22 +160,63 @@ var _ = Describe("Screen", func() {
 		})
 
 		It("shows only the map of the trip that this week brings, with the monster on it", func() {
-			s.apply(real, onTrip(24, 616), nil)
+			s.apply(real, onTrip(24, 975), nil)
 			Expect(s.Content().Visible()).To(BeTrue())
 			Expect(s.boxes).To(HaveLen(1))
 			Expect(s.boxes[0].item.Title).To(HavePrefix("Route · Parepare Jungle: "))
 			Expect(s.boxes[0].cells[19*18+8].text.Text).To(Equal("★"))
 		})
 
+		It("finds the trip of a monster that is three steps up from the start in June, as the game showed it at X 0, Y 3", func() {
+			p := monsterWith(537, 918, 463, 690, 100)
+			p.Player.Ranch = player.Ranch{Known: true, Date: 872, Tile: 27*32 + 15, Steps: 3, WalkKnown: true, Energy: 487, EnergyKnown: true}
+			s.apply(real, p, nil)
+			Expect(s.boxes).To(HaveLen(1))
+			Expect(s.boxes[0].item.Title).To(HavePrefix("Route · Kawrea Volcano: "))
+			Expect(s.boxes[0].summary.Text).To(HavePrefix("487 energy left, at X 0, Y 3, rocks break 100%, INT 463, good nature: "))
+			here := s.boxes[0].cells[24*26+12] // three tiles up from the start of Kawrea, at 12, 27
+			Expect(here.text.Text).To(Equal("★"))
+			Expect(here.bg.FillColor).To(Equal(markerFill))
+			Expect(s.boxes[0].standing).To(HaveLen(3)) // the energy, the place and the steps, in boxes above the map
+			Expect(s.boxes[0].item.Open).To(BeTrue(), "the panel of the trip that the monster is on is open when it appears")
+			Expect(s.boxes[0].stops.Text).NotTo(BeEmpty())
+
+			if dir := os.Getenv("SCREENSHOT_DIR"); dir != "" {
+				f, err := os.Create(filepath.Join(dir, "route-kawrea-here.png"))
+				Expect(err).NotTo(HaveOccurred())
+				defer f.Close()
+				Expect(png.Encode(f, software.Render(s.boxes[0].panel, theme.DefaultTheme()))).To(Succeed())
+			}
+		})
+
+		It("leaves a panel that the breeder has closed closed, when it comes again on the trip", func() {
+			p := monsterWith(537, 918, 463, 690, 100)
+			p.Player.Ranch = player.Ranch{Known: true, Date: 872, Tile: 27*32 + 15, Steps: 3, WalkKnown: true, Energy: 487, EnergyKnown: true}
+			s.apply(real, p, nil)
+			s.boxes[0].panel.Close(0)
+			p.Player.Ranch.Steps, p.Player.Ranch.Energy, p.Player.Ranch.Tile = 4, 486, 26*32+15
+			s.apply(real, p, nil)
+			Expect(s.boxes[0].item.Open).To(BeFalse())
+		})
+
+		It("has no boxes above a map that the monster is not on, and the panel is closed", func() {
+			s = NewScreen(svc, maps, true)
+			s.apply(real, monsterOf(420, 400), nil)
+			for _, b := range s.boxes {
+				Expect(b.standing).To(BeEmpty())
+				Expect(b.item.Open).To(BeFalse())
+			}
+		})
+
 		It("shows nothing in the other weeks", func() {
-			s.apply(real, onTrip(24, 616), nil)
-			s.apply(real, onTrip(25, 616), nil)
+			s.apply(real, onTrip(24, 975), nil)
+			s.apply(real, onTrip(25, 975), nil)
 			Expect(s.boxes).To(BeEmpty())
 			Expect(s.Content().Visible()).To(BeFalse())
 		})
 
 		It("shows nothing where the place of the monster on the map is not known", func() {
-			p := onTrip(24, 616)
+			p := onTrip(24, 975)
 			p.Player.Ranch.WalkKnown = false
 			s.apply(real, p, nil)
 			Expect(s.boxes).To(BeEmpty())
@@ -183,7 +224,7 @@ var _ = Describe("Screen", func() {
 
 		It("shows every map in the demo, and marks the monster only on the one that it is on", func() {
 			s = NewScreen(svc, maps, true)
-			s.apply(real, onTrip(24, 616), nil)
+			s.apply(real, onTrip(24, 975), nil)
 			Expect(s.boxes).To(HaveLen(3))
 			marked := 0
 			for _, b := range s.boxes {

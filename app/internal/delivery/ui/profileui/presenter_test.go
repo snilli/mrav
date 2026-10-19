@@ -407,8 +407,8 @@ var _ = Describe("NewMonsterView", func() {
 					p.Player.Ranch = player.Ranch{Known: true, Tile: tile, Steps: steps, WalkKnown: known}
 				}
 			}
-			Expect(view(at(911, 2, true)).Expeditions.GameWalk).To(Equal("Position in the game now: x 15, y 28 · 2 steps walked"))
-			Expect(view(at(975, 1, true)).Expeditions.GameWalk).To(Equal("Position in the game now: x 15, y 30 · 1 step walked"))
+			Expect(view(at(911, 2, true)).Expeditions.GameWalk).To(Equal("Position in the game now: X 0, Y 2 · 2 steps walked"))
+			Expect(view(at(975, 1, true)).Expeditions.GameWalk).To(Equal("Position in the game now: X 0, Y 0 · 1 step walked"))
 			Expect(view(at(911, 2, false)).Expeditions.GameWalk).To(BeEmpty())
 			Expect(view(nil).Expeditions.GameWalk).To(BeEmpty())
 		})
