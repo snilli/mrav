@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"image/color"
+	"slices"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
@@ -379,13 +380,16 @@ func NewScreen(svc move.MoveService, icons IconFunc) *Screen {
 		}
 		columns[c] = container.New(layout.NewCustomPaddedVBoxLayout(0), cells...)
 	}
+	slices.Reverse(columns) // the last column is shown first, and the active moves under the columns follow
 	grid := container.New(layout.NewCustomPaddedHBoxLayout(0), columns...)
 
-	actives := []fyne.CanvasObject{profileui.Quiet("Active moves")}
+	pictures := make([]fyne.CanvasObject, domain.Columns)
 	for c := range s.active {
 		s.active[c] = newPicture(s.icons, activeW, activeH)
-		actives = append(actives, s.active[c].img)
+		pictures[c] = s.active[c].img
 	}
+	slices.Reverse(pictures)
+	actives := append([]fyne.CanvasObject{profileui.Quiet("Active moves")}, pictures...)
 	s.body = container.NewVBox(
 		s.genus,
 		s.legend.object,

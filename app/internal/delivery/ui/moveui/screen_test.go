@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/driver/software"
 	"fyne.io/fyne/v2/test"
 	"fyne.io/fyne/v2/theme"
@@ -49,6 +50,17 @@ var _ = Describe("Screen", func() {
 		ctx = context.Background()
 		svc = mockmove.NewMockMoveService(GinkgoT())
 		s = NewScreen(svc, icons.Bytes)
+	})
+
+	It("shows the columns of the grid from the last to the first, with the active moves under them in that order", func() {
+		w := test.NewWindow(s.Content())
+		DeferCleanup(w.Close)
+		w.Resize(fyne.NewSize(900, 900))
+		x := func(o fyne.CanvasObject) float32 { return fyne.CurrentApp().Driver().AbsolutePositionForObject(o).X }
+		for c := 1; c < domain.Columns; c++ {
+			Expect(x(s.cells[c][0])).To(BeNumerically("<", x(s.cells[c-1][0])), "column %d is left of column %d", c+1, c)
+			Expect(x(s.active[c].img)).To(BeNumerically("<", x(s.active[c-1].img)), "active move %d is left of %d", c+1, c)
+		}
 	})
 
 	It("keeps the names of its overlays in step with the icon assets", func() {
