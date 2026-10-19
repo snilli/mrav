@@ -2,7 +2,6 @@ package moveui
 
 import (
 	"context"
-	"errors"
 	"image/color"
 
 	"fyne.io/fyne/v2"
@@ -12,9 +11,9 @@ import (
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 
-	"app/internal/core/apperr"
 	"app/internal/core/move"
 	"app/internal/core/move/domain"
+	"app/internal/delivery/ui/status"
 )
 
 // The game's icons are 48x32 pixels and its marks 16x16; the screen draws everything at twice that.
@@ -138,7 +137,37 @@ type detail struct {
 	guts, damage, hit, withering, sharpness, extra, uses *widget.Label
 	learned, canLearn                                    *widget.Check
 	description                                          *widget.Label
+	needsBox                                             *fyne.Container // the heading and the list; hidden when the move needs nothing
+	requirements                                         *fyne.Container
+	needs                                                []need
 	content                                              fyne.CanvasObject
+}
+
+var (
+	metColor   color.Color = color.NRGBA{R: 50, G: 205, B: 50, A: 255}
+	unmetColor color.Color = color.NRGBA{R: 255, G: 69, A: 255}
+)
+
+// need is one line of the list of what a move asks of the monster: a mark for met or not, and the words.
+type need struct {
+	mark   *canvas.Text
+	label  *widget.Label
+	object fyne.CanvasObject
+}
+
+func newNeed(r RequirementView) need {
+	n := need{mark: canvas.NewText("✗", unmetColor)}
+	if r.Met {
+		n.mark.Text, n.mark.Color = "✓", metColor
+	}
+	text := r.Text
+	if r.Have != "" {
+		text += " (" + r.Have + ")"
+	}
+	n.label = widget.NewLabel(text)
+	n.label.Wrapping = fyne.TextWrapWord
+	n.object = container.NewBorder(nil, nil, n.mark, nil, n.label)
+	return n
 }
 
 func newDetail() *detail {
@@ -168,7 +197,13 @@ func newDetail() *detail {
 		widget.NewLabel("Sharpness"), d.sharpness,
 		widget.NewLabel("Uses"), d.uses,
 	)
-	d.content = container.NewVBox(d.name, numbers, d.extra, container.NewHBox(d.learned, d.canLearn), d.description)
+	d.requirements = container.NewVBox()
+	d.needsBox = container.NewVBox(
+		widget.NewLabelWithStyle("To learn it", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
+		d.requirements,
+	)
+	d.needsBox.Hide()
+	d.content = container.NewVBox(d.name, numbers, d.extra, container.NewHBox(d.learned, d.canLearn), d.needsBox, d.description)
 	return d
 }
 
@@ -200,6 +235,15 @@ func (d *detail) show(v DetailView) {
 	d.learned.SetChecked(v.Learned)
 	d.canLearn.SetChecked(v.CanLearn)
 	d.description.SetText(v.Description)
+
+	d.needs = nil
+	d.requirements.RemoveAll()
+	for _, r := range v.Requirements {
+		n := newNeed(r)
+		d.needs = append(d.needs, n)
+		d.requirements.Add(n.object)
+	}
+	setVisible(d.needsBox, len(d.needs) > 0)
 }
 
 // Screen is the Move Viewer: the grid of moves, the active move of each column, and the details of
@@ -213,6 +257,7 @@ type Screen struct {
 	genus  *widget.Label
 	detail *detail
 
+	body    fyne.CanvasObject
 	content fyne.CanvasObject
 	grid    domain.Grid // the grid last shown, for the details of the selected cell
 	hasSel  bool
@@ -244,14 +289,15 @@ func NewScreen(svc move.MoveService, icons IconFunc) *Screen {
 		s.active[c] = newPicture(s.icons)
 		actives[c] = s.active[c].img
 	}
-	left := container.NewVBox(
+	s.body = container.NewVBox(
 		s.genus,
 		grid,
-		widget.NewSeparator(),
 		widget.NewLabelWithStyle("Active moves", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
 		container.New(layout.NewCustomPaddedHBoxLayout(0), actives...),
+		widget.NewSeparator(),
+		s.detail.content,
 	)
-	s.content = container.NewBorder(nil, nil, left, nil, container.NewPadded(s.detail.content))
+	s.content = container.NewVScroll(container.NewPadded(s.body))
 
 	s.detail.show(NewDetailView(domain.Cell{}))
 	return s
@@ -268,15 +314,11 @@ func (s *Screen) Load(ctx context.Context) {
 
 // apply shows a grid, or why there is none. It must run on the UI thread.
 func (s *Screen) apply(g domain.Grid, err error) {
-	switch {
-	case err == nil:
+	if err != nil {
+		g = domain.Grid{}
+		s.genus.SetText(status.Message(err))
+	} else {
 		s.genus.SetText(g.Genus.Name)
-	case errors.Is(err, apperr.ErrNotFound):
-		g = domain.Grid{}
-		s.genus.SetText("No monster")
-	default:
-		g = domain.Grid{}
-		s.genus.SetText("Error: " + err.Error())
 	}
 	s.grid = g
 	v := NewGridView(g)

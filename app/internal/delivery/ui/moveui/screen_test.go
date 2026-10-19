@@ -90,6 +90,28 @@ var _ = Describe("Screen", func() {
 		Expect(s.cells[0][0].highlight.Visible()).To(BeFalse())
 	})
 
+	It("lists what the selected move still needs, each as met or not, and no list when it needs nothing", func() {
+		g := grid()
+		g.Cells[0][1].Requirements = []domain.Requirement{
+			{Text: "Pow + Int at least 400", Have: "421", Met: true},
+			{Text: "Use Pat at least 50 times", Have: "31 / 50"},
+			{Text: "The game gives no way to learn it"},
+		}
+		s.apply(g, nil)
+		test.Tap(s.cells[0][1])
+		Expect(s.detail.needsBox.Visible()).To(BeTrue())
+		Expect(s.detail.needs).To(HaveLen(3))
+		Expect(s.detail.needs[0].mark.Text).To(Equal("✓"))
+		Expect(s.detail.needs[0].label.Text).To(Equal("Pow + Int at least 400 (421)"))
+		Expect(s.detail.needs[1].mark.Text).To(Equal("✗"))
+		Expect(s.detail.needs[1].label.Text).To(Equal("Use Pat at least 50 times (31 / 50)"))
+		Expect(s.detail.needs[2].label.Text).To(Equal("The game gives no way to learn it"))
+
+		test.Tap(s.cells[0][0])
+		Expect(s.detail.needsBox.Visible()).To(BeFalse())
+		Expect(s.detail.needs).To(BeEmpty())
+	})
+
 	It("keeps the selection and brings its details up to date when the grid changes", func() {
 		s.apply(grid(), nil)
 		test.Tap(s.cells[0][1])
@@ -104,10 +126,18 @@ var _ = Describe("Screen", func() {
 
 	It("shows No monster when the game shows none", func() {
 		s.apply(grid(), nil)
-		s.apply(domain.Grid{}, apperr.NotFound("monster", "the game shows none"))
+		s.apply(domain.Grid{}, apperr.NotFound("monster", "No monster"))
 		Expect(s.genus.Text).To(Equal("No monster"))
 		Expect(s.cells[0][0].iconKey).To(Equal(NoMove))
 		Expect(s.cells[0][0].check.Visible()).To(BeFalse())
+	})
+
+	It("says what a not-found error says, such as that the game is not running, and No monster when it says nothing", func() {
+		s.apply(domain.Grid{}, apperr.NotFound("game", "DuckStation is not running"))
+		Expect(s.genus.Text).To(Equal("DuckStation is not running"))
+
+		s.apply(domain.Grid{}, apperr.ErrNotFound)
+		Expect(s.genus.Text).To(Equal("No monster"))
 	})
 
 	It("shows any other error on the genus line", func() {
@@ -157,6 +187,7 @@ var _ = Describe("Screen", func() {
 		f, err := os.Create(filepath.Join(dir, "move-viewer-dragon.png"))
 		Expect(err).NotTo(HaveOccurred())
 		DeferCleanup(f.Close)
-		Expect(png.Encode(f, software.Render(real.Content(), theme.DefaultTheme()))).To(Succeed())
+		// The screen is a scroll, whose smallest size is a few pixels, so draw what it holds at its own size.
+		Expect(png.Encode(f, software.Render(real.body, theme.DefaultTheme()))).To(Succeed())
 	})
 })

@@ -35,6 +35,13 @@ type GridView struct {
 	Active [domain.Columns]string                // the icon of each column's active move; NoMove when it has none
 }
 
+// RequirementView is one thing a move asks of a monster before it can learn it, and where the monster stands on it.
+type RequirementView struct {
+	Text string
+	Have string // what the monster has, when that is a number; empty otherwise
+	Met  bool
+}
+
 // DetailView is what the details of one cell show, every value already in the game's words.
 type DetailView struct {
 	Name        string
@@ -49,6 +56,8 @@ type DetailView struct {
 	Learned     bool
 	CanLearn    bool
 	Description string
+	// Requirements are what the move still asks of the monster; none for a learned move or an empty cell.
+	Requirements []RequirementView
 }
 
 func NewGridView(g domain.Grid) GridView {
@@ -92,6 +101,9 @@ func NewDetailView(c domain.Cell) DetailView {
 		Learned:     c.Learned,
 		CanLearn:    c.CanLearn,
 		Description: m.Description,
+	}
+	for _, r := range c.Requirements {
+		v.Requirements = append(v.Requirements, RequirementView{Text: r.Text, Have: r.Have, Met: r.Met})
 	}
 	if e := m.Extra; e != nil {
 		value := e.Text

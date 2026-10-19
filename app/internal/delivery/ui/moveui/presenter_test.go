@@ -62,6 +62,20 @@ var _ = Describe("NewDetailView", func() {
 		Expect(moveui.NewDetailView(domain.Cell{Move: &m}).Extra).To(Equal("Recovery: B (30)"))
 	})
 
+	It("lists what the monster still needs to learn the move, and where it stands on each", func() {
+		m := domain.Move{Name: "Slap"}
+		v := moveui.NewDetailView(domain.Cell{Move: &m, Requirements: []domain.Requirement{
+			{Text: "Pow + Int at least 400", Have: "421", Met: true},
+			{Text: "Use Pat at least 50 times", Have: "31 / 50"},
+			{Text: "The game gives no way to learn it"},
+		}})
+		Expect(v.Requirements).To(Equal([]moveui.RequirementView{
+			{Text: "Pow + Int at least 400", Have: "421", Met: true},
+			{Text: "Use Pat at least 50 times", Have: "31 / 50"},
+			{Text: "The game gives no way to learn it"},
+		}))
+	})
+
 	It("tells a learned move apart", func() {
 		m := domain.Move{Name: "Pat"}
 		Expect(moveui.NewDetailView(domain.Cell{Move: &m, Learned: true}).Learned).To(BeTrue())

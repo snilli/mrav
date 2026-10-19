@@ -1,39 +1,65 @@
-// Command mrav is the Move Viewer window.
+// Command mrav is the Monster Rancher 2 viewer window.
 package main
 
 import (
 	"context"
 	"fmt"
+	"runtime"
 	"time"
 
 	"fyne.io/fyne/v2"
 	fyneapp "fyne.io/fyne/v2/app"
-	"fyne.io/fyne/v2/container"
 	"github.com/rs/zerolog/log"
 	"go.uber.org/fx"
 
 	"app/config"
+	"app/internal/core/item"
+	"app/internal/core/item/repository/db/itemrepo"
+	"app/internal/core/item/service/itemsvc"
 	"app/internal/core/move"
 	"app/internal/core/move/repository/db/moverepo"
 	"app/internal/core/move/service/movesvc"
+	"app/internal/core/player"
+	"app/internal/core/player/service/playersvc"
+	"app/internal/core/profile"
+	"app/internal/core/profile/repository/db/profilerepo"
+	"app/internal/core/profile/service/profilesvc"
+	"app/internal/core/training"
+	"app/internal/core/training/repository/db/trainingrepo"
+	"app/internal/core/training/service/trainingsvc"
 	"app/internal/delivery/ui/demoui"
+	"app/internal/delivery/ui/itemui"
 	"app/internal/delivery/ui/moveui"
+	"app/internal/delivery/ui/playerui"
+	"app/internal/delivery/ui/profileui"
+	"app/internal/delivery/ui/shellui"
+	"app/internal/delivery/ui/trainingui"
 	"app/internal/infrastructure/database"
 	"app/internal/infrastructure/fakemonster"
+	"app/internal/infrastructure/fakeplayer"
+	"app/internal/infrastructure/gamememory"
 	"app/internal/infrastructure/icons"
 	"app/internal/port"
 )
 
-// options is the whole dependency graph. Each repository and service constructor returns its port, so
-// none needs fx.Annotate; the fake source is the one thing provided as two types, because the demo panel
-// needs its setters and the service needs only its port.
+// controllerEvery is how often the Controller page asks for the buttons held: it shows what the game reads from
+// the pad, so it needs to be much faster than the rest.
+const controllerEvery = 50 * time.Millisecond
+
+// options is the whole dependency graph. Each repository and service constructor returns its port, so none needs
+// fx.Annotate; newSource is the one constructor that gives several types, because the services need only the
+// ports of the monster and the player while the demo panel needs the fakes behind them, when there are any.
 func options() fx.Option {
 	return fx.Options(
 		fx.Provide(provideConfig, database.ProvideDatabase),
 		fx.Provide(moverepo.New, movesvc.New),
-		fx.Provide(fakemonster.New, func(s *fakemonster.Source) port.MonsterSource { return s }),
-		fx.Provide(newFyneApp, newScreen, newDemo, newWindow),
-		fx.Invoke(refreshLoop),
+		fx.Provide(profilerepo.New, profilesvc.New),
+		fx.Provide(trainingrepo.New, trainingsvc.New),
+		fx.Provide(itemrepo.New, itemsvc.New),
+		fx.Provide(playersvc.New),
+		fx.Provide(newSource),
+		fx.Provide(newFyneApp, newParts, newDemo, newWindow),
+		fx.Invoke(refreshLoops),
 	)
 }
 
@@ -63,46 +89,100 @@ func provideConfig() (*config.Config, error) {
 	return cfg, nil
 }
 
-func newFyneApp() fyne.App { return fyneapp.NewWithID("io.ezcards.mrav") }
+// canReadGames is whether this system can read a running game's memory, which only Windows can.
+var canReadGames = runtime.GOOS == "windows"
 
-// The screen and the panel take the Fyne app only so that it exists before their widgets do.
-func newScreen(_ fyne.App, svc move.MoveService) *moveui.Screen {
-	return moveui.NewScreen(svc, icons.Bytes)
+// newSource is where the monster and the player come from: a running game's memory, one source for both, or the
+// demo panel's hand-set fakes, which are the last two values and nil unless the demo is shown. With auto it is
+// whichever game is running, and the demo where no game can be read.
+func newSource(cfg *config.Config) (port.MonsterSource, port.PlayerSource, *fakemonster.Source, *fakeplayer.Source) {
+	switch {
+	case cfg.Game == "duckstation":
+		game := gamememory.DuckStation()
+		return game, game, nil, nil
+	case cfg.Game == "mr2dx":
+		game := gamememory.MR2DX()
+		return game, game, nil, nil
+	case cfg.Game == "auto" && canReadGames:
+		game := gamememory.AutoDetect()
+		return game, game, nil, nil
+	}
+	monsters, players := fakemonster.New(), fakeplayer.New()
+	return monsters, players, monsters, players
 }
 
-func newDemo(_ fyne.App, svc move.MoveService, src *fakemonster.Source) (*demoui.Panel, error) {
+func newFyneApp() fyne.App { return fyneapp.NewWithID("io.ezcards.mrav") }
+
+// loader is a page that can be told to ask its service for what it shows.
+type loader interface{ Load(ctx context.Context) }
+
+// newParts builds the pages of the window, without the demo panel. They take the Fyne app only so that it exists
+// before their widgets do.
+func newParts(
+	_ fyne.App, profiles profile.ProfileService, moves move.MoveService, trainings training.TrainingService,
+	items item.ItemService, players player.PlayerService,
+) shellui.Parts {
+	return shellui.Parts{
+		Dashboard:  profileui.NewDashboard(profiles),
+		Training:   trainingui.NewScreen(trainings),
+		Moves:      moveui.NewScreen(moves, icons.Bytes),
+		Items:      itemui.NewScreen(items),
+		Breeder:    playerui.NewBreederScreen(players),
+		Controller: playerui.NewControllerScreen(players),
+	}
+}
+
+// slow are the pages that are asked at the rate in the config.
+func slow(p shellui.Parts) []loader {
+	return []loader{p.Dashboard, p.Moves, p.Training, p.Items, p.Breeder}
+}
+
+// newDemo is nil when a game is read, because nobody sets that monster by hand.
+func newDemo(_ fyne.App, svc move.MoveService, monsters *fakemonster.Source, players *fakeplayer.Source) (*demoui.Panel, error) {
+	if monsters == nil {
+		return nil, nil
+	}
 	genera, err := svc.ListGenera(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("failed to list the genera: %w", err)
 	}
-	return demoui.New(src, genera), nil
+	panel := demoui.New(monsters, players, genera)
+	panel.Randomize() // so that the pages have something to show from the start
+	return panel, nil
 }
 
-func newWindow(a fyne.App, screen *moveui.Screen, demo *demoui.Panel) fyne.Window {
-	w := a.NewWindow("mrav - Move Viewer")
-	split := container.NewHSplit(screen.Content(), demo.Content())
-	split.SetOffset(0.72)
-	w.SetContent(split)
+func newWindow(a fyne.App, p shellui.Parts, demo *demoui.Panel) fyne.Window {
+	w := a.NewWindow("mrav - Monster Rancher 2 Viewer")
+	w.Resize(fyne.NewSize(1500, 900))
+	p.Demo = demo
+	w.SetContent(shellui.New(w, p).Content())
 	return w
 }
 
-// refreshLoop asks the screen to reload every RefreshMS, from a goroutine that lives as long as the app.
-func refreshLoop(lc fx.Lifecycle, cfg *config.Config, screen *moveui.Screen) {
+// refreshLoops asks the pages to reload, each from a goroutine that lives as long as the app: most of them at
+// the rate in the config, and the Controller page faster.
+func refreshLoops(lc fx.Lifecycle, cfg *config.Config, p shellui.Parts) {
 	ctx, cancel := context.WithCancel(context.Background())
+	loop := func(every time.Duration, screens ...loader) {
+		go func() {
+			ticker := time.NewTicker(every)
+			defer ticker.Stop()
+			for {
+				for _, s := range screens {
+					s.Load(ctx)
+				}
+				select {
+				case <-ctx.Done():
+					return
+				case <-ticker.C:
+				}
+			}
+		}()
+	}
 	lc.Append(fx.Hook{
 		OnStart: func(context.Context) error {
-			go func() {
-				ticker := time.NewTicker(time.Duration(cfg.RefreshMS) * time.Millisecond)
-				defer ticker.Stop()
-				for {
-					screen.Load(ctx)
-					select {
-					case <-ctx.Done():
-						return
-					case <-ticker.C:
-					}
-				}
-			}()
+			loop(time.Duration(cfg.RefreshMS)*time.Millisecond, slow(p)...)
+			loop(controllerEvery, p.Controller)
 			return nil
 		},
 		OnStop: func(context.Context) error {
