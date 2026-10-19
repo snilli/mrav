@@ -13,9 +13,10 @@ type Profile struct {
 	Breed     Breed
 	MainGenus string
 	SubGenus  string
-	Like      string // the item the monster wants
-	Dislike   string // the item the monster does not want
-	Drug      string // the item that is a drug the monster is on; "---" when it is on none
+	Like      string        // the item the monster wants
+	Dislike   string        // the item the monster does not want
+	Drug      string        // the item that is a drug the monster is on; "---" when it is on none
+	Breeds    []BreedUnlock // the main breeds and whether each is unlocked; none when the game does not say
 }
 
 // DesireName is what an item id is called when a monster wants it, dislikes it or is on it, or "---" for an id

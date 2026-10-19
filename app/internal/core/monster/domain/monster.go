@@ -69,6 +69,13 @@ type Monster struct {
 	GutsRate        int
 	Specials        int // flags: the battle specials
 	PrizeMoney      int
+	Record          Record
+}
+
+// Record is what the game keeps of a monster's fights and ailments: counts, each of them.
+type Record struct {
+	Wins, Losses, KOs                          int
+	Injuries, Runaways, Sicknesses, Resistance int
 }
 
 // StatSum adds the named stats; a stat outside the six adds nothing.

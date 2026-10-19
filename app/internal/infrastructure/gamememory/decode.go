@@ -102,6 +102,12 @@ func decode(l Layout, mem Memory) (monster.Monster, error) {
 	for s := range m.Stats {
 		m.Stats[s] = r.i16(l.Stats[s])
 	}
+	rec := r.read(l.Record, 16) // wins, losses, knock-outs, a gap, injuries, runaways, sicknesses, resistance
+	count := func(i int) int { return int(binary.LittleEndian.Uint16(rec[2*i:])) }
+	m.Record = monster.Record{
+		Wins: count(0), Losses: count(1), KOs: count(2),
+		Injuries: count(4), Runaways: count(5), Sicknesses: count(6), Resistance: count(7),
+	}
 	// The game keeps the growth rates in the order Power, Intelligence, Life, Skill, Speed, Defence.
 	m.Growth[monster.Pow], m.Growth[monster.Int], m.Growth[monster.Life] = int(growth[0]), int(growth[1]), int(growth[2])
 	m.Growth[monster.Skill], m.Growth[monster.Speed], m.Growth[monster.Defense] = int(growth[3]), int(growth[4]), int(growth[5])
@@ -137,6 +143,22 @@ func decodePlayer(l Layout, mem Memory) (player.Player, error) {
 	}
 	for slot := range p.Items {
 		p.Items[slot] = r.u8(l.Items + 4*uint32(slot))
+	}
+	if l.Date != 0 {
+		p.Ranch = player.Ranch{
+			Known: true, Date: r.i32(l.Date), StartYear: r.i32(l.StartYear), Grade: r.u8(l.Grade),
+			House: r.u8(l.House), Barn: r.u8(l.Barn), Altar: r.u8(l.Altar),
+		}
+		for breed, unlocked := range r.read(l.Unlocks, player.BreedCount) {
+			p.Ranch.Unlocked[breed] = unlocked != 0
+		}
+		// The energy is outside the RAM, and nothing that the rest needs: a failure to read it leaves it unknown.
+		if exe, ok := mem.(ModuleMemory); ok && l.Energy != 0 {
+			var b [2]byte
+			if exe.ReadModule(l.Energy, b[:]) == nil {
+				p.Ranch.Energy, p.Ranch.EnergyKnown = int(int16(binary.LittleEndian.Uint16(b[:]))), true
+			}
+		}
 	}
 	if r.err != nil {
 		return player.Player{}, r.err

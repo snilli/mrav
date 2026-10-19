@@ -25,6 +25,13 @@ type addresses struct {
 	moves, active, arena, guts, specials, prize                        uint32
 	name, breeder                                                      uint32
 	money, items, nextSale, errantry, input                            uint32
+	// From a Cheat Engine table for MR2DX, which MR2AV does not read. record is where wins are, with losses and
+	// knock-outs after it, then a gap, then injuries, runaways, sicknesses and resistance, two bytes each. The
+	// ranch's are known for Steam only.
+	record                                     uint32
+	date, startYear, grade, house, barn, altar uint32
+	unlocks                                    uint32 // a byte for each main breed, by its code: 1 when it is unlocked
+	energy                                     uint32 // where the expedition's energy is, counted from the exe, not the RAM
 }
 
 var (
@@ -41,6 +48,7 @@ var (
 		moves: 0x97B9A, active: 0x97BD0, arena: 0x97BD6, guts: 0x97BD7, specials: 0x97BD8, prize: 0x97A5C,
 		name: 0x97B78, breeder: 0,
 		money: 0x98FBC, items: 0x9923C, nextSale: 0x992DE, errantry: 0x992E9, input: 0x938AE,
+		record: 0x97A66, // the Steam one and 8, as every field of the monster before its name is
 	}
 	// MR2DX on Steam, English release.
 	steamMR2AV = addresses{
@@ -55,16 +63,41 @@ var (
 		moves: 0x97BA2, active: 0x97BD8, arena: 0x97BDE, guts: 0x97BDF, specials: 0x97BE0, prize: 0x97A54,
 		name: 0x97B78, breeder: 0x9A54A,
 		money: 0x9A568, items: 0x9A7EC, nextSale: 0x9A88E, errantry: 0x9A899, input: 0x938AE,
+		record: 0x97A5E,
+		date:   0x9A7D8, startYear: 0x9A62C, grade: 0x9A56C, house: 0x9A56D, barn: 0x9A56E, altar: 0x9A5FC,
+		unlocks: 0x9A936,
+		energy:  0x1DE8B84,
 	}
 )
 
 const ramSize = 0x200000 // the PlayStation's 2 MB
 
-// image is a game's RAM, which can be made to fail, and which counts how often it is let go of.
+// image is a game's RAM, which can be made to fail, and which counts how often it is let go of. It also has the little
+// that a game keeps in its exe, outside the RAM, which can be made to fail by itself.
 type image struct {
-	ram    []byte
-	fail   error
-	closed int
+	ram        []byte
+	fail       error
+	closed     int
+	module     map[uint32]byte
+	moduleFail error
+}
+
+// ReadModule reads from the exe: what was put there with i16module, and nothing for the rest.
+func (i *image) ReadModule(offset uint32, p []byte) error {
+	if i.moduleFail != nil {
+		return i.moduleFail
+	}
+	for n := range p {
+		p[n] = i.module[offset+uint32(n)]
+	}
+	return nil
+}
+
+func (i *image) i16module(offset uint32, v int16) {
+	if i.module == nil {
+		i.module = map[uint32]byte{}
+	}
+	i.module[offset], i.module[offset+1] = byte(uint16(v)), byte(uint16(v)>>8)
 }
 
 func newImage() *image { return &image{ram: make([]byte, ramSize)} }
@@ -145,6 +178,14 @@ func monsterImage(a addresses, name, breeder []byte) *image {
 	}
 	img.put(a.active, 0, 6, 12, 255)
 	img.put(a.name, name...)
+	img.i16(a.record, 12)   // wins
+	img.i16(a.record+2, 3)  // losses
+	img.i16(a.record+4, 5)  // knock-outs
+	img.i16(a.record+6, -1) // not a count, and not read
+	img.i16(a.record+8, 4)  // injuries
+	img.i16(a.record+10, 6) // runaways
+	img.i16(a.record+12, 7) // sicknesses
+	img.i16(a.record+14, 8) // resistance
 
 	img.i32(a.money, 987654)
 	for slot := range uint32(player.ItemSlots) {
@@ -155,9 +196,27 @@ func monsterImage(a addresses, name, breeder []byte) *image {
 	if a.breeder != 0 {
 		img.put(a.breeder, breeder...)
 	}
+	if a.date != 0 {
+		img.i32(a.date, 155)
+		img.i32(a.startYear, 1000)
+		img.u8(a.grade, 6)
+		img.u8(a.house, 2)
+		img.u8(a.barn, 1)
+		img.u8(a.altar, 3)
+		// Pixie and Dragon unlocked, Henger not, Worm (36) unlocked with any value but 0, Naga (37) not.
+		img.put(a.unlocks, 1, 1, 0, 0, 0, 0)
+		img.u8(a.unlocks+36, 2)
+		img.i16module(a.energy, -5) // below nothing, as the energy of an expedition can go
+	}
 	img.i16(a.input, 48) // Circle and Cross
 	return img
 }
+
+// ramOnly is a Memory that is the RAM and nothing else: it cannot read the exe, as the PlayStation's cannot.
+type ramOnly struct{ image *image }
+
+func (r *ramOnly) Read(addr uint32, p []byte) error { return r.image.Read(addr, p) }
+func (r *ramOnly) Close() error                     { return r.image.Close() }
 
 func reason(err error) string {
 	GinkgoHelper()
@@ -187,6 +246,7 @@ var _ = Describe("decode", func() {
 				PlayType:   2, Drug: 38, DrugWeeks: 3, ItemLike: 4, ItemDislike: 130,
 				Rank: 2, LifeStage: 5, LifeType: 3, ArenaSpeed: 4, GutsRate: 5,
 				Specials: 0x0403, PrizeMoney: 12345,
+				Record: monster.Record{Wins: 12, Losses: 3, KOs: 5, Injuries: 4, Runaways: 6, Sicknesses: 7, Resistance: 8},
 			}
 			want.Learned[3], want.Learned[23] = true, true // only a flag of exactly 1 is learned
 			want.Used[3], want.Used[5], want.Used[7], want.Used[23] = 77, 12, 9, 255
@@ -197,19 +257,43 @@ var _ = Describe("decode", func() {
 	)
 
 	DescribeTable("reads the player's side from where its game keeps it",
-		func(l Layout, a addresses, wantBreeder string) {
+		func(l Layout, a addresses, wantBreeder string, wantRanch player.Ranch) {
 			got, err := decodePlayer(l, monsterImage(a, ps1Name, steamBreeds))
 			Expect(err).NotTo(HaveOccurred())
 
-			want := player.Player{Money: 987654, NextSale: 7, ErrantryCD: 255, Breeder: wantBreeder, Input: 48}
+			want := player.Player{Money: 987654, NextSale: 7, ErrantryCD: 255, Breeder: wantBreeder, Input: 48, Ranch: wantRanch}
 			for slot := range want.Items {
 				want.Items[slot] = slot * 9
 			}
 			Expect(got).To(Equal(want))
 		},
-		Entry("MR2 on the PlayStation, which has no breeder name to read", ps1, ps1MR2AV, ""),
-		Entry("MR2DX on Steam", steam, steamMR2AV, "Bob"),
+		Entry("MR2 on the PlayStation, which has no breeder name or ranch to read", ps1, ps1MR2AV, "", player.Ranch{}),
+		Entry("MR2DX on Steam", steam, steamMR2AV, "Bob",
+			player.Ranch{
+				Known: true, Date: 155, StartYear: 1000, Grade: 6, House: 2, Barn: 1, Altar: 3,
+				Unlocked: [player.BreedCount]bool{0: true, 1: true, 36: true}, Energy: -5, EnergyKnown: true,
+			}),
 	)
+
+	It("still reads the ranch when the exe cannot be read, and says the energy is not known", func() {
+		img := monsterImage(steamMR2AV, steamName, steamBreeds)
+		img.moduleFail = errors.New("access denied")
+
+		got, err := decodePlayer(steam, img)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(got.Ranch.Known).To(BeTrue())
+		Expect(got.Ranch.House).To(Equal(2))
+		Expect(got.Ranch.EnergyKnown).To(BeFalse())
+		Expect(got.Ranch.Energy).To(BeZero())
+	})
+
+	It("does not look for the energy in a memory that has no exe to read", func() {
+		mem := &ramOnly{image: monsterImage(steamMR2AV, steamName, steamBreeds)}
+		got, err := decodePlayer(steam, mem)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(got.Ranch.Known).To(BeTrue())
+		Expect(got.Ranch.EnergyKnown).To(BeFalse())
+	})
 
 	DescribeTable("works out the nature the way the game shows it: the base plus the sine, cut toward zero",
 		func(nature int16, base byte, want int) {

@@ -26,5 +26,5 @@ func (s *Service) Inventory(ctx context.Context) ([]domain.Slot, error) {
 	if err != nil {
 		return nil, err
 	}
-	return domain.Fill(p.Items[:], items), nil
+	return domain.Lock(domain.Fill(p.Items[:], items), p.Ranch.Slots()), nil
 }

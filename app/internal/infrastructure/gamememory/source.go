@@ -18,6 +18,13 @@ type Memory interface {
 	Close() error
 }
 
+// ModuleMemory is a Memory that can also read the game's own exe, outside the console's RAM, which is where the
+// English release of MR2DX keeps what it adds to the console. Offsets are from where the exe is loaded.
+type ModuleMemory interface {
+	Memory
+	ReadModule(offset uint32, p []byte) error
+}
+
 // Attach finds the running game and opens its RAM, or says why it cannot.
 type Attach func() (Memory, error)
 

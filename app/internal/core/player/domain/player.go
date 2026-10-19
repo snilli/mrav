@@ -24,6 +24,7 @@ type Player struct {
 	Items      [ItemSlots]int
 	Breeder    string // the breeder's name; empty when the game keeps it where this viewer cannot read it
 	Input      int    // the buttons held on controller 1, one bit each
+	Ranch      Ranch
 }
 
 // ErrantrySaleReady says whether the errantry sale can be had now.

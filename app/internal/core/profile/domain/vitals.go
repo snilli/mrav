@@ -37,6 +37,25 @@ func EffectiveSpeed(spd, form int) int {
 	return int(clampStat(float32(spd) * (1 - float32(form)/400)))
 }
 
+// FatigueWord is how the game says a fatigue: well from 1, seems well from 20, then every 20 up to pass out at 100.
+func FatigueWord(fatigue int) string {
+	switch {
+	case fatigue >= 100:
+		return "pass out"
+	case fatigue >= 80:
+		return "very tired"
+	case fatigue >= 60:
+		return "pretty tired"
+	case fatigue >= 40:
+		return "seems tired"
+	case fatigue >= 20:
+		return "seems well"
+	case fatigue >= 1:
+		return "well"
+	}
+	return "very well"
+}
+
 // Loyalty is half of the spoil and half of the fear, each cut to a whole number, added.
 func Loyalty(spoil, fear int) int { return spoil/2 + fear/2 }
 

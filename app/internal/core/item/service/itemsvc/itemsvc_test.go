@@ -50,6 +50,27 @@ var _ = Describe("ItemService", func() {
 		Expect(slots[1].Item).To(BeNil())
 	})
 
+	It("locks the places the house has no room for, when the game says how far it is upgraded", func() {
+		players.EXPECT().Player(ctx).Return(player.Player{Ranch: player.Ranch{Known: true, House: 1}}, nil)
+		repo.EXPECT().ListItems(ctx).Return(nil, nil)
+
+		slots, err := svc.Inventory(ctx)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(slots[13].Locked).To(BeFalse()) // a house one up gives 14
+		Expect(slots[14].Locked).To(BeTrue())
+	})
+
+	It("locks nothing when the game does not say", func() {
+		players.EXPECT().Player(ctx).Return(player.Player{}, nil)
+		repo.EXPECT().ListItems(ctx).Return(nil, nil)
+
+		slots, err := svc.Inventory(ctx)
+		Expect(err).NotTo(HaveOccurred())
+		for _, s := range slots {
+			Expect(s.Locked).To(BeFalse())
+		}
+	})
+
 	It("returns the source's error without asking the repository", func() {
 		players.EXPECT().Player(ctx).Return(player.Player{}, apperr.NotFound("game", "DuckStation is not running"))
 		// no repository expectation: the mock fails the test if it is called

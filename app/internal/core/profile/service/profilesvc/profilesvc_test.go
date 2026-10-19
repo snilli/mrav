@@ -62,6 +62,24 @@ var _ = Describe("ProfileService", func() {
 		Expect(got.Like).To(Equal("Cup Jelly"))
 		Expect(got.Dislike).To(Equal("Nothing"))
 		Expect(got.Drug).To(Equal("Troron"))
+		Expect(got.Breeds).To(BeNil()) // the player has no ranch to read
+	})
+
+	It("lists the main breeds with whether each is unlocked, when the game says", func() {
+		monsters.EXPECT().Current(ctx).Return(henger, nil)
+		unlocked := [player.BreedCount]bool{5: true}
+		players.EXPECT().Player(ctx).Return(player.Player{Ranch: player.Ranch{Known: true, Unlocked: unlocked}}, nil)
+		repo.EXPECT().ListGenusNames(ctx).Return(names, nil)
+		repo.EXPECT().ListBreedRules(ctx, 5).Return([]domain.BreedRule{rule}, nil)
+		repo.EXPECT().ListCocoonRules(ctx).Return(nil, nil)
+		repo.EXPECT().ListDesireNames(ctx).Return(desires, nil)
+
+		got, err := svc.Current(ctx)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(got.Breeds).To(HaveLen(player.BreedCount))
+		Expect(got.Breeds[5]).To(Equal(domain.BreedUnlock{Name: "Henger", Unlocked: true}))
+		Expect(got.Breeds[3]).To(Equal(domain.BreedUnlock{Name: "C. Pandora"}))
+		Expect(got.Breeds[0]).To(Equal(domain.BreedUnlock{Name: "#0"}))
 	})
 
 	It("says the monster is on no drug when its drug id is not a drug's, and --- for an id the list lacks", func() {

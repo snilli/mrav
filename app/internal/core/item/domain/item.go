@@ -17,10 +17,20 @@ type Item struct {
 	PurchasePrice string
 }
 
-// Slot is one of the places the player carries an item in. Item is nil when the place is empty.
+// Slot is one of the places the player carries an item in. Item is nil when the place is empty. A place is Locked
+// when the house has no room for it yet.
 type Slot struct {
-	Index int
-	Item  *Item
+	Index  int
+	Item   *Item
+	Locked bool
+}
+
+// Lock marks the slots from the first one past usable as locked, and gives the slots back.
+func Lock(slots []Slot, usable int) []Slot {
+	for i := range slots {
+		slots[i].Locked = i >= usable
+	}
+	return slots
 }
 
 // Fill puts the item of each id in its slot. A slot stays empty for an id that marks one, and for an id that the

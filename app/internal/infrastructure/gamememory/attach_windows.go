@@ -103,6 +103,12 @@ type processMemory struct {
 func (m processMemory) Read(addr uint32, p []byte) error {
 	return m.process.read(m.ram+uintptr(addr), p)
 }
+
+// ReadModule reads the exe the process runs, from where it is loaded.
+func (m processMemory) ReadModule(offset uint32, p []byte) error {
+	return m.process.read(m.process.base+uintptr(offset), p)
+}
+
 func (m processMemory) Close() error { return windows.CloseHandle(m.handle) }
 
 func attachMR2DX() (Memory, error) {

@@ -38,3 +38,20 @@ var _ = Describe("Fill", func() {
 		Expect(catalog[0].Name).To(Equal("Potato"))
 	})
 })
+
+var _ = Describe("Lock", func() {
+	It("locks the places the house has no room for, from the first one past what it gives", func() {
+		slots := domain.Lock(domain.Fill(make([]int, 20), nil), 14)
+		for i, s := range slots {
+			Expect(s.Locked).To(Equal(i >= 14), "slot %d", i)
+		}
+	})
+
+	It("locks none when the house gives all of them, or more", func() {
+		for _, usable := range []int{20, 25} {
+			for _, s := range domain.Lock(domain.Fill(make([]int, 20), nil), usable) {
+				Expect(s.Locked).To(BeFalse())
+			}
+		}
+	})
+})

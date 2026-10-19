@@ -16,11 +16,6 @@ packages:
       all: true
       dir: 'mock/core/{{.SrcPackageName}}'
       pkgname: 'mock{{.SrcPackageName}}'
-  app/internal/core/player:
-    config:
-      all: true
-      dir: 'mock/core/{{.SrcPackageName}}'
-      pkgname: 'mock{{.SrcPackageName}}'
   app/internal/core/profile:
     config:
       all: true

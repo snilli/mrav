@@ -55,6 +55,22 @@ var _ = Describe("vitals", func() {
 		Entry("stress counts twice", 40, 60, 160, 3),
 	)
 
+	DescribeTable("FatigueWord says it as the game does, in steps of 20 from 20",
+		func(fatigue int, want string) { Expect(domain.FatigueWord(fatigue)).To(Equal(want)) },
+		Entry("none", 0, "very well"),
+		Entry("a little", 1, "well"),
+		Entry("just under 20", 19, "well"),
+		Entry("20", 20, "seems well"),
+		Entry("39", 39, "seems well"),
+		Entry("40", 40, "seems tired"),
+		Entry("59", 59, "seems tired"),
+		Entry("60", 60, "pretty tired"),
+		Entry("79", 79, "pretty tired"),
+		Entry("80", 80, "very tired"),
+		Entry("99", 99, "very tired"),
+		Entry("100", 100, "pass out"),
+	)
+
 	DescribeTable("AgeText says an age in weeks as years, months and weeks of a 48-week year",
 		func(weeks int, want string) { Expect(domain.AgeText(weeks)).To(Equal(want)) },
 		Entry("no age", -1, "---"),

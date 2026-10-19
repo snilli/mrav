@@ -48,7 +48,12 @@ func (s *Service) Current(ctx context.Context) (domain.Profile, error) {
 	if domain.IsDrug(m.Drug) {
 		drug = domain.DesireName(desires, m.Drug)
 	}
+	var breeds []domain.BreedUnlock
+	if p.Ranch.Known {
+		breeds = domain.BreedUnlocks(genera, p.Ranch.Unlocked)
+	}
 	return domain.Profile{
+		Breeds:    breeds,
 		Monster:   m,
 		Player:    p,
 		Breed:     domain.ResolveBreed(rules, cocoons, m),
