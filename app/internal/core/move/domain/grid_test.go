@@ -57,6 +57,37 @@ var _ = Describe("NewGrid", func() {
 		Expect(g.Cells[2][1].CanLearn).To(BeFalse(), "Lightning: Bolt used 49 times, not 50")
 	})
 
+	It("tells what a move that is not learned still asks, in the names of the moves of the genus", func() {
+		m := newMonster()
+		m.Used[12] = 49
+		g := domain.NewGrid(genus, moves(), m)
+		Expect(g.Cells[2][1].Requirements).To(Equal([]domain.Requirement{
+			{Text: "Use Bolt at least 50 times", Have: "49 / 50", Met: false},
+		}))
+	})
+
+	It("asks nothing for a move that is already learned, or that has no condition", func() {
+		m := newMonster()
+		m.Learned[1] = true
+		g := domain.NewGrid(genus, moves(), m)
+		Expect(g.Cells[0][1].Requirements).To(BeEmpty(), "Slap is learned")
+		Expect(g.Cells[2][0].Requirements).To(BeEmpty(), "Bolt has no condition")
+	})
+
+	It("names the sub-genera of a condition from the names it is given", func() {
+		mv := domain.Move{Genus: 0, MemorySlot: 5, Col: 1, Row: 6, Name: "Odd", Icon: "Pixie_6",
+			Unlock: domain.UnlockRule{All: []domain.Condition{domain.SubGenusIn{IDs: []monster.Genus{24, 25}}}}}
+		m := newMonster()
+		m.SubGenus = 3
+		names := domain.Names{Genus: func(g monster.Genus) string {
+			return map[monster.Genus]string{3: "C. Pandora", 24: "Jill", 25: "Mocchi"}[g]
+		}}
+		g := domain.NewGridNamed(genus, []domain.Move{mv}, m, names)
+		Expect(g.Cells[0][5].Requirements).To(Equal([]domain.Requirement{
+			{Text: "Sub-genus is Jill or Mocchi", Have: "C. Pandora", Met: false},
+		}))
+	})
+
 	It("finds the active move of each column by its memory slot", func() {
 		m := newMonster()
 		m.Active = [monster.ActiveGroups]int{0, monster.NoActiveMove, 13, monster.NoActiveMove}

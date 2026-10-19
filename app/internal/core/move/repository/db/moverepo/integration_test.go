@@ -19,8 +19,6 @@ import (
 	"app/internal/testutil"
 )
 
-func ptr[T any](v T) *T { return &v }
-
 var _ = Describe("moverepo", Label("integration"), func() {
 	var (
 		ctx  context.Context
@@ -34,7 +32,7 @@ var _ = Describe("moverepo", Label("integration"), func() {
 	refreshment := movedomain.Move{
 		Genus: 0, MemorySlot: 13, Col: 3, Row: 2, Name: "Refreshment", Kind: movedomain.KindIntelligence,
 		Guts: 30, Hit: 1, Description: "d", Icon: "Pixie_12",
-		Extra: &movedomain.Extra{Label: "Recovery:", Scale: ptr(movedomain.ScaleForce), Raw: 30},
+		Extra: &movedomain.Extra{Label: "Recovery:", Scale: new(movedomain.ScaleForce), Raw: 30},
 		Unlock: movedomain.UnlockRule{All: []movedomain.Condition{
 			movedomain.MoveUsedAtLeast{Slot: 12, Min: 50},
 			movedomain.StatSumAtLeast{Stats: []monster.Stat{monster.Pow, monster.Int}, Min: 400},
@@ -67,12 +65,12 @@ var _ = Describe("moverepo", Label("integration"), func() {
 		}
 		seed(pixie.ID, refreshment).
 			SetUnlock([]stored.Condition{
-				{Type: stored.MoveUsed, Slot: ptr(12), Min: ptr(50)},
-				{Type: stored.StatSum, Stats: []int{1, 2}, Min: ptr(400)},
-				{Type: stored.NatureAtMost, Max: ptr(-50)},
+				{Type: stored.MoveUsed, Slot: new(12), Min: new(50)},
+				{Type: stored.StatSum, Stats: []int{1, 2}, Min: new(400)},
+				{Type: stored.NatureAtMost, Max: new(-50)},
 				{Type: stored.SubGenusNotIn, IDs: []int{24, 5}},
 			}).
-			SetExtra(&stored.Extra{Label: "Recovery:", Scale: ptr(0), Raw: 30}).
+			SetExtra(&stored.Extra{Label: "Recovery:", Scale: new(0), Raw: 30}).
 			SaveX(ctx)
 		seed(dragon.ID, never).SaveX(ctx)
 		seed(pixie.ID, pat).SaveX(ctx)

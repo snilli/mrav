@@ -21,6 +21,9 @@ type Cell struct {
 	CanLearn bool // not learned yet, and the monster meets the unlock rule
 	Used     int
 	Active   bool // the move is the active one of its column
+	// Requirements is what the move still asks, condition by condition; it is empty for a move that is learned
+	// or has no condition.
+	Requirements []Requirement
 }
 
 // Grid is a genus's moves laid out as the game shows them, for one monster.
@@ -33,24 +36,48 @@ type Grid struct {
 // NewGrid lays a genus's moves out for a monster. A move whose cell or memory slot is outside the grid
 // cannot be shown and is left out.
 func NewGrid(genus Genus, moves []Move, m monster.Monster) Grid {
+	return NewGridNamed(genus, moves, m, Names{})
+}
+
+// NewGridNamed is NewGrid with names for the genera in the unlock rules; the moves are named from the moves.
+func NewGridNamed(genus Genus, moves []Move, m monster.Monster, names Names) Grid {
 	g := Grid{Genus: genus}
 	bySlot := make(map[int]*Move, len(moves))
+	placeable := func(mv *Move) bool {
+		return mv.Col >= 1 && mv.Col <= Columns && mv.Row >= 1 && mv.Row <= Rows && mv.MemorySlot >= 0 && mv.MemorySlot < monster.SlotCount
+	}
+	for i := range moves {
+		if mv := &moves[i]; placeable(mv) {
+			bySlot[mv.MemorySlot] = mv
+		}
+	}
+	if names.Move == nil {
+		names.Move = func(slot int) string {
+			if mv, ok := bySlot[slot]; ok {
+				return mv.Name
+			}
+			return ""
+		}
+	}
 	for i := range moves {
 		mv := &moves[i]
-		if mv.Col < 1 || mv.Col > Columns || mv.Row < 1 || mv.Row > Rows || mv.MemorySlot < 0 || mv.MemorySlot >= monster.SlotCount {
+		if !placeable(mv) {
 			continue
 		}
-		bySlot[mv.MemorySlot] = mv
 		learned := m.Learned[mv.MemorySlot]
-		g.Cells[mv.Col-1][mv.Row-1] = Cell{
+		cell := Cell{
 			Move:     mv,
 			Learned:  learned,
 			CanLearn: !learned && mv.Unlock.Holds(m),
 			Used:     m.Used[mv.MemorySlot],
 		}
+		if !learned {
+			cell.Requirements = mv.Unlock.Requirements(m, names)
+		}
+		g.Cells[mv.Col-1][mv.Row-1] = cell
 	}
 	// Column c's active move must be one of that column's six memory slots, as the game keeps them.
-	for c := 0; c < Columns; c++ {
+	for c := range Columns {
 		slot := m.Active[c]
 		if slot < c*Rows || slot >= (c+1)*Rows {
 			continue

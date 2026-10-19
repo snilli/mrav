@@ -1,0 +1,61 @@
+package profilesvc
+
+import (
+	"context"
+
+	"app/internal/core/profile"
+	"app/internal/core/profile/domain"
+	"app/internal/port"
+)
+
+type Service struct {
+	repo     profile.ProfileRepository
+	monsters port.MonsterSource
+	players  port.PlayerSource
+}
+
+func New(repo profile.ProfileRepository, monsters port.MonsterSource, players port.PlayerSource) profile.ProfileService {
+	return &Service{repo: repo, monsters: monsters, players: players}
+}
+
+func (s *Service) Current(ctx context.Context) (domain.Profile, error) {
+	m, err := s.monsters.Current(ctx)
+	if err != nil {
+		return domain.Profile{}, err
+	}
+	p, err := s.players.Player(ctx)
+	if err != nil {
+		return domain.Profile{}, err
+	}
+	genera, err := s.repo.ListGenusNames(ctx)
+	if err != nil {
+		return domain.Profile{}, err
+	}
+	rules, err := s.repo.ListBreedRules(ctx, int(m.Genus))
+	if err != nil {
+		return domain.Profile{}, err
+	}
+	cocoons, err := s.repo.ListCocoonRules(ctx)
+	if err != nil {
+		return domain.Profile{}, err
+	}
+	desires, err := s.repo.ListDesireNames(ctx)
+	if err != nil {
+		return domain.Profile{}, err
+	}
+
+	drug := "---"
+	if domain.IsDrug(m.Drug) {
+		drug = domain.DesireName(desires, m.Drug)
+	}
+	return domain.Profile{
+		Monster:   m,
+		Player:    p,
+		Breed:     domain.ResolveBreed(rules, cocoons, m),
+		MainGenus: domain.GenusLabel(int(m.Genus), true, genera),
+		SubGenus:  domain.GenusLabel(int(m.SubGenus), false, genera),
+		Like:      domain.DesireName(desires, m.ItemLike),
+		Dislike:   domain.DesireName(desires, m.ItemDislike),
+		Drug:      drug,
+	}, nil
+}

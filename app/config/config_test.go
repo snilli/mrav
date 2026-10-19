@@ -37,6 +37,24 @@ var _ = Describe("Load", func() {
 		Expect(err).To(HaveOccurred())
 	})
 
+	It("reads whichever game is running unless told otherwise, and knows only the games it can read", func() {
+		unset("GAME")
+		cfg, err := config.Load()
+		Expect(err).NotTo(HaveOccurred())
+		Expect(cfg.Game).To(Equal("auto"))
+
+		for _, game := range []string{"demo", "duckstation", "mr2dx", "auto"} {
+			GinkgoT().Setenv("GAME", game)
+			cfg, err = config.Load()
+			Expect(err).NotTo(HaveOccurred(), game)
+			Expect(cfg.Game).To(Equal(game))
+		}
+
+		GinkgoT().Setenv("GAME", "epsxe")
+		_, err = config.Load()
+		Expect(err).To(HaveOccurred())
+	})
+
 	It("reads the database path from the environment", func() {
 		GinkgoT().Setenv("DB_PATH", "elsewhere.sqlite")
 		cfg, err := config.Load()

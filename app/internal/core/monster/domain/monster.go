@@ -8,6 +8,8 @@ const (
 	ActiveGroups = 4
 	// NoActiveMove is what the game stores for a group with no active move.
 	NoActiveMove = 24
+	// DrillCount is how many drills a monster has a motivation for.
+	DrillCount = 10
 )
 
 // Genus is a monster's main breed, 0 (Pixie) to 37 (Naga).
@@ -35,6 +37,38 @@ type Monster struct {
 	Learned  [SlotCount]bool
 	Used     [SlotCount]int
 	Active   [ActiveGroups]int // a memory slot per group, NoActiveMove when there is none
+
+	// The rest is what the Monster, Life Index and Training pages show.
+	Name            string
+	Age             int // in weeks
+	Lifespan        int // weeks left
+	InitialLifespan int
+	NatureBase      int // the part of the nature that does not swing
+	Fatigue         int
+	Stress          int
+	Fame            int
+	Form            int
+	Spoil           int
+	Fear            int
+	Growth          [StatCount]int  // 0 (E) to 4 (A) and beyond, by stat, in the order of Stats
+	TrainBoost      int             // flags: the drills and the places the monster is good at
+	CupJellies      int             // a Worm's count
+	GoldPeach       bool            // eaten
+	SilverPeach     bool            // eaten
+	ItemUsed        bool            // an item has been used this week
+	Motivation      [DrillCount]int // percent, by drill: Domino, Study, Run, Shoot, Dodge, Endure, Pull, Meditate, Leap, Swim
+	PlayType        int
+	Drug            int // an item id; the drugs are 34 to 41
+	DrugWeeks       int
+	ItemLike        int // an item id, or a desire id such as Battle
+	ItemDislike     int
+	Rank            int
+	LifeStage       int
+	LifeType        int
+	ArenaSpeed      int
+	GutsRate        int
+	Specials        int // flags: the battle specials
+	PrizeMoney      int
 }
 
 // StatSum adds the named stats; a stat outside the six adds nothing.

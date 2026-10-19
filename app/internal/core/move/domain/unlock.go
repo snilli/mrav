@@ -9,6 +9,8 @@ import (
 // Condition is one requirement of an unlock rule.
 type Condition interface {
 	Holds(m monster.Monster) bool
+	// Require says the condition in words, with what the monster has.
+	Require(m monster.Monster, n Names) Requirement
 }
 
 // StatSumAtLeast needs the named stats to add up to Min.

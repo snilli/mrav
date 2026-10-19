@@ -19,6 +19,10 @@ type Config struct {
 
 	// RefreshMS is how often the viewer asks for the monster, in milliseconds (MR2AV polls four times a second).
 	RefreshMS int `env:"REFRESH_MS" default:"500" validate:"min=50"`
+
+	// Game is where the monster comes from: "demo" is the panel on screen; "duckstation" and "mr2dx" read that game;
+	// "auto" reads whichever is running, and is the demo panel where no game can be read.
+	Game string `env:"GAME" default:"auto" validate:"oneof=auto demo duckstation mr2dx"`
 }
 
 var validate = validator.New()

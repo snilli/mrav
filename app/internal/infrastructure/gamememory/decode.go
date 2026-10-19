@@ -1,0 +1,145 @@
+package gamememory
+
+import (
+	"encoding/binary"
+	"math"
+	"slices"
+
+	"app/internal/core/apperr"
+	monster "app/internal/core/monster/domain"
+	player "app/internal/core/player/domain"
+)
+
+// noMonster is what the screen shows when the memory holds none.
+const noMonster = "No monster"
+
+// reader reads what decode needs from the game's RAM, a few bytes at a time. The first failure sticks: after it
+// everything reads as zero, and err says what went wrong.
+type reader struct {
+	mem Memory
+	err error
+}
+
+func (r *reader) read(addr uint32, n int) []byte {
+	p := make([]byte, n)
+	if r.err == nil {
+		r.err = r.mem.Read(addr, p)
+	}
+	return p
+}
+
+func (r *reader) u8(addr uint32) int  { return int(r.read(addr, 1)[0]) }
+func (r *reader) u16(addr uint32) int { return int(binary.LittleEndian.Uint16(r.read(addr, 2))) }
+func (r *reader) i16(addr uint32) int { return int(int16(r.u16(addr))) }
+func (r *reader) i32(addr uint32) int {
+	return int(int32(binary.LittleEndian.Uint32(r.read(addr, 4))))
+}
+
+// decode reads the monster out of the game's RAM the way MR2AV does: a byte is unsigned, a stat and the nature
+// are two bytes and signed, the nature base and the form are signed bytes. It is apperr.ErrNotFound when no
+// monster is loaded, and the memory's own error when the memory cannot be read.
+func decode(l Layout, mem Memory) (monster.Monster, error) {
+	r := &reader{mem: mem}
+
+	genus, sub := r.u8(l.Genus), r.u8(l.SubGenus)
+	growth := r.read(l.Growth, monster.StatCount) // Power, Intelligence, Life, Skill, Speed, Defence
+	guts := r.u8(l.GutsRate)
+	if r.err != nil {
+		return monster.Monster{}, r.err
+	}
+	// No monster is loaded when the guts rate is nothing and the breed is a blank (Pixie/Pixie or 46/46) or a
+	// growth rate is nothing. A real monster's guts rate is never nothing.
+	blank := genus == 0 && sub == 0 || genus == 46 && sub == 46
+	if guts == 0 && (blank || slices.Contains(growth, 0)) {
+		return monster.Monster{}, apperr.NotFound("monster", noMonster)
+	}
+
+	// The nature shown is the base plus a swing of the sine of the nature, up to 100 either way, cut toward zero.
+	natureBase := int(int8(r.u8(l.NatureBase)))
+	swing := int(math.Sin(math.Pi*float64(r.i16(l.Nature))/2048) * 100)
+
+	fatigue := r.u8(l.Fatigue)
+	switch {
+	case fatigue > 100 && fatigue < 128:
+		fatigue = 100
+	case fatigue > 128:
+		fatigue = 0
+	}
+
+	m := monster.Monster{
+		Genus:           monster.Genus(genus),
+		SubGenus:        monster.Genus(sub),
+		Nature:          natureBase + swing,
+		NatureBase:      natureBase,
+		Age:             r.i16(l.Age),
+		Lifespan:        r.i16(l.Lifespan),
+		InitialLifespan: r.i16(l.InitialLifespan),
+		Fatigue:         fatigue,
+		Fame:            r.u8(l.Fame),
+		Stress:          r.u8(l.Stress),
+		Form:            int(int8(r.u8(l.Form))),
+		Spoil:           r.u8(l.Spoil),
+		Fear:            r.u8(l.Fear),
+		TrainBoost:      r.u16(l.TrainBoost),
+		CupJellies:      r.u8(l.CupJellies),
+		GoldPeach:       r.u8(l.GoldPeach) != 0,
+		SilverPeach:     r.u8(l.SilverPeach) != 0,
+		ItemUsed:        r.u8(l.ItemUsed) != 0,
+		PlayType:        r.u8(l.PlayType),
+		Drug:            r.u8(l.Drug),
+		DrugWeeks:       r.u8(l.DrugWeeks),
+		ItemLike:        r.u8(l.ItemLike),
+		ItemDislike:     r.u8(l.ItemDislike),
+		Rank:            r.u8(l.Rank),
+		LifeStage:       r.u8(l.LifeStage),
+		LifeType:        r.u8(l.LifeType),
+		ArenaSpeed:      r.u8(l.ArenaSpeed),
+		GutsRate:        guts,
+		Specials:        r.u16(l.Specials),
+		PrizeMoney:      r.i32(l.PrizeMoney),
+		Name:            readText(r, l.Name),
+	}
+	for s := range m.Stats {
+		m.Stats[s] = r.i16(l.Stats[s])
+	}
+	// The game keeps the growth rates in the order Power, Intelligence, Life, Skill, Speed, Defence.
+	m.Growth[monster.Pow], m.Growth[monster.Int], m.Growth[monster.Life] = int(growth[0]), int(growth[1]), int(growth[2])
+	m.Growth[monster.Skill], m.Growth[monster.Speed], m.Growth[monster.Defense] = int(growth[3]), int(growth[4]), int(growth[5])
+	for d, percent := range r.read(l.Motivation, monster.DrillCount) {
+		m.Motivation[d] = int(percent)
+	}
+	moves := r.read(l.Moves, 2*monster.SlotCount)
+	for slot := range m.Learned {
+		m.Learned[slot] = moves[2*slot] == 1
+		m.Used[slot] = int(moves[2*slot+1])
+	}
+	for g, slot := range r.read(l.Active, monster.ActiveGroups) {
+		m.Active[g] = int(slot)
+		if m.Active[g] >= monster.SlotCount {
+			m.Active[g] = monster.NoActiveMove
+		}
+	}
+	if r.err != nil {
+		return monster.Monster{}, r.err
+	}
+	return m, nil
+}
+
+// decodePlayer reads what is not the monster: the money, the items, the timers, the breeder's name, the buttons.
+func decodePlayer(l Layout, mem Memory) (player.Player, error) {
+	r := &reader{mem: mem}
+	p := player.Player{
+		Money:      r.i32(l.Money),
+		NextSale:   r.u8(l.NextSale),
+		ErrantryCD: r.u8(l.ErrantryCD),
+		Breeder:    readText(r, l.Breeder),
+		Input:      r.u16(l.Input),
+	}
+	for slot := range p.Items {
+		p.Items[slot] = r.u8(l.Items + 4*uint32(slot))
+	}
+	if r.err != nil {
+		return player.Player{}, r.err
+	}
+	return p, nil
+}

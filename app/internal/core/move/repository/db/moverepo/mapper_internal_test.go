@@ -10,8 +10,6 @@ import (
 	movedomain "app/internal/core/move/domain"
 )
 
-func ptr[T any](v T) *T { return &v }
-
 var _ = Describe("domainConditions", func() {
 	DescribeTable("reads each stored shape",
 		func(in stored.Condition, want movedomain.Condition) {
@@ -19,13 +17,13 @@ var _ = Describe("domainConditions", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(got).To(Equal([]movedomain.Condition{want}))
 		},
-		Entry("a stat sum", stored.Condition{Type: stored.StatSum, Stats: []int{1, 2}, Min: ptr(400)},
+		Entry("a stat sum", stored.Condition{Type: stored.StatSum, Stats: []int{1, 2}, Min: new(400)},
 			movedomain.StatSumAtLeast{Stats: []monster.Stat{monster.Pow, monster.Int}, Min: 400}),
-		Entry("a move count", stored.Condition{Type: stored.MoveUsed, Slot: ptr(12), Min: ptr(50)},
+		Entry("a move count", stored.Condition{Type: stored.MoveUsed, Slot: new(12), Min: new(50)},
 			movedomain.MoveUsedAtLeast{Slot: 12, Min: 50}),
-		Entry("a good nature", stored.Condition{Type: stored.NatureAtLeast, Min: ptr(20)},
+		Entry("a good nature", stored.Condition{Type: stored.NatureAtLeast, Min: new(20)},
 			movedomain.NatureAtLeast{Min: 20}),
-		Entry("a bad nature", stored.Condition{Type: stored.NatureAtMost, Max: ptr(-50)},
+		Entry("a bad nature", stored.Condition{Type: stored.NatureAtMost, Max: new(-50)},
 			movedomain.NatureAtMost{Max: -50}),
 		Entry("sub-genera that qualify", stored.Condition{Type: stored.SubGenusIn, IDs: []int{1, 11}},
 			movedomain.SubGenusIn{IDs: []monster.Genus{1, 11}}),
@@ -40,7 +38,7 @@ var _ = Describe("domainConditions", func() {
 		},
 		Entry("an unknown type", stored.Condition{Type: "moon_phase"}, "moon_phase"),
 		Entry("a stat sum without its minimum", stored.Condition{Type: stored.StatSum, Stats: []int{1}}, "min"),
-		Entry("a move count without its slot", stored.Condition{Type: stored.MoveUsed, Min: ptr(1)}, "slot"),
+		Entry("a move count without its slot", stored.Condition{Type: stored.MoveUsed, Min: new(1)}, "slot"),
 		Entry("a nature bound without its value", stored.Condition{Type: stored.NatureAtMost}, "max"),
 	)
 

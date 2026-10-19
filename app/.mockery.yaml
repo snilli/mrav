@@ -6,6 +6,26 @@ packages:
       all: true
       dir: 'mock/core/{{.SrcPackageName}}'
       pkgname: 'mock{{.SrcPackageName}}'
+  app/internal/core/training:
+    config:
+      all: true
+      dir: 'mock/core/{{.SrcPackageName}}'
+      pkgname: 'mock{{.SrcPackageName}}'
+  app/internal/core/item:
+    config:
+      all: true
+      dir: 'mock/core/{{.SrcPackageName}}'
+      pkgname: 'mock{{.SrcPackageName}}'
+  app/internal/core/player:
+    config:
+      all: true
+      dir: 'mock/core/{{.SrcPackageName}}'
+      pkgname: 'mock{{.SrcPackageName}}'
+  app/internal/core/profile:
+    config:
+      all: true
+      dir: 'mock/core/{{.SrcPackageName}}'
+      pkgname: 'mock{{.SrcPackageName}}'
   app/internal/port:
     config:
       all: true
