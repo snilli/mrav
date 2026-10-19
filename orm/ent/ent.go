@@ -6,8 +6,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"orm/ent/breed"
+	"orm/ent/cocoon"
 	"orm/ent/genus"
+	"orm/ent/item"
 	"orm/ent/move"
+	"orm/ent/traininggain"
 	"reflect"
 	"sync"
 
@@ -74,8 +78,12 @@ var (
 func checkColumn(t, c string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
-			genus.Table: genus.ValidColumn,
-			move.Table:  move.ValidColumn,
+			breed.Table:        breed.ValidColumn,
+			cocoon.Table:       cocoon.ValidColumn,
+			genus.Table:        genus.ValidColumn,
+			item.Table:         item.ValidColumn,
+			move.Table:         move.ValidColumn,
+			traininggain.Table: traininggain.ValidColumn,
 		})
 	})
 	return columnCheck(t, c)

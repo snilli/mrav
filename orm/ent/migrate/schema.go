@@ -8,6 +8,44 @@ import (
 )
 
 var (
+	// BreedsColumns holds the columns for the "breeds" table.
+	BreedsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "main_genus", Type: field.TypeInt},
+		{Name: "sub_genus", Type: field.TypeInt},
+		{Name: "seq", Type: field.TypeInt},
+		{Name: "name", Type: field.TypeString},
+		{Name: "otherwise", Type: field.TypeString, Default: ""},
+		{Name: "guts", Type: field.TypeInt, Nullable: true},
+		{Name: "match_guts", Type: field.TypeBool, Default: false},
+		{Name: "growth", Type: field.TypeJSON, Nullable: true},
+	}
+	// BreedsTable holds the schema information for the "breeds" table.
+	BreedsTable = &schema.Table{
+		Name:       "breeds",
+		Columns:    BreedsColumns,
+		PrimaryKey: []*schema.Column{BreedsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "breed_main_genus_sub_genus_seq",
+				Unique:  true,
+				Columns: []*schema.Column{BreedsColumns[1], BreedsColumns[2], BreedsColumns[3]},
+			},
+		},
+	}
+	// CocoonsColumns holds the columns for the "cocoons" table.
+	CocoonsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "guts", Type: field.TypeInt},
+		{Name: "growth", Type: field.TypeJSON},
+		{Name: "name", Type: field.TypeString, Unique: true},
+	}
+	// CocoonsTable holds the schema information for the "cocoons" table.
+	CocoonsTable = &schema.Table{
+		Name:       "cocoons",
+		Columns:    CocoonsColumns,
+		PrimaryKey: []*schema.Column{CocoonsColumns[0]},
+	}
 	// GenusColumns holds the columns for the "genus" table.
 	GenusColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -19,6 +57,24 @@ var (
 		Name:       "genus",
 		Columns:    GenusColumns,
 		PrimaryKey: []*schema.Column{GenusColumns[0]},
+	}
+	// ItemsColumns holds the columns for the "items" table.
+	ItemsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "code", Type: field.TypeInt, Unique: true},
+		{Name: "name", Type: field.TypeString},
+		{Name: "desire_name", Type: field.TypeString},
+		{Name: "kind", Type: field.TypeString},
+		{Name: "description", Type: field.TypeString, Size: 2147483647},
+		{Name: "effect", Type: field.TypeString, Size: 2147483647},
+		{Name: "sale_price", Type: field.TypeString},
+		{Name: "purchase_price", Type: field.TypeString},
+	}
+	// ItemsTable holds the schema information for the "items" table.
+	ItemsTable = &schema.Table{
+		Name:       "items",
+		Columns:    ItemsColumns,
+		PrimaryKey: []*schema.Column{ItemsColumns[0]},
 	}
 	// MovesColumns holds the columns for the "moves" table.
 	MovesColumns = []*schema.Column{
@@ -66,10 +122,35 @@ var (
 			},
 		},
 	}
+	// TrainingGainsColumns holds the columns for the "training_gains" table.
+	TrainingGainsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "life_stage", Type: field.TypeInt},
+		{Name: "growth_rate", Type: field.TypeInt},
+		{Name: "kind", Type: field.TypeInt},
+		{Name: "text", Type: field.TypeString},
+	}
+	// TrainingGainsTable holds the schema information for the "training_gains" table.
+	TrainingGainsTable = &schema.Table{
+		Name:       "training_gains",
+		Columns:    TrainingGainsColumns,
+		PrimaryKey: []*schema.Column{TrainingGainsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "traininggain_life_stage_growth_rate_kind",
+				Unique:  true,
+				Columns: []*schema.Column{TrainingGainsColumns[1], TrainingGainsColumns[2], TrainingGainsColumns[3]},
+			},
+		},
+	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
+		BreedsTable,
+		CocoonsTable,
 		GenusTable,
+		ItemsTable,
 		MovesTable,
+		TrainingGainsTable,
 	}
 )
 

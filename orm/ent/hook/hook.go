@@ -8,6 +8,30 @@ import (
 	"orm/ent"
 )
 
+// The BreedFunc type is an adapter to allow the use of ordinary
+// function as Breed mutator.
+type BreedFunc func(context.Context, *ent.BreedMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f BreedFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.BreedMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.BreedMutation", m)
+}
+
+// The CocoonFunc type is an adapter to allow the use of ordinary
+// function as Cocoon mutator.
+type CocoonFunc func(context.Context, *ent.CocoonMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f CocoonFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.CocoonMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.CocoonMutation", m)
+}
+
 // The GenusFunc type is an adapter to allow the use of ordinary
 // function as Genus mutator.
 type GenusFunc func(context.Context, *ent.GenusMutation) (ent.Value, error)
@@ -20,6 +44,18 @@ func (f GenusFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.GenusMutation", m)
 }
 
+// The ItemFunc type is an adapter to allow the use of ordinary
+// function as Item mutator.
+type ItemFunc func(context.Context, *ent.ItemMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ItemFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ItemMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ItemMutation", m)
+}
+
 // The MoveFunc type is an adapter to allow the use of ordinary
 // function as Move mutator.
 type MoveFunc func(context.Context, *ent.MoveMutation) (ent.Value, error)
@@ -30,6 +66,18 @@ func (f MoveFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error)
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.MoveMutation", m)
+}
+
+// The TrainingGainFunc type is an adapter to allow the use of ordinary
+// function as TrainingGain mutator.
+type TrainingGainFunc func(context.Context, *ent.TrainingGainMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f TrainingGainFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.TrainingGainMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TrainingGainMutation", m)
 }
 
 // Condition is a hook condition function.

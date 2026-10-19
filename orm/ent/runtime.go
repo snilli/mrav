@@ -3,15 +3,59 @@
 package ent
 
 import (
+	"orm/ent/breed"
+	"orm/ent/cocoon"
 	"orm/ent/genus"
+	"orm/ent/item"
 	"orm/ent/move"
 	"orm/ent/schema"
+	"orm/ent/traininggain"
 )
 
 // The init function reads all schema descriptors with runtime code
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	breedFields := schema.Breed{}.Fields()
+	_ = breedFields
+	// breedDescMainGenus is the schema descriptor for main_genus field.
+	breedDescMainGenus := breedFields[0].Descriptor()
+	// breed.MainGenusValidator is a validator for the "main_genus" field. It is called by the builders before save.
+	breed.MainGenusValidator = breedDescMainGenus.Validators[0].(func(int) error)
+	// breedDescSubGenus is the schema descriptor for sub_genus field.
+	breedDescSubGenus := breedFields[1].Descriptor()
+	// breed.SubGenusValidator is a validator for the "sub_genus" field. It is called by the builders before save.
+	breed.SubGenusValidator = breedDescSubGenus.Validators[0].(func(int) error)
+	// breedDescSeq is the schema descriptor for seq field.
+	breedDescSeq := breedFields[2].Descriptor()
+	// breed.SeqValidator is a validator for the "seq" field. It is called by the builders before save.
+	breed.SeqValidator = breedDescSeq.Validators[0].(func(int) error)
+	// breedDescName is the schema descriptor for name field.
+	breedDescName := breedFields[3].Descriptor()
+	// breed.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	breed.NameValidator = breedDescName.Validators[0].(func(string) error)
+	// breedDescOtherwise is the schema descriptor for otherwise field.
+	breedDescOtherwise := breedFields[4].Descriptor()
+	// breed.DefaultOtherwise holds the default value on creation for the otherwise field.
+	breed.DefaultOtherwise = breedDescOtherwise.Default.(string)
+	// breedDescGuts is the schema descriptor for guts field.
+	breedDescGuts := breedFields[5].Descriptor()
+	// breed.GutsValidator is a validator for the "guts" field. It is called by the builders before save.
+	breed.GutsValidator = breedDescGuts.Validators[0].(func(int) error)
+	// breedDescMatchGuts is the schema descriptor for match_guts field.
+	breedDescMatchGuts := breedFields[6].Descriptor()
+	// breed.DefaultMatchGuts holds the default value on creation for the match_guts field.
+	breed.DefaultMatchGuts = breedDescMatchGuts.Default.(bool)
+	cocoonFields := schema.Cocoon{}.Fields()
+	_ = cocoonFields
+	// cocoonDescGuts is the schema descriptor for guts field.
+	cocoonDescGuts := cocoonFields[0].Descriptor()
+	// cocoon.GutsValidator is a validator for the "guts" field. It is called by the builders before save.
+	cocoon.GutsValidator = cocoonDescGuts.Validators[0].(func(int) error)
+	// cocoonDescName is the schema descriptor for name field.
+	cocoonDescName := cocoonFields[2].Descriptor()
+	// cocoon.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	cocoon.NameValidator = cocoonDescName.Validators[0].(func(string) error)
 	genusFields := schema.Genus{}.Fields()
 	_ = genusFields
 	// genusDescCode is the schema descriptor for code field.
@@ -22,6 +66,32 @@ func init() {
 	genusDescName := genusFields[1].Descriptor()
 	// genus.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	genus.NameValidator = genusDescName.Validators[0].(func(string) error)
+	itemFields := schema.Item{}.Fields()
+	_ = itemFields
+	// itemDescCode is the schema descriptor for code field.
+	itemDescCode := itemFields[0].Descriptor()
+	// item.CodeValidator is a validator for the "code" field. It is called by the builders before save.
+	item.CodeValidator = itemDescCode.Validators[0].(func(int) error)
+	// itemDescName is the schema descriptor for name field.
+	itemDescName := itemFields[1].Descriptor()
+	// item.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	item.NameValidator = itemDescName.Validators[0].(func(string) error)
+	// itemDescDesireName is the schema descriptor for desire_name field.
+	itemDescDesireName := itemFields[2].Descriptor()
+	// item.DesireNameValidator is a validator for the "desire_name" field. It is called by the builders before save.
+	item.DesireNameValidator = itemDescDesireName.Validators[0].(func(string) error)
+	// itemDescKind is the schema descriptor for kind field.
+	itemDescKind := itemFields[3].Descriptor()
+	// item.KindValidator is a validator for the "kind" field. It is called by the builders before save.
+	item.KindValidator = itemDescKind.Validators[0].(func(string) error)
+	// itemDescSalePrice is the schema descriptor for sale_price field.
+	itemDescSalePrice := itemFields[6].Descriptor()
+	// item.SalePriceValidator is a validator for the "sale_price" field. It is called by the builders before save.
+	item.SalePriceValidator = itemDescSalePrice.Validators[0].(func(string) error)
+	// itemDescPurchasePrice is the schema descriptor for purchase_price field.
+	itemDescPurchasePrice := itemFields[7].Descriptor()
+	// item.PurchasePriceValidator is a validator for the "purchase_price" field. It is called by the builders before save.
+	item.PurchasePriceValidator = itemDescPurchasePrice.Validators[0].(func(string) error)
 	moveFields := schema.Move{}.Fields()
 	_ = moveFields
 	// moveDescMemorySlot is the schema descriptor for memory_slot field.
@@ -86,4 +156,64 @@ func init() {
 	moveDescIcon := moveFields[15].Descriptor()
 	// move.IconValidator is a validator for the "icon" field. It is called by the builders before save.
 	move.IconValidator = moveDescIcon.Validators[0].(func(string) error)
+	traininggainFields := schema.TrainingGain{}.Fields()
+	_ = traininggainFields
+	// traininggainDescLifeStage is the schema descriptor for life_stage field.
+	traininggainDescLifeStage := traininggainFields[0].Descriptor()
+	// traininggain.LifeStageValidator is a validator for the "life_stage" field. It is called by the builders before save.
+	traininggain.LifeStageValidator = func() func(int) error {
+		validators := traininggainDescLifeStage.Validators
+		fns := [...]func(int) error{
+			validators[0].(func(int) error),
+			validators[1].(func(int) error),
+		}
+		return func(life_stage int) error {
+			for _, fn := range fns {
+				if err := fn(life_stage); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// traininggainDescGrowthRate is the schema descriptor for growth_rate field.
+	traininggainDescGrowthRate := traininggainFields[1].Descriptor()
+	// traininggain.GrowthRateValidator is a validator for the "growth_rate" field. It is called by the builders before save.
+	traininggain.GrowthRateValidator = func() func(int) error {
+		validators := traininggainDescGrowthRate.Validators
+		fns := [...]func(int) error{
+			validators[0].(func(int) error),
+			validators[1].(func(int) error),
+		}
+		return func(growth_rate int) error {
+			for _, fn := range fns {
+				if err := fn(growth_rate); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// traininggainDescKind is the schema descriptor for kind field.
+	traininggainDescKind := traininggainFields[2].Descriptor()
+	// traininggain.KindValidator is a validator for the "kind" field. It is called by the builders before save.
+	traininggain.KindValidator = func() func(int) error {
+		validators := traininggainDescKind.Validators
+		fns := [...]func(int) error{
+			validators[0].(func(int) error),
+			validators[1].(func(int) error),
+		}
+		return func(kind int) error {
+			for _, fn := range fns {
+				if err := fn(kind); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// traininggainDescText is the schema descriptor for text field.
+	traininggainDescText := traininggainFields[3].Descriptor()
+	// traininggain.TextValidator is a validator for the "text" field. It is called by the builders before save.
+	traininggain.TextValidator = traininggainDescText.Validators[0].(func(string) error)
 }

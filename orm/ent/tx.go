@@ -12,10 +12,18 @@ import (
 // Tx is a transactional client that is created by calling Client.Tx().
 type Tx struct {
 	config
+	// Breed is the client for interacting with the Breed builders.
+	Breed *BreedClient
+	// Cocoon is the client for interacting with the Cocoon builders.
+	Cocoon *CocoonClient
 	// Genus is the client for interacting with the Genus builders.
 	Genus *GenusClient
+	// Item is the client for interacting with the Item builders.
+	Item *ItemClient
 	// Move is the client for interacting with the Move builders.
 	Move *MoveClient
+	// TrainingGain is the client for interacting with the TrainingGain builders.
+	TrainingGain *TrainingGainClient
 
 	// lazily loaded.
 	client     *Client
@@ -147,8 +155,12 @@ func (tx *Tx) Client() *Client {
 }
 
 func (tx *Tx) init() {
+	tx.Breed = NewBreedClient(tx.config)
+	tx.Cocoon = NewCocoonClient(tx.config)
 	tx.Genus = NewGenusClient(tx.config)
+	tx.Item = NewItemClient(tx.config)
 	tx.Move = NewMoveClient(tx.config)
+	tx.TrainingGain = NewTrainingGainClient(tx.config)
 }
 
 // txDriver wraps the given dialect.Tx with a nop dialect.Driver implementation.
@@ -158,7 +170,7 @@ func (tx *Tx) init() {
 // of them in order to commit or rollback the transaction.
 //
 // If a closed transaction is embedded in one of the generated entities, and the entity
-// applies a query, for example: Genus.QueryXXX(), the query will be executed
+// applies a query, for example: Breed.QueryXXX(), the query will be executed
 // through the driver which created this transaction.
 //
 // Note that txDriver is not goroutine safe.

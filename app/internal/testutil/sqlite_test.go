@@ -15,8 +15,6 @@ import (
 	"app/internal/testutil"
 )
 
-func ptr[T any](v T) *T { return &v }
-
 var _ = Describe("NewClient", func() {
 	var (
 		ctx    context.Context
@@ -84,11 +82,11 @@ var _ = Describe("NewClient", func() {
 
 	It("round-trips the JSON columns", func() {
 		unlock := []stored.Condition{
-			{Type: stored.StatSum, Stats: []int{1, 2}, Min: ptr(150)},
-			{Type: stored.MoveUsed, Slot: ptr(3), Min: ptr(30)},
+			{Type: stored.StatSum, Stats: []int{1, 2}, Min: new(150)},
+			{Type: stored.MoveUsed, Slot: new(3), Min: new(30)},
 			{Type: stored.SubGenusIn, IDs: []int{2, 5}},
 		}
-		extra := &stored.Extra{Label: "Recovery:", Scale: ptr(0), Raw: 30}
+		extra := &stored.Extra{Label: "Recovery:", Scale: new(0), Raw: 30}
 		id := newMove(pixie.ID, 1, 1, 1).SetUnlock(unlock).SetExtra(extra).SaveX(ctx).ID
 
 		got := client.Move.GetX(ctx, id)

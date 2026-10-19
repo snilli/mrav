@@ -6,8 +6,20 @@ import (
 	"entgo.io/ent/dialect/sql"
 )
 
+// Breed is the predicate function for breed builders.
+type Breed func(*sql.Selector)
+
+// Cocoon is the predicate function for cocoon builders.
+type Cocoon func(*sql.Selector)
+
 // Genus is the predicate function for genus builders.
 type Genus func(*sql.Selector)
 
+// Item is the predicate function for item builders.
+type Item func(*sql.Selector)
+
 // Move is the predicate function for move builders.
 type Move func(*sql.Selector)
+
+// TrainingGain is the predicate function for traininggain builders.
+type TrainingGain func(*sql.Selector)
