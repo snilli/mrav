@@ -73,4 +73,53 @@ var _ = Describe("Expeditions", func() {
 		Entry("700", 700, 700),
 		Entry("999", 999, 700),
 	)
+
+	DescribeTable("BreakChance is the guide's 50% at 350 power rising to 100% at 500, and carried down to 5% below that",
+		func(pow int, want float64) { Expect(domain.BreakChance(pow)).To(BeNumerically("~", want, 1e-9)) },
+		Entry("at 350", 350, 0.5),
+		Entry("halfway to 500", 425, 0.75),
+		Entry("at 500", 500, 1.0),
+		Entry("more power does not help", 900, 1.0),
+		Entry("under 350 the line goes on", 275, 0.25),
+		Entry("but it is never nothing", 100, 0.05),
+	)
+
+	DescribeTable("FindChance is the guide's 5% below 100 intelligence, 10% more for each 100, and 95% at 900",
+		func(intelligence int, want float64) {
+			Expect(domain.FindChance(intelligence)).To(BeNumerically("~", want, 1e-9))
+		},
+		Entry("none", 0, 0.05),
+		Entry("99", 99, 0.05),
+		Entry("100", 100, 0.15),
+		Entry("300", 300, 0.35),
+		Entry("899", 899, 0.85),
+		Entry("900", 900, 0.95),
+		Entry("more does not help", 1500, 0.95),
+	)
+
+	Describe("Loot", func() {
+		loot := domain.Loot{
+			Building: "Cave", Stat: monster.Int, Mins: []int{0, 100, 200, 300},
+			Bad: []domain.Chance{
+				{Item: "Gem", Price: 1000, Pct: []float64{10, 20, 30, 40}},
+				{Item: "Nuts", Price: 100, Pct: []float64{90, 80, 70, 60}},
+			},
+			Good: []domain.Chance{{Item: "Gem", Price: 1000, Pct: []float64{50, 50, 50, 50}}},
+		}
+
+		DescribeTable("is worth what each item is worth by its chance, at the tier of the stat that the search is by",
+			func(stat int, good bool, want float64) {
+				Expect(loot.Worth(stat, good)).To(BeNumerically("~", want, 1e-9))
+			},
+			Entry("the first tier", 99, false, 190.0),
+			Entry("the second, where it starts", 100, false, 280.0),
+			Entry("the second, to its end", 199, false, 280.0),
+			Entry("the last tier, as high as the stat goes", 999, false, 460.0),
+			Entry("a good nature has its own table", 500, true, 500.0),
+		)
+
+		It("has a stat that it is searched by", func() {
+			Expect(loot.Stat).To(Equal(monster.Int))
+		})
+	})
 })

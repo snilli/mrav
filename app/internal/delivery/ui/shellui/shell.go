@@ -15,6 +15,7 @@ import (
 	"app/internal/delivery/ui/itemui"
 	"app/internal/delivery/ui/moveui"
 	"app/internal/delivery/ui/profileui"
+	"app/internal/delivery/ui/routeui"
 	"app/internal/delivery/ui/trainingui"
 )
 
@@ -30,6 +31,7 @@ type Parts struct {
 	Training  *trainingui.Screen
 	Moves     *moveui.Screen
 	Items     *itemui.Screen
+	Route     *routeui.Screen
 	Demo      *demoui.Panel // nil when a game is read, because nobody sets that monster by hand
 }
 
@@ -55,8 +57,8 @@ func New(p Parts) *Shell {
 
 	header := container.NewBorder(nil, widget.NewSeparator(), nil, toggle, p.Dashboard.Header())
 	// The right column is panels, each closed until it is opened: the training, the ranch's upgrades, the breeds that
-	// are unlocked, and the expeditions. They scroll together, for when several are open.
-	right := container.NewVScroll(container.NewVBox(p.Training.Content(), p.Dashboard.Ranch()))
+	// are unlocked, the expeditions, and the route on the map of each. They scroll together, for when several are open.
+	right := container.NewVScroll(container.NewVBox(p.Training.Content(), p.Dashboard.Ranch(), p.Route.Content()))
 	movesAndTraining := container.NewHSplit(p.Moves.Content(), right)
 	movesAndTraining.SetOffset(movesShare)
 	columns := container.NewHSplit(p.Dashboard.Vitals(), movesAndTraining)

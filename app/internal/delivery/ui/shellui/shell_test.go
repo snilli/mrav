@@ -7,10 +7,12 @@ import (
 	. "github.com/onsi/gomega"
 
 	movedomain "app/internal/core/move/domain"
+	profiledomain "app/internal/core/profile/domain"
 	"app/internal/delivery/ui/demoui"
 	"app/internal/delivery/ui/itemui"
 	"app/internal/delivery/ui/moveui"
 	"app/internal/delivery/ui/profileui"
+	"app/internal/delivery/ui/routeui"
 	"app/internal/delivery/ui/trainingui"
 	"app/internal/infrastructure/fakemonster"
 	"app/internal/infrastructure/fakeplayer"
@@ -31,6 +33,7 @@ var _ = Describe("Shell", func() {
 			Training:  trainingui.NewScreen(mocktraining.NewMockTrainingService(GinkgoT())),
 			Moves:     moveui.NewScreen(mockmove.NewMockMoveService(GinkgoT()), icons.Bytes),
 			Items:     itemui.NewScreen(mockitem.NewMockItemService(GinkgoT())),
+			Route:     routeui.NewScreen(mockprofile.NewMockProfileService(GinkgoT()), func() []profiledomain.ExpeditionMap { return nil }, true),
 		}
 	})
 

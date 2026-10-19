@@ -20,6 +20,7 @@ import (
 	"app/internal/core/move/repository/db/moverepo"
 	"app/internal/core/move/service/movesvc"
 	"app/internal/core/profile"
+	profiledomain "app/internal/core/profile/domain"
 	"app/internal/core/profile/repository/db/profilerepo"
 	"app/internal/core/profile/service/profilesvc"
 	"app/internal/core/training"
@@ -29,9 +30,11 @@ import (
 	"app/internal/delivery/ui/itemui"
 	"app/internal/delivery/ui/moveui"
 	"app/internal/delivery/ui/profileui"
+	"app/internal/delivery/ui/routeui"
 	"app/internal/delivery/ui/shellui"
 	"app/internal/delivery/ui/trainingui"
 	"app/internal/infrastructure/database"
+	"app/internal/infrastructure/expeditionmaps"
 	"app/internal/infrastructure/fakemonster"
 	"app/internal/infrastructure/fakeplayer"
 	"app/internal/infrastructure/gamememory"
@@ -49,7 +52,7 @@ func options() fx.Option {
 		fx.Provide(profilerepo.New, profilesvc.New),
 		fx.Provide(trainingrepo.New, trainingsvc.New),
 		fx.Provide(itemrepo.New, itemsvc.New),
-		fx.Provide(newSource),
+		fx.Provide(newSource, newMaps),
 		fx.Provide(newFyneApp, newParts, newDemo, newWindow),
 		fx.Invoke(refreshLoops),
 	)
@@ -113,22 +116,34 @@ func newFyneApp() fyne.App {
 type loader interface{ Load(ctx context.Context) }
 
 // newParts builds the pages of the window, without the demo panel. They take the Fyne app only so that it exists
-// before their widgets do.
+// before their widgets do. The Route panel shows the map of the trip that the monster is on in a game, and every map
+// in the demo, which is when there are fakes to set a monster by.
 func newParts(
 	_ fyne.App, profiles profile.ProfileService, moves move.MoveService, trainings training.TrainingService,
-	items item.ItemService,
+	items item.ItemService, maps routeui.Maps, monsters *fakemonster.Source,
 ) shellui.Parts {
 	return shellui.Parts{
 		Dashboard: profileui.NewDashboard(profiles),
 		Training:  trainingui.NewScreen(trainings),
 		Moves:     moveui.NewScreen(moves, icons.Bytes),
 		Items:     itemui.NewScreen(items),
+		Route:     routeui.NewScreen(profiles, maps, monsters != nil),
 	}
+}
+
+// newMaps is where the maps of the expeditions come from: the ones that are embedded, for the demo and for a game
+// that is read alike.
+func newMaps() (routeui.Maps, error) {
+	maps, err := expeditionmaps.Load()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load the expedition maps: %w", err)
+	}
+	return func() []profiledomain.ExpeditionMap { return maps }, nil
 }
 
 // loaders are the pages, which are all asked at the rate in the config.
 func loaders(p shellui.Parts) []loader {
-	return []loader{p.Dashboard, p.Moves, p.Training, p.Items}
+	return []loader{p.Dashboard, p.Moves, p.Training, p.Items, p.Route}
 }
 
 // newDemo is nil when a game is read, because nobody sets that monster by hand.

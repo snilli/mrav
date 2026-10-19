@@ -91,7 +91,7 @@ func newFacilityView(f player.Facility, p player.Player) FacilityView {
 	}
 	switch up, ok := r.Next(f); {
 	case ok:
-		v.Next = "next " + gold(up.Cost)
+		v.Next = "next " + Gold(up.Cost)
 		if up.Grade > 0 {
 			v.Next += fmt.Sprintf(" · grade %d", up.Grade)
 		}
@@ -120,7 +120,7 @@ func upgradeState(up player.Upgrade, grade, money int) Box {
 		missing = append(missing, fmt.Sprintf("grade %d", up.Grade))
 	}
 	if need := up.GoldNeeded(); money < need {
-		missing = append(missing, gold(need-money)+" more")
+		missing = append(missing, Gold(need-money)+" more")
 	}
 	if len(missing) == 0 {
 		return Box{Text: "READY", Tone: ToneLimeGreen}
@@ -128,8 +128,8 @@ func upgradeState(up player.Upgrade, grade, money int) Box {
 	return Box{Text: strings.Join(missing, " · "), Tone: ToneOrange}
 }
 
-// gold writes an amount of gold with a comma between thousands: 12,000 G.
-func gold(n int) string {
+// Gold writes an amount of gold with a comma between thousands: 12,000 G.
+func Gold(n int) string {
 	s := strconv.Itoa(n)
 	for i := len(s) - 3; i > 0; i -= 3 {
 		s = s[:i] + "," + s[i:]

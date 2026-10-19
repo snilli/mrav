@@ -66,3 +66,52 @@ func RankLetter(rank int) string {
 // StartEnergy is the energy a monster begins an expedition with: 70 for every 70 of its life, at least 140 and at
 // most 700.
 func StartEnergy(life int) int { return min(max(life/70*70, 140), 700) }
+
+// BreakChance is the chance that an attempt on an obstacle breaks it, for a monster with this much POW. The guide
+// gives 50% at 350 rising to 100% at 500 for the maps of the trips, and says only that it climbs steeply toward 300.
+//
+// shortcut: the line through those two points, carried below 350 and kept above 5%, where the guide gives no
+// numbers; replace it when the game's own table is known.
+func BreakChance(pow int) float64 { return min(max(0.5+float64(pow-350)/300, 0.05), 1) }
+
+// FindChance is the chance that a search finds the way through a gate, for a monster with this much intelligence: 5%
+// below 100, 10% more for each 100, and 95% from 900.
+func FindChance(intelligence int) float64 { return min(0.05+0.10*float64(intelligence/100), 0.95) }
+
+// Chance is the chance of finding an item in a building, in percent, at each tier of the stat that the search goes
+// by. Price is what the item sells for, 0 where it cannot be sold.
+type Chance struct {
+	Item  string
+	Price int
+	Pct   []float64
+}
+
+// Loot is what a search of a building can turn up. A tier of the stat starts at each of Mins, the first at 0. Bad is
+// for a monster whose nature is 0 or less, and Good for one whose nature is above 0.
+type Loot struct {
+	Building  string
+	Stat      monster.Stat // the stat that the search goes by: intelligence, or skill
+	Mins      []int
+	Bad, Good []Chance
+}
+
+// Worth is what a search is worth on average, in gold, to a monster with this much of the stat and of this nature.
+func (l Loot) Worth(stat int, good bool) float64 {
+	tier := 0
+	for i, from := range l.Mins {
+		if stat >= from {
+			tier = i
+		}
+	}
+	table := l.Bad
+	if good {
+		table = l.Good
+	}
+	worth := 0.0
+	for _, c := range table {
+		if tier < len(c.Pct) {
+			worth += c.Pct[tier] / 100 * float64(c.Price)
+		}
+	}
+	return worth
+}
