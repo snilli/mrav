@@ -1,0 +1,13 @@
+filename: '{{.InterfaceName | lower}}.go'
+structname: 'Mock{{.InterfaceName}}'
+packages:
+  app/internal/core/move:
+    config:
+      all: true
+      dir: 'mock/core/{{.SrcPackageName}}'
+      pkgname: 'mock{{.SrcPackageName}}'
+  app/internal/port:
+    config:
+      all: true
+      dir: 'mock/port'
+      pkgname: 'mockport'
