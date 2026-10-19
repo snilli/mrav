@@ -44,7 +44,18 @@ type Ranch struct {
 	// the viewer could not read it.
 	Energy      int
 	EnergyKnown bool
+
+	// Tile is the tile of an expedition's map that its monster last stood on, and Steps how many it had walked. Like
+	// the energy they are kept after the expedition, and WalkKnown is false where the viewer could not read them.
+	Tile, Steps int
+	WalkKnown   bool
 }
+
+// MapWidth is how many tiles are in a row of an expedition's map.
+const MapWidth = 32
+
+// Spot is the tile as a column and a row of the map: a row is 32 tiles, and a step up is a row less.
+func (r Ranch) Spot() (x, y int) { return r.Tile % MapWidth, r.Tile / MapWidth }
 
 // BreedCount is how many main breeds the game has, Pixie to Naga.
 const BreedCount = 38

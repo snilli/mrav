@@ -152,11 +152,23 @@ func decodePlayer(l Layout, mem Memory) (player.Player, error) {
 		for breed, unlocked := range r.read(l.Unlocks, player.BreedCount) {
 			p.Ranch.Unlocked[breed] = unlocked != 0
 		}
-		// The energy is outside the RAM, and nothing that the rest needs: a failure to read it leaves it unknown.
-		if exe, ok := mem.(ModuleMemory); ok && l.Energy != 0 {
-			var b [2]byte
-			if exe.ReadModule(l.Energy, b[:]) == nil {
-				p.Ranch.Energy, p.Ranch.EnergyKnown = int(int16(binary.LittleEndian.Uint16(b[:]))), true
+		// The energy and the place on the expedition's map are outside the RAM, and nothing that the rest needs: a
+		// failure to read them leaves them unknown.
+		if exe, ok := mem.(ModuleMemory); ok {
+			word := func(offset uint32) (uint16, bool) {
+				var b [2]byte
+				if offset == 0 || exe.ReadModule(offset, b[:]) != nil {
+					return 0, false
+				}
+				return binary.LittleEndian.Uint16(b[:]), true
+			}
+			if energy, ok := word(l.Energy); ok {
+				p.Ranch.Energy, p.Ranch.EnergyKnown = int(int16(energy)), true
+			}
+			tile, tileOK := word(l.Tile)
+			steps, stepsOK := word(l.Steps)
+			if tileOK && stepsOK {
+				p.Ranch.Tile, p.Ranch.Steps, p.Ranch.WalkKnown = int(tile), int(steps), true
 			}
 		}
 	}

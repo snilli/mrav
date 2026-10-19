@@ -210,6 +210,17 @@ var _ = Describe("Dashboard", func() {
 			Expect(d.gameEnergy.Visible()).To(BeFalse())
 		})
 
+		It("says where the monster stands and how far it has walked, only when that was read", func() {
+			p := dated()
+			p.Player.Ranch.Tile, p.Player.Ranch.Steps, p.Player.Ranch.WalkKnown = 911, 2, true
+			d.apply(p, nil)
+			Expect(d.gameWalk.Visible()).To(BeTrue())
+			Expect(d.gameWalk.Text).To(Equal("Position in the game now: x 15, y 28 · 2 steps walked"))
+
+			d.apply(dated(), nil)
+			Expect(d.gameWalk.Visible()).To(BeFalse())
+		})
+
 		It("is there for a game that keeps no date, in the order of the calendar, since the invitations are the same", func() {
 			d.apply(pixieProfile(), nil)
 			Expect(d.expeditionsBody.Visible()).To(BeTrue())

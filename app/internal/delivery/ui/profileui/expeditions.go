@@ -16,6 +16,7 @@ type ExpeditionsView struct {
 	Title       string // the nearest trip, and whether the monster is fit for it
 	StartEnergy string
 	GameEnergy  string // what the game last kept as an expedition's energy; empty where it could not be read
+	GameWalk    string // the tile of the map it last stood on and the steps it had walked; empty where not read
 	Costs       string
 	Trips       []TripView
 }
@@ -57,6 +58,14 @@ func newExpeditionsView(p domain.Profile) ExpeditionsView {
 	}
 	if r.EnergyKnown {
 		v.GameEnergy = fmt.Sprintf("Energy in the game now: %d (it stays after an expedition)", r.Energy)
+	}
+	if r.WalkKnown {
+		x, y := r.Spot()
+		v.GameWalk = fmt.Sprintf("Position in the game now: x %d, y %d · %d step", x, y, r.Steps)
+		if r.Steps != 1 {
+			v.GameWalk += "s"
+		}
+		v.GameWalk += " walked"
 	}
 	for _, t := range trips {
 		tv := TripView{Name: t.e.Name, When: fmt.Sprintf("%s wk %d", player.MonthNames[t.e.Month-1], t.e.Week), Fit: true}

@@ -97,6 +97,7 @@ type Dashboard struct {
 	expeditions                    *widget.Accordion // the trips, opening from the nearest one
 	expeditionsItem                *widget.AccordionItem
 	startEnergy, gameEnergy, costs *widget.Label
+	gameWalk                       *widget.Label
 	trips                          []tripRow
 }
 
@@ -283,8 +284,10 @@ func (d *Dashboard) buildBreeds() {
 func (d *Dashboard) buildExpeditions() fyne.CanvasObject {
 	d.startEnergy, d.gameEnergy, d.costs = Quiet(""), Quiet(""), Quiet("")
 	d.gameEnergy.Hide()
+	d.gameWalk = Quiet("")
+	d.gameWalk.Hide()
 	d.costs.Wrapping = fyne.TextWrapWord
-	body := container.NewVBox(d.startEnergy, d.gameEnergy)
+	body := container.NewVBox(d.startEnergy, d.gameEnergy, d.gameWalk)
 	for range domain.Expeditions {
 		row := &tripRow{
 			name: widget.NewLabelWithStyle("", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
@@ -418,6 +421,8 @@ func (d *Dashboard) showExpeditions(e ExpeditionsView) {
 	d.startEnergy.SetText(e.StartEnergy)
 	d.gameEnergy.SetText(e.GameEnergy)
 	setVisible(d.gameEnergy, e.GameEnergy != "")
+	d.gameWalk.SetText(e.GameWalk)
+	setVisible(d.gameWalk, e.GameWalk != "")
 	d.costs.SetText(e.Costs)
 	for i, row := range d.trips {
 		if i >= len(e.Trips) {

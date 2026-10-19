@@ -64,6 +64,7 @@ type Layout struct {
 	Grade, House, Barn, Altar uint32 // a byte each
 	Unlocks                   uint32 // a byte for each main breed, by its code: 0 while it is locked
 	Energy                    uint32 // two bytes, signed, counted from the exe and not the RAM: an expedition's energy
+	Tile, Steps               uint32 // two bytes each, counted from the exe too: the tile the monster is on, and its steps
 }
 
 var (
@@ -107,6 +108,6 @@ var (
 		Breeder: Text{Addr: 0x9A54A, Len: 24, Steam: true},
 		Record:  0x97A5E,
 		Date:    0x9A7D8, Tournament: 0x9A62C, Grade: 0x9A56C, House: 0x9A56D, Barn: 0x9A56E, Altar: 0x9A5FC,
-		Unlocks: 0x9A936, Energy: 0x1DE8B84,
+		Unlocks: 0x9A936, Energy: 0x1DE8B84, Tile: 0x1DE8B7E, Steps: 0x1DE8B8A,
 	}
 )

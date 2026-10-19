@@ -31,7 +31,7 @@ type addresses struct {
 	record                                      uint32
 	date, tournament, grade, house, barn, altar uint32
 	unlocks                                     uint32 // a byte for each main breed, by its code: 1 when it is unlocked
-	energy                                      uint32 // where the expedition's energy is, counted from the exe, not the RAM
+	energy, tile, steps                         uint32 // where the expedition's energy, tile and steps are, counted from the exe, not the RAM
 }
 
 var (
@@ -66,7 +66,7 @@ var (
 		record: 0x97A5E,
 		date:   0x9A7D8, tournament: 0x9A62C, grade: 0x9A56C, house: 0x9A56D, barn: 0x9A56E, altar: 0x9A5FC,
 		unlocks: 0x9A936,
-		energy:  0x1DE8B84,
+		energy:  0x1DE8B84, tile: 0x1DE8B7E, steps: 0x1DE8B8A,
 	}
 )
 
@@ -207,6 +207,8 @@ func monsterImage(a addresses, name, breeder []byte) *image {
 		img.put(a.unlocks, 1, 1, 0, 0, 0, 0)
 		img.u8(a.unlocks+36, 2)
 		img.i16module(a.energy, -5) // below nothing, as the energy of an expedition can go
+		img.i16module(a.tile, 911)  // column 15 of row 28, on a map 32 tiles wide
+		img.i16module(a.steps, 2)
 	}
 	img.i16(a.input, 48) // Circle and Cross
 	return img
@@ -272,6 +274,7 @@ var _ = Describe("decode", func() {
 			player.Ranch{
 				Known: true, Date: 155, Tournament: 1003, Grade: 6, House: 2, Barn: 1, Altar: 3,
 				Unlocked: [player.BreedCount]bool{0: true, 1: true, 36: true}, Energy: -5, EnergyKnown: true,
+				Tile: 911, Steps: 2, WalkKnown: true,
 			}),
 	)
 
@@ -285,6 +288,7 @@ var _ = Describe("decode", func() {
 		Expect(got.Ranch.House).To(Equal(2))
 		Expect(got.Ranch.EnergyKnown).To(BeFalse())
 		Expect(got.Ranch.Energy).To(BeZero())
+		Expect(got.Ranch.WalkKnown).To(BeFalse())
 	})
 
 	It("does not look for the energy in a memory that has no exe to read", func() {
@@ -293,6 +297,7 @@ var _ = Describe("decode", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(got.Ranch.Known).To(BeTrue())
 		Expect(got.Ranch.EnergyKnown).To(BeFalse())
+		Expect(got.Ranch.WalkKnown).To(BeFalse())
 	})
 
 	DescribeTable("works out the nature the way the game shows it: the base plus the sine, cut toward zero",

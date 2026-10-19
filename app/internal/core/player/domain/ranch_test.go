@@ -59,6 +59,18 @@ var _ = Describe("Ranch", func() {
 		Expect(ok).To(BeFalse(), "a ranch that is not known has no date")
 	})
 
+	DescribeTable("reads a tile of an expedition's map as its column and row: 32 to a row, the row first",
+		func(tile, x, y int) {
+			gotX, gotY := domain.Ranch{Tile: tile}.Spot()
+			Expect([]int{gotX, gotY}).To(Equal([]int{x, y}))
+		},
+		Entry("column 15 of row 30", 975, 15, 30),
+		Entry("one step up is a row less", 943, 15, 29),
+		Entry("two steps up", 911, 15, 28),
+		Entry("one step right is a column more", 912, 16, 28),
+		Entry("the corner", 0, 0, 0),
+	)
+
 	DescribeTable("says what a facility's next upgrade is, or that there is none",
 		func(r domain.Ranch, f domain.Facility, want domain.Upgrade, ok bool) {
 			got, found := r.Next(f)

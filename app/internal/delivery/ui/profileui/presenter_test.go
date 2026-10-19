@@ -401,6 +401,18 @@ var _ = Describe("NewMonsterView", func() {
 			Expect(view(nil).Expeditions.GameEnergy).To(BeEmpty())
 		})
 
+		It("says where the monster stands on the map and how far it has walked, only when that was read", func() {
+			at := func(tile, steps int, known bool) func(*domain.Profile) {
+				return func(p *domain.Profile) {
+					p.Player.Ranch = player.Ranch{Known: true, Tile: tile, Steps: steps, WalkKnown: known}
+				}
+			}
+			Expect(view(at(911, 2, true)).Expeditions.GameWalk).To(Equal("Position in the game now: x 15, y 28 · 2 steps walked"))
+			Expect(view(at(975, 1, true)).Expeditions.GameWalk).To(Equal("Position in the game now: x 15, y 30 · 1 step walked"))
+			Expect(view(at(911, 2, false)).Expeditions.GameWalk).To(BeEmpty())
+			Expect(view(nil).Expeditions.GameWalk).To(BeEmpty())
+		})
+
 		It("gives what an expedition costs, and what failing costs", func() {
 			Expect(view(nil).Expeditions.Costs).To(Equal("A step costs 1 energy, an obstacle 5, a search 10; ending under -9 costs 12 weeks of life"))
 		})
