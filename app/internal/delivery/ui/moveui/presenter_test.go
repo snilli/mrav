@@ -11,10 +11,12 @@ import (
 var _ = Describe("NewGridView", func() {
 	pat := domain.Move{Col: 1, Row: 1, Name: "Pat", Icon: "Pixie_1"}
 	slap := domain.Move{Col: 1, Row: 2, Name: "Slap", Icon: "Pixie_2"}
+	bolt := domain.Move{Col: 1, Row: 3, Name: "Bolt", Icon: "Pixie_3"}
 	grid := func() domain.Grid {
 		g := domain.Grid{Genus: domain.Genus{Code: 0, Name: "Pixie"}}
 		g.Cells[0][0] = domain.Cell{Move: &pat, Learned: true, Active: true}
 		g.Cells[0][1] = domain.Cell{Move: &slap, CanLearn: true}
+		g.Cells[0][2] = domain.Cell{Move: &bolt}
 		g.Active[0] = &pat
 		return g
 	}
@@ -33,6 +35,17 @@ var _ = Describe("NewGridView", func() {
 		Expect(v.Cells[0][1]).To(Equal(moveui.CellView{Icon: "Pixie_2", CanLearn: true}))
 	})
 
+	It("shows a move that is neither learned nor ready to learn as locked", func() {
+		Expect(moveui.NewGridView(grid()).Cells[0][2]).To(Equal(moveui.CellView{Icon: "Pixie_3", Locked: true}))
+	})
+
+	It("counts the moves learned, ready to learn and not yet, and leaves the empty cells out", func() {
+		v := moveui.NewGridView(grid())
+		Expect(v.Learned).To(Equal(1))
+		Expect(v.Ready).To(Equal(1))
+		Expect(v.Locked).To(Equal(1))
+	})
+
 	It("shows the icon of each column's active move, and No Move where it has none", func() {
 		v := moveui.NewGridView(grid())
 		Expect(v.Active[0]).To(Equal("Pixie_1"))
@@ -47,8 +60,16 @@ var _ = Describe("NewDetailView", func() {
 		v := moveui.NewDetailView(domain.Cell{Move: &m, Used: 40, CanLearn: true})
 		Expect(v).To(Equal(moveui.DetailView{
 			Name: "Slap", Kind: domain.KindPower, Guts: "18", Damage: "D (15)", Hit: "A (9)",
-			Withering: "E (5)", Sharpness: "---", Uses: "40", CanLearn: true, Description: "Basic tech.",
+			Withering: "E (5)", Sharpness: "---", Uses: "40", CanLearn: true, Status: "READY TO LEARN", Description: "Basic tech.",
 		}))
+	})
+
+	It("says in words where the move stands: learned, ready to learn, or not yet", func() {
+		m := domain.Move{Name: "Slap"}
+		Expect(moveui.NewDetailView(domain.Cell{Move: &m, Learned: true}).Status).To(Equal("LEARNED"))
+		Expect(moveui.NewDetailView(domain.Cell{Move: &m, CanLearn: true}).Status).To(Equal("READY TO LEARN"))
+		Expect(moveui.NewDetailView(domain.Cell{Move: &m}).Status).To(Equal("NOT YET"))
+		Expect(moveui.NewDetailView(domain.Cell{}).Status).To(BeEmpty())
 	})
 
 	It("adds the extra row of a move, as a literal", func() {

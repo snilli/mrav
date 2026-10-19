@@ -16,6 +16,13 @@ const (
 	Highlight = "hilight"
 )
 
+// Where a move stands, in words.
+const (
+	statusLearned = "LEARNED"
+	statusReady   = "READY TO LEARN"
+	statusLocked  = "NOT YET"
+)
+
 // emptyText is what the game says about an empty cell.
 const emptyText = "Click on a move to learn more."
 
@@ -25,6 +32,7 @@ type CellView struct {
 	Icon     string // an asset key; NoMove for an empty cell
 	Learned  bool
 	CanLearn bool
+	Locked   bool // a move that is neither learned nor ready to learn yet
 	Active   bool
 }
 
@@ -33,6 +41,8 @@ type GridView struct {
 	Genus  string
 	Cells  [domain.Columns][domain.Rows]CellView // Cells[col-1][row-1]
 	Active [domain.Columns]string                // the icon of each column's active move; NoMove when it has none
+	// How many moves are learned, ready to learn, and not yet; the empty cells are none of these.
+	Learned, Ready, Locked int
 }
 
 // RequirementView is one thing a move asks of a monster before it can learn it, and where the monster stands on it.
@@ -55,6 +65,7 @@ type DetailView struct {
 	Uses        string
 	Learned     bool
 	CanLearn    bool
+	Status      string // where the move stands, in words; empty for an empty cell
 	Description string
 	// Requirements are what the move still asks of the monster; none for a learned move or an empty cell.
 	Requirements []RequirementView
@@ -64,7 +75,17 @@ func NewGridView(g domain.Grid) GridView {
 	v := GridView{Genus: g.Genus.Name}
 	for c := range g.Cells {
 		for r, cell := range g.Cells[c] {
-			v.Cells[c][r] = newCellView(cell)
+			cv := newCellView(cell)
+			v.Cells[c][r] = cv
+			switch {
+			case cv.Empty:
+			case cv.Learned:
+				v.Learned++
+			case cv.CanLearn:
+				v.Ready++
+			default:
+				v.Locked++
+			}
 		}
 		v.Active[c] = NoMove
 		if m := g.Active[c]; m != nil {
@@ -78,7 +99,7 @@ func newCellView(c domain.Cell) CellView {
 	if c.Move == nil {
 		return CellView{Empty: true, Icon: NoMove}
 	}
-	return CellView{Icon: c.Move.Icon, Learned: c.Learned, CanLearn: c.CanLearn, Active: c.Active}
+	return CellView{Icon: c.Move.Icon, Learned: c.Learned, CanLearn: c.CanLearn, Locked: !c.Learned && !c.CanLearn, Active: c.Active}
 }
 
 func NewDetailView(c domain.Cell) DetailView {
@@ -101,6 +122,14 @@ func NewDetailView(c domain.Cell) DetailView {
 		Learned:     c.Learned,
 		CanLearn:    c.CanLearn,
 		Description: m.Description,
+	}
+	switch {
+	case c.Learned:
+		v.Status = statusLearned
+	case c.CanLearn:
+		v.Status = statusReady
+	default:
+		v.Status = statusLocked
 	}
 	for _, r := range c.Requirements {
 		v.Requirements = append(v.Requirements, RequirementView{Text: r.Text, Have: r.Have, Met: r.Met})

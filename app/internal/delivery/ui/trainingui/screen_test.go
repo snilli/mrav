@@ -125,6 +125,16 @@ var _ = Describe("Screen", func() {
 		Expect(s.rows[6].name.Importance).To(Equal(widget.LowImportance))
 	})
 
+	It("is a panel that is closed until it is opened, and says on its title how many drills are worth doing", func() {
+		Expect(s.item.Title).To(Equal("Training"))
+
+		s.apply(trainingOf(1<<0|1<<9), nil) // Domino at 85%, and both swims at 100%, which are specialties
+		Expect(s.item.Title).To(Equal("Training · 3 recommended"))
+
+		s.apply(trainingOf(0), nil)
+		Expect(s.item.Title).To(Equal("Training"))
+	})
+
 	It("shows the new numbers for the drill that stays selected when the page is loaded again", func() {
 		s.apply(trainingOf(0), nil)
 		test.Tap(s.rows[6].name)
@@ -169,6 +179,7 @@ var _ = Describe("Screen", func() {
 			Skip("set SCREENSHOT_DIR to write the screenshots")
 		}
 		s.apply(trainingOf(1<<0|1<<2|1<<10), nil)
+		s.panel.OpenAll()
 		test.Tap(s.rows[6].name)
 		Expect(os.MkdirAll(dir, 0o755)).To(Succeed())
 		f, err := os.Create(filepath.Join(dir, "training-table.png"))

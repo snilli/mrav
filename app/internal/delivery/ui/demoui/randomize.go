@@ -51,6 +51,10 @@ func randomize(rng *rand.Rand, genera []domain.Genus, m *monster.Monster, p *pla
 		m.Drug, m.DrugWeeks = 34+rng.IntN(8), 1+rng.IntN(4)
 	}
 	m.PrizeMoney = rng.IntN(100000)
+	m.Record = monster.Record{
+		Wins: rng.IntN(60), Losses: rng.IntN(40), KOs: rng.IntN(30),
+		Injuries: rng.IntN(5), Runaways: rng.IntN(5), Sicknesses: rng.IntN(8), Resistance: rng.IntN(20),
+	}
 
 	for slot := range m.Learned {
 		m.Learned[slot], m.Used[slot] = flag(), rng.IntN(100)
@@ -72,6 +76,16 @@ func randomize(rng *rand.Rand, genera []domain.Genus, m *monster.Monster, p *pla
 		if rng.IntN(3) != 0 {
 			p.Items[slot] = rng.IntN(item.EmptyFrom)
 		}
+	}
+	p.Ranch = player.Ranch{
+		Known: true, Date: rng.IntN(8 * 48), StartYear: 1000, Grade: rng.IntN(11),
+		House: rng.IntN(player.MaxLevel(player.House) + 1), Barn: rng.IntN(player.MaxLevel(player.Barn) + 1),
+		Altar: rng.IntN(player.MaxLevel(player.Altar) + 1),
+		// an expedition's energy, which the game can take a little below nothing
+		Energy: rng.IntN(300) - 10, EnergyKnown: true,
+	}
+	for breed := range p.Ranch.Unlocked {
+		p.Ranch.Unlocked[breed] = flag()
 	}
 	p.Breeder = "Demo Breeder"
 	p.Input = rng.IntN(1 << 16)

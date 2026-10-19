@@ -2,6 +2,7 @@ package moveui
 
 import (
 	"context"
+	"fmt"
 	"image/color"
 
 	"fyne.io/fyne/v2"
@@ -13,15 +14,30 @@ import (
 
 	"app/internal/core/move"
 	"app/internal/core/move/domain"
+	"app/internal/delivery/ui/profileui"
 	"app/internal/delivery/ui/status"
 )
 
-// The game's icons are 48x32 pixels and its marks 16x16; the screen draws everything at twice that.
+// The game's icons are 48x32 pixels and its marks 16x16; the grid draws them one and a half times that, which
+// leaves room under it for what a move needs, and the row of active moves draws them as they are.
 const (
-	zoom  = 2
-	iconW = 48 * zoom
-	iconH = 32 * zoom
-	markW = 16 * zoom
+	zoom       = 1.5
+	iconW      = 48 * zoom
+	iconH      = 32 * zoom
+	markW      = 16 * zoom
+	activeW    = 48
+	activeH    = 32
+	frameWidth = 3
+	ribbonH    = 14
+)
+
+// The colours that say where a move stands: learned, ready to learn, and not yet.
+var (
+	metColor    color.Color = color.NRGBA{R: 50, G: 205, B: 50, A: 255}
+	readyColor  color.Color = color.NRGBA{R: 255, G: 159, B: 28, A: 255}
+	lockedColor color.Color = color.NRGBA{R: 150, G: 150, B: 150, A: 255}
+	unmetColor  color.Color = color.NRGBA{R: 255, G: 69, A: 255}
+	dimColor    color.Color = color.NRGBA{A: 150} // laid over a move that is not yet, to push it back
 )
 
 // IconFunc returns the PNG of an icon by key.
@@ -75,8 +91,8 @@ type picture struct {
 	key string
 }
 
-func newPicture(is *iconSet) *picture {
-	return &picture{img: pixelImage(is.resource(NoMove), iconW, iconH), key: NoMove}
+func newPicture(is *iconSet, w, h float32) *picture {
+	return &picture{img: pixelImage(is.resource(NoMove), w, h), key: NoMove}
 }
 
 func (p *picture) show(key string, is *iconSet) {
@@ -87,11 +103,16 @@ func (p *picture) show(key string, is *iconSet) {
 	p.img.Refresh()
 }
 
-// cell is one place of the grid: the icon, the selection, and the learned and can-learn marks.
+// cell is one place of the grid: the icon, and what says where the move stands: a green frame when it is learned,
+// an orange frame and a ribbon when it is ready to learn, a dimming when it is not yet; with the selection, and
+// the game's own marks for learned and can-learn.
 type cell struct {
 	widget.BaseWidget
 	iconKey   string
 	icon      *canvas.Image
+	dim       *canvas.Rectangle
+	frame     *canvas.Rectangle
+	ribbon    *fyne.Container
 	highlight *canvas.Image
 	check     *canvas.Image
 	canGet    *canvas.Image
@@ -103,17 +124,33 @@ func newCell(is *iconSet, onTap func()) *cell {
 	c := &cell{
 		iconKey:   NoMove,
 		icon:      pixelImage(is.resource(NoMove), iconW, iconH),
+		dim:       canvas.NewRectangle(dimColor),
+		frame:     canvas.NewRectangle(color.Transparent),
 		highlight: pixelImage(is.resource(Highlight), iconW, iconH),
 		check:     pixelImage(is.resource(Checked), markW, markW),
 		canGet:    pixelImage(is.resource(CanGet), markW, markW),
 		onTap:     onTap,
 	}
+	c.dim.Resize(fyne.NewSize(iconW, iconH))
+	c.frame.StrokeWidth = frameWidth
+	c.frame.Resize(fyne.NewSize(iconW, iconH))
+
+	ribbonBg := canvas.NewRectangle(readyColor)
+	ribbonBg.Move(fyne.NewPos(0, iconH-ribbonH))
+	ribbonBg.Resize(fyne.NewSize(iconW, ribbonH))
+	ribbonTxt := canvas.NewText("READY", color.Black)
+	ribbonTxt.TextSize, ribbonTxt.TextStyle = 10, fyne.TextStyle{Bold: true}
+	want := ribbonTxt.MinSize()
+	ribbonTxt.Move(fyne.NewPos((iconW-want.Width)/2, iconH-ribbonH+(ribbonH-want.Height)/2))
+	c.ribbon = container.NewWithoutLayout(ribbonBg, ribbonTxt)
+	c.ribbon.Resize(fyne.NewSize(iconW, iconH))
+
 	c.check.Move(fyne.NewPos(30*zoom, 2*zoom)) // where MR2AV puts the mark
 	c.canGet.Move(fyne.NewPos(30*zoom, 2*zoom))
-	c.highlight.Hide()
-	c.check.Hide()
-	c.canGet.Hide()
-	c.body = container.NewWithoutLayout(c.icon, c.highlight, c.check, c.canGet)
+	for _, o := range []fyne.CanvasObject{c.dim, c.frame, c.ribbon, c.highlight, c.check, c.canGet} {
+		o.Hide()
+	}
+	c.body = container.NewWithoutLayout(c.icon, c.dim, c.frame, c.ribbon, c.highlight, c.check, c.canGet)
 	c.ExtendBaseWidget(c)
 	return c
 }
@@ -129,24 +166,62 @@ func (c *cell) show(v CellView, is *iconSet) {
 	}
 	setVisible(c.check, v.Learned)
 	setVisible(c.canGet, v.CanLearn)
+	setVisible(c.dim, v.Locked)
+	setVisible(c.ribbon, v.CanLearn)
+	setVisible(c.frame, v.Learned || v.CanLearn)
+	c.frame.StrokeColor = readyColor
+	if v.Learned {
+		c.frame.StrokeColor = metColor
+	}
+	c.frame.Refresh()
 }
 
-// detail is the panel of numbers and words about the selected move.
-type detail struct {
-	name                                                 *canvas.Text
-	guts, damage, hit, withering, sharpness, extra, uses *widget.Label
-	learned, canLearn                                    *widget.Check
-	description                                          *widget.Label
-	needsBox                                             *fyne.Container // the heading and the list; hidden when the move needs nothing
-	requirements                                         *fyne.Container
-	needs                                                []need
-	content                                              fyne.CanvasObject
+// legend counts the moves in each state, beside the colour that marks it.
+type legend struct {
+	learned, ready, locked *widget.Label
+	object                 fyne.CanvasObject
 }
 
-var (
-	metColor   color.Color = color.NRGBA{R: 50, G: 205, B: 50, A: 255}
-	unmetColor color.Color = color.NRGBA{R: 255, G: 69, A: 255}
-)
+func newLegend() *legend {
+	l := &legend{learned: widget.NewLabel(""), ready: widget.NewLabel(""), locked: widget.NewLabel("")}
+	item := func(c color.Color, label *widget.Label) fyne.CanvasObject {
+		swatch := canvas.NewRectangle(c)
+		swatch.SetMinSize(fyne.NewSize(12, 12))
+		return container.NewHBox(container.NewCenter(swatch), label)
+	}
+	l.object = container.NewHBox(item(metColor, l.learned), item(readyColor, l.ready), item(lockedColor, l.locked))
+	l.show(GridView{})
+	return l
+}
+
+func (l *legend) show(v GridView) {
+	l.learned.SetText(fmt.Sprintf("Learned %d", v.Learned))
+	l.ready.SetText(fmt.Sprintf("Ready to learn %d", v.Ready))
+	l.locked.SetText(fmt.Sprintf("Not yet %d", v.Locked))
+}
+
+// badge is a few words on a coloured ground, hidden when there are none.
+type badge struct {
+	bg     *canvas.Rectangle
+	txt    *canvas.Text
+	object *fyne.Container
+}
+
+func newBadge() *badge {
+	b := &badge{bg: canvas.NewRectangle(color.Transparent), txt: canvas.NewText("", color.Black)}
+	b.bg.CornerRadius = 4
+	b.txt.TextStyle = fyne.TextStyle{Bold: true}
+	b.object = container.NewStack(b.bg, container.NewPadded(b.txt))
+	b.object.Hide()
+	return b
+}
+
+func (b *badge) set(text string, fill color.Color) {
+	b.txt.Text, b.bg.FillColor = text, fill
+	b.txt.Refresh()
+	b.bg.Refresh()
+	setVisible(b.object, text != "")
+}
 
 // need is one line of the list of what a move asks of the monster: a mark for met or not, and the words.
 type need struct {
@@ -170,9 +245,22 @@ func newNeed(r RequirementView) need {
 	return n
 }
 
+// detail is the panel of numbers and words about the selected move.
+type detail struct {
+	name                                                 *canvas.Text
+	status                                               *badge
+	guts, damage, hit, withering, sharpness, extra, uses *widget.Label
+	description                                          *widget.Label
+	needsBox                                             *fyne.Container // the heading and the list; hidden when the move needs nothing
+	requirements                                         *fyne.Container
+	needs                                                []need
+	content                                              fyne.CanvasObject
+}
+
 func newDetail() *detail {
 	d := &detail{
 		name:        canvas.NewText("", theme.Color(theme.ColorNameForeground)),
+		status:      newBadge(),
 		guts:        widget.NewLabel(""),
 		damage:      widget.NewLabel(""),
 		hit:         widget.NewLabel(""),
@@ -180,22 +268,17 @@ func newDetail() *detail {
 		sharpness:   widget.NewLabel(""),
 		extra:       widget.NewLabel(""),
 		uses:        widget.NewLabel(""),
-		learned:     widget.NewCheck("Learned", nil),
-		canLearn:    widget.NewCheck("Can learn", nil),
 		description: widget.NewLabel(""),
 	}
 	d.name.TextSize = 22
 	d.name.TextStyle = fyne.TextStyle{Bold: true}
-	d.learned.Disable() // they show state; the game, not the viewer, learns moves
-	d.canLearn.Disable()
 	d.description.Wrapping = fyne.TextWrapWord
-	numbers := container.New(layout.NewFormLayout(),
-		widget.NewLabel("Guts"), d.guts,
-		widget.NewLabel("Damage"), d.damage,
-		widget.NewLabel("Hit"), d.hit,
-		widget.NewLabel("Withering"), d.withering,
-		widget.NewLabel("Sharpness"), d.sharpness,
-		widget.NewLabel("Uses"), d.uses,
+	pair := func(name string, value *widget.Label) fyne.CanvasObject {
+		return container.NewHBox(profileui.Quiet(name), value)
+	}
+	numbers := container.NewGridWithColumns(3,
+		pair("Guts", d.guts), pair("Damage", d.damage), pair("Hit", d.hit),
+		pair("Withering", d.withering), pair("Sharpness", d.sharpness), pair("Uses", d.uses),
 	)
 	d.requirements = container.NewVBox()
 	d.needsBox = container.NewVBox(
@@ -203,7 +286,13 @@ func newDetail() *detail {
 		d.requirements,
 	)
 	d.needsBox.Hide()
-	d.content = container.NewVBox(d.name, numbers, d.extra, container.NewHBox(d.learned, d.canLearn), d.needsBox, d.description)
+	d.content = container.NewVBox(
+		container.NewBorder(nil, nil, nil, container.NewCenter(d.status.object), d.name),
+		numbers,
+		d.extra,
+		d.needsBox,
+		d.description,
+	)
 	return d
 }
 
@@ -220,6 +309,14 @@ func nameColor(k domain.Kind) color.Color {
 func (d *detail) show(v DetailView) {
 	d.name.Text, d.name.Color = v.Name, nameColor(v.Kind)
 	d.name.Refresh()
+	switch {
+	case v.Learned:
+		d.status.set(v.Status, metColor)
+	case v.CanLearn:
+		d.status.set(v.Status, readyColor)
+	default:
+		d.status.set(v.Status, lockedColor)
+	}
 	d.guts.SetText(v.Guts)
 	d.damage.SetText(v.Damage)
 	d.hit.SetText(v.Hit)
@@ -232,8 +329,6 @@ func (d *detail) show(v DetailView) {
 	} else {
 		d.extra.Show()
 	}
-	d.learned.SetChecked(v.Learned)
-	d.canLearn.SetChecked(v.CanLearn)
 	d.description.SetText(v.Description)
 
 	d.needs = nil
@@ -255,6 +350,7 @@ type Screen struct {
 	cells  [domain.Columns][domain.Rows]*cell
 	active [domain.Columns]*picture
 	genus  *widget.Label
+	legend *legend
 	detail *detail
 
 	body    fyne.CanvasObject
@@ -270,6 +366,7 @@ func NewScreen(svc move.MoveService, icons IconFunc) *Screen {
 		svc:    svc,
 		icons:  &iconSet{load: icons, cache: map[string]fyne.Resource{}},
 		genus:  widget.NewLabelWithStyle("", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
+		legend: newLegend(),
 		detail: newDetail(),
 	}
 
@@ -284,16 +381,16 @@ func NewScreen(svc move.MoveService, icons IconFunc) *Screen {
 	}
 	grid := container.New(layout.NewCustomPaddedHBoxLayout(0), columns...)
 
-	actives := make([]fyne.CanvasObject, domain.Columns)
+	actives := []fyne.CanvasObject{profileui.Quiet("Active moves")}
 	for c := range s.active {
-		s.active[c] = newPicture(s.icons)
-		actives[c] = s.active[c].img
+		s.active[c] = newPicture(s.icons, activeW, activeH)
+		actives = append(actives, s.active[c].img)
 	}
 	s.body = container.NewVBox(
 		s.genus,
+		s.legend.object,
 		grid,
-		widget.NewLabelWithStyle("Active moves", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
-		container.New(layout.NewCustomPaddedHBoxLayout(0), actives...),
+		container.NewHBox(actives...),
 		widget.NewSeparator(),
 		s.detail.content,
 	)
@@ -328,6 +425,7 @@ func (s *Screen) apply(g domain.Grid, err error) {
 		}
 		s.active[c].show(v.Active[c], s.icons)
 	}
+	s.legend.show(v)
 	s.showSelection()
 }
 

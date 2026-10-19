@@ -6,11 +6,13 @@ import (
 	"image/png"
 	"os"
 	"path/filepath"
+	"strconv"
 
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/driver/software"
 	"fyne.io/fyne/v2/test"
 	"fyne.io/fyne/v2/theme"
+	"fyne.io/fyne/v2/widget"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -75,8 +77,141 @@ var _ = Describe("Dashboard", func() {
 		Expect(d.loyalty.Text).To(Equal("75 (spoil 70 / fear 80)"))
 		Expect(d.drug.Text).To(Equal("Troron (3w)"))
 		Expect(d.drugTip.Text).To(HavePrefix("Troron:"))
-		Expect(d.goldPeach.Checked).To(BeTrue())
-		Expect(d.errantry.Checked).To(BeTrue())
+		Expect(d.goldPeach.On()).To(BeTrue())
+		Expect(d.silverPeach.On()).To(BeFalse())
+		Expect(d.errantry.On()).To(BeTrue())
+	})
+
+	It("says how tired the monster is in the game's words, and sums up its fights and its ailments", func() {
+		p := pixieProfile()
+		p.Monster.Record = monster.Record{Wins: 12, Losses: 3, KOs: 5, Injuries: 4, Runaways: 6, Sicknesses: 7, Resistance: 8}
+		d.apply(p, nil)
+		Expect(d.fatigueWord.Text).To(Equal("seems tired"))
+		Expect(d.record.Text).To(Equal("12 W · 3 L · 5 KO"))
+		Expect(d.history.Text).To(Equal("sick 7 · injured 4 · ran away 6 · resistance 8"))
+	})
+
+	Describe("the ranch", func() {
+		// ranchProfile is the Pixie with a ranch of a game that keeps one, its gold and grade one short of a step.
+		ranchProfile := func() domain.Profile {
+			p := pixieProfile()
+			p.Player.Ranch = player.Ranch{Known: true, Date: 155, StartYear: 1000, Grade: 6, House: 2, Barn: 1, Altar: 3}
+			return p
+		}
+
+		It("shows the date in the header with the game's count of weeks, and the panel of upgrades", func() {
+			d.apply(ranchProfile(), nil)
+			Expect(d.date.Visible()).To(BeTrue())
+			Expect(d.date.Text).To(Equal("Y1003 Mar wk 4 (week 155)"))
+			Expect(d.ranchBody.Visible()).To(BeTrue())
+			Expect(d.ranchItem.Title).To(Equal("Ranch · House & stable: May wk 4, in 8 weeks"))
+		})
+
+		It("shows each facility: how far it is, what its next step costs, and where that step stands", func() {
+			d.apply(ranchProfile(), nil)
+			house, stable, altar := d.facilities[0], d.facilities[1], d.facilities[2]
+			Expect(house.name.Text).To(Equal("House"))
+			Expect(house.level.Text).To(Equal("2/4"))
+			Expect(house.bar.Ratio()).To(BeNumerically("~", 0.5, 1e-9))
+			Expect(house.next.Text).To(Equal("16 places · next 12,000 G · grade 6"))
+			Expect(house.state.txt.Text).To(Equal("15,500 G more"))
+			Expect(house.state.bg.FillColor).To(Equal(toneColors[ToneOrange]))
+			Expect(stable.name.Text).To(Equal("Stable"))
+			Expect(stable.next.Text).To(Equal("next 30,000 G · grade 7"))
+			Expect(altar.next.Text).To(Equal("fully upgraded"))
+			Expect(altar.state.txt.Text).To(Equal("MAX"))
+		})
+
+		It("lights up the main breeds that are unlocked, in a list that opens from its title with the count", func() {
+			p := ranchProfile()
+			for i := range player.BreedCount {
+				p.Breeds = append(p.Breeds, domain.BreedUnlock{Name: "B" + strconv.Itoa(i), Unlocked: i%2 == 0})
+			}
+			d.apply(p, nil)
+			Expect(d.breeds.Visible()).To(BeTrue())
+			Expect(d.breedsItem.Title).To(Equal("Breeds unlocked 19/38"))
+			Expect(d.breedFlags[0].txt.Text).To(Equal("B0"))
+			Expect(d.breedFlags[0].On()).To(BeTrue())
+			Expect(d.breedFlags[1].On()).To(BeFalse())
+			Expect(d.breedFlags[37].txt.Text).To(Equal("B37"))
+		})
+
+		It("has no list of breeds when the game does not say which are unlocked", func() {
+			d.apply(ranchProfile(), nil)
+			Expect(d.breeds.Visible()).To(BeFalse())
+		})
+
+		It("keeps the four panels closed until they are opened: the ranch, the breeds, and the expeditions", func() {
+			d.apply(ranchProfile(), nil)
+			for _, panel := range []*widget.Accordion{d.ranchPanel, d.breeds, d.expeditions} {
+				for _, item := range panel.Items {
+					Expect(item.Open).To(BeFalse(), item.Title)
+				}
+			}
+		})
+
+		It("is not shown for a game that keeps no ranch, and not when there is nothing to show", func() {
+			d.apply(pixieProfile(), nil)
+			Expect(d.date.Visible()).To(BeFalse())
+			Expect(d.ranchBody.Visible()).To(BeFalse())
+
+			d.apply(ranchProfile(), nil)
+			Expect(d.ranchBody.Visible()).To(BeTrue())
+			d.apply(domain.Profile{}, apperr.NotFound("game", "DuckStation is not running"))
+			Expect(d.ranchBody.Visible()).To(BeFalse())
+		})
+	})
+
+	Describe("the expeditions", func() {
+		dated := func() domain.Profile {
+			p := pixieProfile()
+			p.Player.Ranch = player.Ranch{Known: true, Date: 155, StartYear: 1000, Energy: -5, EnergyKnown: true}
+			return p
+		}
+
+		It("puts the nearest trip on the title of a list that opens to every trip", func() {
+			d.apply(dated(), nil)
+			Expect(d.expeditionsBody.Visible()).To(BeTrue())
+			Expect(d.expeditionsItem.Title).To(Equal("Next expedition: Phoenix Volcano Adventure, Jun wk 1, in 9 weeks · not fit yet"))
+			Expect(d.trips[0].name.Text).To(Equal("Phoenix Volcano Adventure"))
+			Expect(d.trips[0].when.Text).To(Equal("Jun wk 1, in 9 weeks"))
+			Expect(d.trips[0].note.Text).To(HavePrefix("the first expedition"))
+			Expect(d.trips[0].note.Visible()).To(BeTrue())
+			Expect(d.trips[1].note.Visible()).To(BeFalse())
+		})
+
+		It("marks each condition as met in green and unmet in orange, as the monster stands", func() {
+			d.apply(dated(), nil) // the Pixie: life 111, fame 50, grade E; the first trip asks for 140, 40 and D
+			chips := d.trips[0].chips
+			Expect(chips[0].txt.Text).To(Equal("✗ LIF 140 or more (111)"))
+			Expect(chips[0].bg.FillColor).To(Equal(toneColors[ToneOrange]))
+			Expect(chips[1].txt.Text).To(Equal("✓ Fame 40 or more (50)"))
+			Expect(chips[1].bg.FillColor).To(Equal(toneColors[ToneLimeGreen]))
+			Expect(chips[2].txt.Text).To(Equal("✗ Grade D or higher (E)"))
+		})
+
+		It("says the energy the monster would start with, and the energy in the game only when it was read", func() {
+			d.apply(dated(), nil)
+			Expect(d.startEnergy.Text).To(HavePrefix("Starts with 140 energy"))
+			Expect(d.gameEnergy.Visible()).To(BeTrue())
+			Expect(d.gameEnergy.Text).To(Equal("Energy in the game now: -5 (it stays after an expedition)"))
+
+			d.apply(pixieProfile(), nil)
+			Expect(d.gameEnergy.Visible()).To(BeFalse())
+		})
+
+		It("is there for a game that keeps no date, in the order of the calendar, since the invitations are the same", func() {
+			d.apply(pixieProfile(), nil)
+			Expect(d.expeditionsBody.Visible()).To(BeTrue())
+			Expect(d.trips[0].name.Text).To(Equal("Torles Mountains (Rovest)"))
+			Expect(d.trips[0].when.Text).To(Equal("Feb wk 1"))
+		})
+
+		It("is not shown when there is nothing to show", func() {
+			d.apply(pixieProfile(), nil)
+			d.apply(domain.Profile{}, apperr.NotFound("game", "DuckStation is not running"))
+			Expect(d.expeditionsBody.Visible()).To(BeFalse())
+		})
 	})
 
 	It("draws the stats and the conditions as bars, in the colour of how they stand", func() {
@@ -148,6 +283,30 @@ var _ = Describe("Dashboard", func() {
 		svc.EXPECT().Current(ctx).Return(pixieProfile(), nil)
 		d.Load(ctx)
 		Eventually(func() string { return d.breed.txt.Text }).Should(Equal("Pixie"))
+	})
+
+	It("renders the ranch panel, with its list of breeds open, to a PNG", Label("screenshot"), func() {
+		dir := os.Getenv("SCREENSHOT_DIR")
+		if dir == "" {
+			Skip("set SCREENSHOT_DIR to write the screenshots")
+		}
+		p := pixieProfile()
+		p.Player.Money = 20000
+		p.Player.Ranch = player.Ranch{Known: true, Date: 155, StartYear: 1000, Grade: 6, House: 2, Barn: 1, Altar: 1}
+		names := []string{"Pixie", "Dragon", "Centaur", "ColorPandora", "Beaclon", "Henger", "Wracky", "Golem", "Zuum", "Durahan"}
+		for i := range player.BreedCount {
+			p.Breeds = append(p.Breeds, domain.BreedUnlock{Name: names[i%len(names)], Unlocked: i%3 != 0})
+		}
+		p.Player.Ranch.Energy, p.Player.Ranch.EnergyKnown = 123, true
+		d.apply(p, nil)
+		d.ranchPanel.OpenAll()
+		d.breeds.OpenAll()
+		d.expeditions.OpenAll()
+		Expect(os.MkdirAll(dir, 0o755)).To(Succeed())
+		f, err := os.Create(filepath.Join(dir, "ranch-panel.png"))
+		Expect(err).NotTo(HaveOccurred())
+		DeferCleanup(f.Close)
+		Expect(png.Encode(f, software.Render(d.ranchBox, theme.DefaultTheme()))).To(Succeed())
 	})
 
 	// A screenshot of the real thing, for looking at: SCREENSHOT_DIR=/some/dir ginkgo run --label-filter=screenshot

@@ -17,7 +17,10 @@ type DetailView struct {
 
 // SlotName is what a slot's button says: the name of its item, or dashes for an empty place.
 func SlotName(s domain.Slot) string {
-	if s.Item == nil {
+	switch {
+	case s.Locked:
+		return "locked"
+	case s.Item == nil:
 		return blank
 	}
 	return s.Item.Name
@@ -25,6 +28,12 @@ func SlotName(s domain.Slot) string {
 
 // NewDetailView says what a slot holds. A nil slot is none selected.
 func NewDetailView(s *domain.Slot) DetailView {
+	if s != nil && s.Locked {
+		return DetailView{
+			Kind: "Locked", Description: "The house has no room for this place yet.",
+			Effect: "Upgrade the house for more places.", Sale: blank, Purchase: blank,
+		}
+	}
 	if s != nil && s.Item != nil {
 		it := s.Item
 		return DetailView{

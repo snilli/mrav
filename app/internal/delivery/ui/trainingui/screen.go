@@ -4,6 +4,7 @@ package trainingui
 
 import (
 	"context"
+	"fmt"
 	"image/color"
 	"strconv"
 	"strings"
@@ -74,7 +75,9 @@ type Screen struct {
 	selected int  // the row whose numbers are shown, or -1
 
 	status  *widget.Label
-	body    fyne.CanvasObject
+	body    fyne.CanvasObject // the panel, which is hidden for what to say in its place
+	panel   *widget.Accordion
+	item    *widget.AccordionItem
 	content fyne.CanvasObject
 	rows    []*row
 	places  *widget.Label
@@ -102,8 +105,11 @@ func NewScreen(svc training.TrainingService) *Screen {
 		table.Add(r.object)
 	}
 
-	s.body = container.NewVBox(table, s.places, widget.NewSeparator(), s.detail)
-	s.content = container.NewPadded(container.NewVScroll(container.NewVBox(s.status, s.body)))
+	// A panel that is closed until it is opened. The window scrolls it along with the other panels of its column.
+	s.item = widget.NewAccordionItem("Training", container.NewVBox(table, s.places, widget.NewSeparator(), s.detail))
+	s.panel = widget.NewAccordion(s.item)
+	s.body = s.panel
+	s.content = container.NewPadded(container.NewVBox(s.status, s.body))
 	s.places.SetText("Good places: none")
 	s.showDetail()
 	return s
@@ -146,6 +152,18 @@ func (s *Screen) apply(t domain.Training, err error) {
 		}
 		r.bg.Refresh()
 	}
+
+	recommended := 0
+	for _, g := range t.Drills {
+		if g.Recommended {
+			recommended++
+		}
+	}
+	s.item.Title = "Training"
+	if recommended > 0 {
+		s.item.Title = fmt.Sprintf("Training · %d recommended", recommended)
+	}
+	s.panel.Refresh()
 
 	var places []string
 	for bit := firstPlace; bit < domain.SpecialtyCount; bit++ {

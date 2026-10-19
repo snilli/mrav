@@ -209,6 +209,194 @@ var _ = Describe("NewMonsterView", func() {
 		Expect(view(nil).PlayType).To(Equal("Sparring"))
 	})
 
+	It("says how tired the monster is in the game's words, beside the number", func() {
+		Expect(view(nil).FatigueWord).To(Equal("seems tired")) // a fatigue of 40
+		Expect(view(func(p *domain.Profile) { p.Monster.Fatigue = 0 }).FatigueWord).To(Equal("very well"))
+		Expect(view(func(p *domain.Profile) { p.Monster.Fatigue = 100 }).FatigueWord).To(Equal("pass out"))
+	})
+
+	It("sums up the monster's fights and its ailments", func() {
+		v := view(func(p *domain.Profile) {
+			p.Monster.Record = monster.Record{Wins: 12, Losses: 3, KOs: 5, Injuries: 4, Runaways: 6, Sicknesses: 7, Resistance: 8}
+		})
+		Expect(v.Record).To(Equal("12 W · 3 L · 5 KO"))
+		Expect(v.History).To(Equal("sick 7 · injured 4 · ran away 6 · resistance 8"))
+	})
+
+	Describe("the ranch", func() {
+		known := func(r player.Ranch, money int) func(*domain.Profile) {
+			return func(p *domain.Profile) { p.Player.Ranch, p.Player.Money = r, money }
+		}
+		ranch := player.Ranch{Known: true, Date: 155, StartYear: 1000, Grade: 6, House: 2, Barn: 1, Altar: 3}
+
+		It("is not there when the game does not keep it", func() {
+			Expect(view(nil).Ranch).To(Equal(profileui.RanchView{}))
+		})
+
+		It("says the date, with the game's own count of weeks to check it by, and how long to the upgrade day", func() {
+			v := view(known(ranch, 1500)).Ranch
+			Expect(v.Known).To(BeTrue())
+			Expect(v.Date).To(Equal("Y1003 Mar wk 4 (week 155)"))
+			Expect(v.UpgradeDay).To(Equal("May wk 4, in 8 weeks"))
+		})
+
+		It("says this week on the upgrade day, and the week before it in the singular", func() {
+			day := ranch
+			day.Date = 19
+			Expect(view(known(day, 0)).Ranch.UpgradeDay).To(Equal("May wk 4, this week"))
+			day.Date = 18
+			Expect(view(known(day, 0)).Ranch.UpgradeDay).To(Equal("May wk 4, in 1 week"))
+		})
+
+		It("lists the house, the stable and the altar: how far each is, and what its next step asks for", func() {
+			v := view(known(ranch, 1500)).Ranch
+			Expect(v.Facilities).To(Equal([]profileui.FacilityView{
+				{
+					Name: "House", Level: 2, Max: 4, Ratio: 0.5, Detail: "16 places",
+					Next: "next 12,000 G · grade 6", State: profileui.Box{Text: "15,500 G more", Tone: profileui.ToneOrange},
+				},
+				{
+					Name: "Stable", Level: 1, Max: 2, Ratio: 0.5,
+					Next: "next 30,000 G · grade 7", State: profileui.Box{Text: "grade 7 · 33,500 G more", Tone: profileui.ToneOrange},
+				},
+				{
+					Name: "Altar", Level: 3, Max: 3, Ratio: 1,
+					Next: "fully upgraded", State: profileui.Box{Text: "MAX", Tone: profileui.ToneGray},
+				},
+			}))
+		})
+
+		It("says a step is ready when the grade is enough and the gold is the cost and 5,000 more", func() {
+			short := view(known(ranch, 16999)).Ranch.Facilities[0].State
+			Expect(short).To(Equal(profileui.Box{Text: "1 G more", Tone: profileui.ToneOrange}))
+			ready := view(known(ranch, 17000)).Ranch.Facilities[0].State
+			Expect(ready).To(Equal(profileui.Box{Text: "READY", Tone: profileui.ToneLimeGreen}))
+		})
+
+		It("lists the main breeds with whether each is unlocked, and counts the ones that are", func() {
+			v := view(func(p *domain.Profile) {
+				known(ranch, 1500)(p)
+				p.Breeds = []domain.BreedUnlock{{Name: "Pixie", Unlocked: true}, {Name: "Dragon"}, {Name: "Worm", Unlocked: true}}
+			}).Ranch
+			Expect(v.Breeds).To(Equal([]profileui.BreedView{
+				{Name: "Pixie", Unlocked: true}, {Name: "Dragon"}, {Name: "Worm", Unlocked: true},
+			}))
+			Expect(v.BreedsTitle).To(Equal("Breeds unlocked 2/3"))
+		})
+
+		It("has no list of breeds, and no title for it, when the game does not say which are unlocked", func() {
+			v := view(known(ranch, 1500)).Ranch
+			Expect(v.Breeds).To(BeEmpty())
+			Expect(v.BreedsTitle).To(BeEmpty())
+		})
+
+		It("does not call the altar ready on gold alone, because it also waits 140 weeks that are not known", func() {
+			basic := ranch
+			basic.Altar = 1
+			state := view(known(basic, 8000)).Ranch.Facilities[2].State
+			Expect(state).To(Equal(profileui.Box{Text: "gold is enough", Tone: profileui.ToneLightGreen}))
+		})
+
+		It("asks for a grade the breeder lacks even with the gold in hand", func() {
+			low := ranch
+			low.Grade = 5
+			state := view(known(low, 50000)).Ranch.Facilities[0].State
+			Expect(state).To(Equal(profileui.Box{Text: "grade 6", Tone: profileui.ToneOrange}))
+		})
+
+		It("leaves the grade out of the altar's step, which asks for none, gives its own time and the gold the guide gives, and says when there is no altar yet", func() {
+			basic := ranch
+			basic.Altar = 1
+			altar := view(known(basic, 1500)).Ranch.Facilities[2]
+			Expect(altar.Next).To(Equal("next 5,000 G · Mar wk 3, 140 weeks after the last step"))
+			Expect(altar.State).To(Equal(profileui.Box{Text: "6,500 G more", Tone: profileui.ToneOrange}))
+
+			none := ranch
+			none.Altar = 0
+			Expect(view(known(none, 1500)).Ranch.Facilities[2]).To(Equal(profileui.FacilityView{
+				Name: "Altar", Max: 3, Detail: "none", Next: "no altar yet",
+			}))
+		})
+	})
+
+	Describe("the expeditions", func() {
+		dated := func(weeks int, energy int, energyKnown bool) func(*domain.Profile) {
+			return func(p *domain.Profile) {
+				p.Player.Ranch = player.Ranch{Known: true, Date: weeks, StartYear: 1000, Energy: energy, EnergyKnown: energyKnown}
+			}
+		}
+		names := func(v profileui.ExpeditionsView) []string {
+			var out []string
+			for _, t := range v.Trips {
+				out = append(out, t.Name)
+			}
+			return out
+		}
+
+		It("lists the four trips in the order of the calendar when the date is not known, each with when it comes", func() {
+			v := view(nil).Expeditions
+			Expect(names(v)).To(Equal([]string{
+				"Torles Mountains (Rovest)", "Phoenix Volcano Adventure", "Kawrea Volcano (Dr. Talico)", "Parepare Jungle (Kavaro)",
+			}))
+			Expect(v.Trips[0].When).To(Equal("Feb wk 1"))
+			Expect(v.Trips[3].When).To(Equal("Oct wk 1"))
+			Expect(v.Title).To(Equal("Next expedition: Torles Mountains (Rovest), Feb wk 1 · not fit yet"))
+		})
+
+		It("says what each invitation asks of the monster, and where it stands", func() {
+			trip := view(nil).Expeditions.Trips[0] // the Pixie has life 111, fame 50 and grade E
+			Expect(trip.Conditions).To(Equal([]profileui.ConditionView{
+				{Text: "LIF 210 or more", Have: "111"},
+				{Text: "Fame 50 or more", Have: "50", Met: true},
+				{Text: "Grade C or higher", Have: "E"},
+			}))
+			Expect(trip.Fit).To(BeFalse())
+		})
+
+		It("calls a trip fit when the monster meets every condition", func() {
+			strong := view(func(p *domain.Profile) {
+				p.Monster.Stats[monster.Life], p.Monster.Fame, p.Monster.Rank = 300, 60, 4
+			}).Expeditions
+			for _, t := range strong.Trips {
+				Expect(t.Fit).To(BeTrue(), t.Name)
+			}
+			Expect(strong.Title).To(HaveSuffix("· fit"))
+		})
+
+		It("puts the nearest first and says in how many weeks, when the date is known", func() {
+			v := view(dated(155, 0, false)).Expeditions // March, week 4
+			Expect(names(v)).To(Equal([]string{
+				"Phoenix Volcano Adventure", "Kawrea Volcano (Dr. Talico)", "Parepare Jungle (Kavaro)", "Torles Mountains (Rovest)",
+			}))
+			Expect(v.Trips[0].When).To(Equal("Jun wk 1, in 9 weeks"))
+			Expect(v.Trips[2].When).To(Equal("Oct wk 1, in 25 weeks"))
+			Expect(v.Trips[3].When).To(Equal("Feb wk 1, in 41 weeks"))
+			Expect(v.Title).To(Equal("Next expedition: Phoenix Volcano Adventure, Jun wk 1, in 9 weeks · not fit yet"))
+		})
+
+		It("says this week on the day, and the first expedition is the one that is made once", func() {
+			v := view(dated(20, 0, false)).Expeditions // June, week 1
+			Expect(v.Trips[0].When).To(Equal("Jun wk 1, this week"))
+			Expect(v.Trips[0].Note).To(Equal("the first expedition: made once, and it unlocks the others"))
+			Expect(v.Trips[1].Note).To(BeEmpty())
+		})
+
+		It("says the energy the monster would start with, from its life", func() {
+			v := view(func(p *domain.Profile) { p.Monster.Stats[monster.Life] = 305 }).Expeditions
+			Expect(v.StartEnergy).To(Equal("Starts with 280 energy (70 for every 70 LIF, from 140 up to 700)"))
+		})
+
+		It("says the energy in the game now only when it was read", func() {
+			Expect(view(dated(0, -5, true)).Expeditions.GameEnergy).To(Equal("Energy in the game now: -5 (it stays after an expedition)"))
+			Expect(view(dated(0, 0, false)).Expeditions.GameEnergy).To(BeEmpty())
+			Expect(view(nil).Expeditions.GameEnergy).To(BeEmpty())
+		})
+
+		It("gives what an expedition costs, and what failing costs", func() {
+			Expect(view(nil).Expeditions.Costs).To(Equal("A step costs 1 energy, an obstacle 5, a search 10; ending under -9 costs 12 weeks of life"))
+		})
+	})
+
 	It("names the drug with its weeks and its tip, or shows none", func() {
 		v := view(nil)
 		Expect(v.Drug).To(Equal("---"))

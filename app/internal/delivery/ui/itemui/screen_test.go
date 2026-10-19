@@ -76,6 +76,21 @@ var _ = Describe("Screen", func() {
 		Expect(s.purchase.Text).To(Equal("200"))
 	})
 
+	It("dims the places the house has no room for, and takes the dimming away when it is upgraded", func() {
+		locked := slots()
+		for i := 14; i < len(locked); i++ {
+			locked[i].Locked = true
+		}
+		s.apply(locked, nil)
+		Expect(s.buttons[13].Disabled()).To(BeFalse())
+		Expect(s.buttons[14].Disabled()).To(BeTrue())
+		Expect(s.buttons[14].Text).To(Equal("locked"))
+
+		s.apply(slots(), nil)
+		Expect(s.buttons[14].Disabled()).To(BeFalse())
+		Expect(s.buttons[14].Text).To(Equal("-----"))
+	})
+
 	It("shows a blank place as one", func() {
 		s.apply(slots(), nil)
 		test.Tap(s.buttons[0])

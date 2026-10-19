@@ -107,6 +107,11 @@ type MonsterView struct {
 	ErrantrySale    bool
 	Cocoon          *CocoonView // nil unless the monster is a Worm that can still cocoon
 	Bars            Bars
+	FatigueWord     string // how the game says the fatigue: seems tired
+	Record          string // wins, losses and knock-outs
+	History         string // the ailments and runaways of its life
+	Ranch           RanchView
+	Expeditions     ExpeditionsView
 }
 
 // gradeTones colour the grades E to A, which growth rates and the arena speed share.
@@ -163,6 +168,12 @@ func NewMonsterView(p domain.Profile, o Options) MonsterView {
 		PrizeMoney:      strconv.Itoa(m.PrizeMoney) + "G",
 		NextSale:        strconv.Itoa(p.Player.NextSale) + "w",
 		ErrantrySale:    p.Player.ErrantrySaleReady(),
+		FatigueWord:     domain.FatigueWord(m.Fatigue),
+		Record:          fmt.Sprintf("%d W · %d L · %d KO", m.Record.Wins, m.Record.Losses, m.Record.KOs),
+		History: fmt.Sprintf("sick %d · injured %d · ran away %d · resistance %d",
+			m.Record.Sicknesses, m.Record.Injuries, m.Record.Runaways, m.Record.Resistance),
+		Ranch:       newRanchView(p),
+		Expeditions: newExpeditionsView(p),
 	}
 	if strings.Contains(p.Breed.Name, "[E]") || strings.Contains(p.Breed.Name, "(N/S)") {
 		v.Breed.Tone = ToneLightPink

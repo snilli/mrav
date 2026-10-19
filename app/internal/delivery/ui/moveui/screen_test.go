@@ -3,6 +3,7 @@ package moveui
 import (
 	"context"
 	"errors"
+	"image/color"
 	"image/png"
 	"os"
 	"path/filepath"
@@ -33,10 +34,12 @@ var _ = Describe("Screen", func() {
 	)
 	pat := domain.Move{Col: 1, Row: 1, Name: "Pat", Kind: domain.KindPower, Guts: 12, Force: 6, Hit: 10, Description: "Starting basic tech.", Icon: "Pixie_1"}
 	slap := domain.Move{Col: 1, Row: 2, Name: "Slap", Kind: domain.KindPower, Guts: 18, Force: 15, Hit: 9, Wither: 5, Description: "Basic tech.", Icon: "Pixie_2"}
+	bolt := domain.Move{Col: 1, Row: 3, Name: "Bolt", Kind: domain.KindIntelligence, Guts: 20, Description: "Needs more.", Icon: "Pixie_3"}
 	grid := func() domain.Grid {
 		g := domain.Grid{Genus: domain.Genus{Code: 0, Name: "Pixie"}}
 		g.Cells[0][0] = domain.Cell{Move: &pat, Learned: true, Active: true, Used: 31}
 		g.Cells[0][1] = domain.Cell{Move: &slap, CanLearn: true}
+		g.Cells[0][2] = domain.Cell{Move: &bolt}
 		g.Active[0] = &pat
 		return g
 	}
@@ -85,9 +88,68 @@ var _ = Describe("Screen", func() {
 		Expect(s.detail.damage.Text).To(Equal("D (15)"))
 		Expect(s.detail.withering.Text).To(Equal("E (5)"))
 		Expect(s.detail.description.Text).To(Equal("Basic tech."))
-		Expect(s.detail.canLearn.Checked).To(BeTrue())
+		Expect(s.detail.status.txt.Text).To(Equal("READY TO LEARN"))
 		Expect(s.cells[0][1].highlight.Visible()).To(BeTrue())
 		Expect(s.cells[0][0].highlight.Visible()).To(BeFalse())
+	})
+
+	It("frames a learned move in green, a move ready to learn in orange with a ribbon, and dims a move that is not yet", func() {
+		s.apply(grid(), nil)
+		learned, ready, locked, empty := s.cells[0][0], s.cells[0][1], s.cells[0][2], s.cells[3][5]
+
+		Expect(learned.frame.Visible()).To(BeTrue())
+		Expect(learned.frame.StrokeColor).To(Equal(metColor))
+		Expect(learned.dim.Visible()).To(BeFalse())
+		Expect(learned.ribbon.Visible()).To(BeFalse())
+
+		Expect(ready.frame.Visible()).To(BeTrue())
+		Expect(ready.frame.StrokeColor).To(Equal(readyColor))
+		Expect(ready.ribbon.Visible()).To(BeTrue())
+		Expect(ready.dim.Visible()).To(BeFalse())
+
+		Expect(locked.dim.Visible()).To(BeTrue())
+		Expect(locked.frame.Visible()).To(BeFalse())
+		Expect(locked.ribbon.Visible()).To(BeFalse())
+
+		Expect(empty.frame.Visible()).To(BeFalse())
+		Expect(empty.dim.Visible()).To(BeFalse())
+		Expect(empty.ribbon.Visible()).To(BeFalse())
+	})
+
+	It("takes the frame, the dimming and the ribbon away when a move is learned", func() {
+		s.apply(grid(), nil)
+		g := grid()
+		g.Cells[0][1].CanLearn, g.Cells[0][1].Learned = false, true
+		s.apply(g, nil)
+		Expect(s.cells[0][1].frame.StrokeColor).To(Equal(metColor))
+		Expect(s.cells[0][1].ribbon.Visible()).To(BeFalse())
+	})
+
+	It("counts the moves learned, ready to learn and not yet, above the grid", func() {
+		s.apply(grid(), nil)
+		Expect(s.legend.learned.Text).To(Equal("Learned 1"))
+		Expect(s.legend.ready.Text).To(Equal("Ready to learn 1"))
+		Expect(s.legend.locked.Text).To(Equal("Not yet 1"))
+	})
+
+	It("says where the selected move stands on a badge in the colour of its frame, and none for an empty cell", func() {
+		s.apply(grid(), nil)
+		for _, tc := range []struct {
+			col, row int
+			text     string
+			fill     color.Color
+		}{
+			{0, 0, "LEARNED", metColor},
+			{0, 1, "READY TO LEARN", readyColor},
+			{0, 2, "NOT YET", lockedColor},
+		} {
+			test.Tap(s.cells[tc.col][tc.row])
+			Expect(s.detail.status.object.Visible()).To(BeTrue())
+			Expect(s.detail.status.txt.Text).To(Equal(tc.text))
+			Expect(s.detail.status.bg.FillColor).To(Equal(tc.fill))
+		}
+		test.Tap(s.cells[3][5])
+		Expect(s.detail.status.object.Visible()).To(BeFalse())
 	})
 
 	It("lists what the selected move still needs, each as met or not, and no list when it needs nothing", func() {
@@ -115,12 +177,12 @@ var _ = Describe("Screen", func() {
 	It("keeps the selection and brings its details up to date when the grid changes", func() {
 		s.apply(grid(), nil)
 		test.Tap(s.cells[0][1])
-		Expect(s.detail.learned.Checked).To(BeFalse())
+		Expect(s.detail.status.txt.Text).To(Equal("READY TO LEARN"))
 
 		g := grid()
 		g.Cells[0][1].Learned = true
 		s.apply(g, nil)
-		Expect(s.detail.learned.Checked).To(BeTrue())
+		Expect(s.detail.status.txt.Text).To(Equal("LEARNED"))
 		Expect(s.cells[0][1].highlight.Visible()).To(BeTrue())
 	})
 

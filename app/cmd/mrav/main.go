@@ -19,8 +19,6 @@ import (
 	"app/internal/core/move"
 	"app/internal/core/move/repository/db/moverepo"
 	"app/internal/core/move/service/movesvc"
-	"app/internal/core/player"
-	"app/internal/core/player/service/playersvc"
 	"app/internal/core/profile"
 	"app/internal/core/profile/repository/db/profilerepo"
 	"app/internal/core/profile/service/profilesvc"
@@ -30,7 +28,6 @@ import (
 	"app/internal/delivery/ui/demoui"
 	"app/internal/delivery/ui/itemui"
 	"app/internal/delivery/ui/moveui"
-	"app/internal/delivery/ui/playerui"
 	"app/internal/delivery/ui/profileui"
 	"app/internal/delivery/ui/shellui"
 	"app/internal/delivery/ui/trainingui"
@@ -42,10 +39,6 @@ import (
 	"app/internal/port"
 )
 
-// controllerEvery is how often the Controller page asks for the buttons held: it shows what the game reads from
-// the pad, so it needs to be much faster than the rest.
-const controllerEvery = 50 * time.Millisecond
-
 // options is the whole dependency graph. Each repository and service constructor returns its port, so none needs
 // fx.Annotate; newSource is the one constructor that gives several types, because the services need only the
 // ports of the monster and the player while the demo panel needs the fakes behind them, when there are any.
@@ -56,7 +49,6 @@ func options() fx.Option {
 		fx.Provide(profilerepo.New, profilesvc.New),
 		fx.Provide(trainingrepo.New, trainingsvc.New),
 		fx.Provide(itemrepo.New, itemsvc.New),
-		fx.Provide(playersvc.New),
 		fx.Provide(newSource),
 		fx.Provide(newFyneApp, newParts, newDemo, newWindow),
 		fx.Invoke(refreshLoops),
@@ -111,7 +103,11 @@ func newSource(cfg *config.Config) (port.MonsterSource, port.PlayerSource, *fake
 	return monsters, players, monsters, players
 }
 
-func newFyneApp() fyne.App { return fyneapp.NewWithID("io.ezcards.mrav") }
+func newFyneApp() fyne.App {
+	a := fyneapp.NewWithID("io.ezcards.mrav")
+	a.Settings().SetTheme(shellui.Theme())
+	return a
+}
 
 // loader is a page that can be told to ask its service for what it shows.
 type loader interface{ Load(ctx context.Context) }
@@ -120,21 +116,19 @@ type loader interface{ Load(ctx context.Context) }
 // before their widgets do.
 func newParts(
 	_ fyne.App, profiles profile.ProfileService, moves move.MoveService, trainings training.TrainingService,
-	items item.ItemService, players player.PlayerService,
+	items item.ItemService,
 ) shellui.Parts {
 	return shellui.Parts{
-		Dashboard:  profileui.NewDashboard(profiles),
-		Training:   trainingui.NewScreen(trainings),
-		Moves:      moveui.NewScreen(moves, icons.Bytes),
-		Items:      itemui.NewScreen(items),
-		Breeder:    playerui.NewBreederScreen(players),
-		Controller: playerui.NewControllerScreen(players),
+		Dashboard: profileui.NewDashboard(profiles),
+		Training:  trainingui.NewScreen(trainings),
+		Moves:     moveui.NewScreen(moves, icons.Bytes),
+		Items:     itemui.NewScreen(items),
 	}
 }
 
-// slow are the pages that are asked at the rate in the config.
-func slow(p shellui.Parts) []loader {
-	return []loader{p.Dashboard, p.Moves, p.Training, p.Items, p.Breeder}
+// loaders are the pages, which are all asked at the rate in the config.
+func loaders(p shellui.Parts) []loader {
+	return []loader{p.Dashboard, p.Moves, p.Training, p.Items}
 }
 
 // newDemo is nil when a game is read, because nobody sets that monster by hand.
@@ -155,34 +149,29 @@ func newWindow(a fyne.App, p shellui.Parts, demo *demoui.Panel) fyne.Window {
 	w := a.NewWindow("mrav - Monster Rancher 2 Viewer")
 	w.Resize(fyne.NewSize(1500, 900))
 	p.Demo = demo
-	w.SetContent(shellui.New(w, p).Content())
+	w.SetContent(shellui.New(p).Content())
 	return w
 }
 
-// refreshLoops asks the pages to reload, each from a goroutine that lives as long as the app: most of them at
-// the rate in the config, and the Controller page faster.
+// refreshLoops asks the pages to reload at the rate in the config, from a goroutine that lives as long as the app.
 func refreshLoops(lc fx.Lifecycle, cfg *config.Config, p shellui.Parts) {
 	ctx, cancel := context.WithCancel(context.Background())
-	loop := func(every time.Duration, screens ...loader) {
-		go func() {
-			ticker := time.NewTicker(every)
-			defer ticker.Stop()
-			for {
-				for _, s := range screens {
-					s.Load(ctx)
-				}
-				select {
-				case <-ctx.Done():
-					return
-				case <-ticker.C:
-				}
-			}
-		}()
-	}
 	lc.Append(fx.Hook{
 		OnStart: func(context.Context) error {
-			loop(time.Duration(cfg.RefreshMS)*time.Millisecond, slow(p)...)
-			loop(controllerEvery, p.Controller)
+			go func() {
+				ticker := time.NewTicker(time.Duration(cfg.RefreshMS) * time.Millisecond)
+				defer ticker.Stop()
+				for {
+					for _, s := range loaders(p) {
+						s.Load(ctx)
+					}
+					select {
+					case <-ctx.Done():
+						return
+					case <-ticker.C:
+					}
+				}
+			}()
 			return nil
 		},
 		OnStop: func(context.Context) error {

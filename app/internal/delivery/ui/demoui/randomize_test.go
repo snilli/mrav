@@ -58,6 +58,14 @@ var _ = Describe("randomize", func() {
 			}
 			Expect(p.Breeder).NotTo(BeEmpty())
 			Expect(m.Name).NotTo(BeEmpty())
+			// a ranch that the game could have: levels within what each facility goes to, a grade from Beginner to Master
+			Expect(p.Ranch.Known).To(BeTrue())
+			Expect(p.Ranch.House).To(BeNumerically("<=", player.MaxLevel(player.House)))
+			Expect(p.Ranch.Barn).To(BeNumerically("<=", player.MaxLevel(player.Barn)))
+			Expect(p.Ranch.Altar).To(BeNumerically("<=", player.MaxLevel(player.Altar)))
+			Expect(p.Ranch.Grade).To(BeNumerically("<=", 10))
+			Expect(p.Ranch.Date).To(BeNumerically(">=", 0))
+			Expect(m.Record.Wins).To(BeNumerically(">=", 0))
 		}
 	})
 

@@ -91,6 +91,11 @@ func (s *Screen) apply(slots []domain.Slot, err error) {
 	for i, b := range s.buttons {
 		if i < len(slots) {
 			b.SetText(SlotName(slots[i]))
+			if slots[i].Locked {
+				b.Disable()
+			} else {
+				b.Enable()
+			}
 		}
 	}
 	s.showDetail()

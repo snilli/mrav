@@ -20,7 +20,6 @@ import (
 	"app/internal/infrastructure/gamememory"
 	mockitem "app/mock/core/item"
 	mockmove "app/mock/core/move"
-	mockplayer "app/mock/core/player"
 	mockprofile "app/mock/core/profile"
 	mocktraining "app/mock/core/training"
 )
@@ -89,8 +88,7 @@ var _ = Describe("newWindow", func() {
 		a := test.NewTempApp(GinkgoTB())
 		p := newParts(a,
 			mockprofile.NewMockProfileService(GinkgoT()), mockmove.NewMockMoveService(GinkgoT()),
-			mocktraining.NewMockTrainingService(GinkgoT()), mockitem.NewMockItemService(GinkgoT()),
-			mockplayer.NewMockPlayerService(GinkgoT()))
+			mocktraining.NewMockTrainingService(GinkgoT()), mockitem.NewMockItemService(GinkgoT()))
 
 		w := newWindow(a, p, nil)
 		Expect(w.Content()).NotTo(BeNil())
@@ -98,15 +96,14 @@ var _ = Describe("newWindow", func() {
 	})
 })
 
-var _ = Describe("slow", func() {
-	It("lists the pages that are asked at the rate in the config, and not the Controller, which is asked faster", func() {
+var _ = Describe("loaders", func() {
+	It("lists every page, which are all asked at the rate in the config", func() {
 		test.NewTempApp(GinkgoTB())
 		p := newParts(nil,
 			mockprofile.NewMockProfileService(GinkgoT()), mockmove.NewMockMoveService(GinkgoT()),
-			mocktraining.NewMockTrainingService(GinkgoT()), mockitem.NewMockItemService(GinkgoT()),
-			mockplayer.NewMockPlayerService(GinkgoT()))
+			mocktraining.NewMockTrainingService(GinkgoT()), mockitem.NewMockItemService(GinkgoT()))
 
-		Expect(slow(p)).To(ConsistOf(p.Dashboard, p.Moves, p.Training, p.Items, p.Breeder))
+		Expect(loaders(p)).To(ConsistOf(p.Dashboard, p.Moves, p.Training, p.Items))
 	})
 })
 
