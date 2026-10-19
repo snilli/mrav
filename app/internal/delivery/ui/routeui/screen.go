@@ -37,9 +37,10 @@ func (t tableLayout) MinSize(objs []fyne.CanvasObject) fyne.Size {
 	return fyne.NewSize(float32(t.cols*(cellSize+cellGap)-cellGap), float32(rows*(cellSize+cellGap)-cellGap))
 }
 
-func (t tableLayout) Layout(objs []fyne.CanvasObject, _ fyne.Size) {
+func (t tableLayout) Layout(objs []fyne.CanvasObject, size fyne.Size) {
+	left := max((size.Width-t.MinSize(objs).Width)/2, 0) // the table is in the middle of what it is given
 	for i, o := range objs {
-		o.Move(fyne.NewPos(float32(i%t.cols*(cellSize+cellGap)), float32(i/t.cols*(cellSize+cellGap))))
+		o.Move(fyne.NewPos(left+float32(i%t.cols*(cellSize+cellGap)), float32(i/t.cols*(cellSize+cellGap))))
 		o.Resize(fyne.NewSize(cellSize, cellSize))
 	}
 }
@@ -150,9 +151,9 @@ type box struct {
 	panel    *widget.Accordion
 	item     *widget.AccordionItem
 	summary  *widget.Label
+	table    fyne.CanvasObject
 	standing []*profileui.ToneBox // the energy, the place and the steps of the monster on the trip, above the map
 	stops    *widget.Label
-	credit   *widget.Label // where the map is from
 	cells    []*cell
 }
 
@@ -162,13 +163,8 @@ func newBox(v View, open bool) *box {
 	if len(v.Stops) == 0 {
 		b.stops.Hide()
 	}
-	b.credit = profileui.Quiet(v.Map.Source)
-	b.credit.Wrapping = fyne.TextWrapWord
-	if v.Map.Source == "" {
-		b.credit.Hide()
-	}
-	var table fyne.CanvasObject
-	table, b.cells = newTable(v)
+	table, cells := newTable(v)
+	b.table, b.cells = table, cells
 	key := profileui.Quiet(legend)
 	key.Wrapping = fyne.TextWrapWord
 	content := container.NewVBox()
@@ -180,9 +176,9 @@ func newBox(v View, open bool) *box {
 			b.standing = append(b.standing, box)
 			row.Add(box)
 		}
-		content.Add(row)
+		content.Add(container.NewCenter(row))
 	}
-	for _, o := range []fyne.CanvasObject{b.summary, table, key, b.stops, b.credit} {
+	for _, o := range []fyne.CanvasObject{b.summary, table, key, b.stops} {
 		content.Add(o)
 	}
 	b.item = widget.NewAccordionItem(v.Title(), content)
@@ -257,7 +253,7 @@ func (s *Screen) apply(maps []domain.ExpeditionMap, p domain.Profile, err error)
 			continue
 		}
 		views = append(views, v)
-		fmt.Fprint(&built, v.Name, "|", v.Map.Source, "|", v.Summary, "|", v.Stops, "|", v.Route.Path, ";")
+		fmt.Fprint(&built, v.Name, "|", v.Summary, "|", v.Stops, "|", v.Route.Path, ";")
 	}
 	drawn := built.String()
 	s.status.SetText(strings.Join(problems, "\n"))

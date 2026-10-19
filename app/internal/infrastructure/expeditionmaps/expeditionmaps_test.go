@@ -1,8 +1,6 @@
 package expeditionmaps_test
 
 import (
-	"strings"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -103,13 +101,6 @@ var _ = Describe("Load", func() {
 		for _, m := range maps {
 			_, err := domain.PlanRoute(m, domain.Walker{Energy: 700, BreakChance: 1, Intelligence: 999})
 			Expect(err).NotTo(HaveOccurred(), m.Name)
-		}
-	})
-
-	It("credits the guide that they are from", func() {
-		for _, m := range maps {
-			Expect(m.Source).To(ContainSubstring("LegendCup"), m.Name)
-			Expect(strings.ToLower(m.Source)).To(ContainSubstring("permission"), m.Name)
 		}
 	})
 

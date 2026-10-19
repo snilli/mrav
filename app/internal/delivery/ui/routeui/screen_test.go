@@ -124,15 +124,15 @@ var _ = Describe("Screen", func() {
 		Expect(s.boxes[0].cells[1].bg.FillColor).To(Equal(shutFill))
 	})
 
-	It("credits the map under it, where the map has a source", func() {
-		m := aisle()
-		m.Source = "A guide, with thanks"
-		s.apply([]domain.ExpeditionMap{m}, monsterOf(140, 350), nil)
-		Expect(s.boxes[0].credit.Text).To(Equal("A guide, with thanks"))
-		Expect(s.boxes[0].credit.Visible()).To(BeTrue())
+	It("centres a map in a panel that is wider than it", func() {
+		s.apply(maps(), monsterOf(140, 350), nil) // the aisle, 4 tiles of 17 and 1 between: 71 wide
+		b := s.boxes[0]
+		b.table.Resize(fyne.NewSize(300, 20))
+		Expect(b.cells[0].object.Position().X).To(BeNumerically("~", (300-71)/2, 0.5))
+		Expect(b.cells[1].object.Position().X).To(BeNumerically("~", (300-71)/2+18, 0.5))
 
-		s.apply(maps(), monsterOf(140, 350), nil)
-		Expect(s.boxes[0].credit.Visible()).To(BeFalse())
+		b.table.Resize(fyne.NewSize(50, 20)) // and not left of its own edge when the panel is narrower
+		Expect(b.cells[0].object.Position().X).To(BeNumerically(">=", 0))
 	})
 
 	It("keeps nothing that scrolls inside a panel, so that the wheel over a map scrolls the column", func() {
@@ -238,14 +238,13 @@ var _ = Describe("Screen", func() {
 		})
 	})
 
-	It("draws the maps of the game, each with the guide that they are from", func() {
+	It("draws the maps of the game", func() {
 		real, err := expeditionmaps.Load()
 		Expect(err).NotTo(HaveOccurred())
 		s.apply(real, monsterWith(420, 400, 600, 300, 0), nil)
 		Expect(s.boxes).To(HaveLen(3))
 		Expect(s.boxes[0].cells).To(HaveLen(18 * 20))
 		Expect(s.boxes[0].item.Title).To(HavePrefix("Route · Parepare Jungle: "))
-		Expect(s.boxes[0].credit.Text).To(ContainSubstring("LegendCup"))
 
 		dir := os.Getenv("SCREENSHOT_DIR")
 		if dir == "" {

@@ -18,8 +18,8 @@ const (
 )
 
 // Expedition is a trip a monster is invited on, in the same month and week of every year, when it is fit enough
-// and on the ranch as the week turns. The dates and what they ask of the monster are from LegendCup's guide to the
-// expedition maps, and its battle calendar.
+// and on the ranch as the week turns. The dates and what they ask of the monster are the game's own rules, as
+// players' guides keep them.
 type Expedition struct {
 	Name        string
 	Host        string // who invites the monster, where the guide says

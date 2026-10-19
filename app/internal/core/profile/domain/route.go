@@ -39,10 +39,9 @@ type Spot struct {
 }
 
 // ExpeditionMap is the map of an expedition: the tiles row by row, where the monster starts, its places, and the
-// locks that the gates have. Source says where the map is from, for the credit it is owed.
+// locks that the gates have.
 type ExpeditionMap struct {
 	Name          string
-	Source        string
 	Width, Height int
 	Tiles         []Terrain
 	Start         Point

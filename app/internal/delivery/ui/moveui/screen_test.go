@@ -63,6 +63,19 @@ var _ = Describe("Screen", func() {
 		}
 	})
 
+	It("centres the grid of moves and the active moves in the panel, and not at its left", func() {
+		w := test.NewWindow(s.Content())
+		DeferCleanup(w.Close)
+		w.Resize(fyne.NewSize(900, 900))
+		x := func(o fyne.CanvasObject) float32 { return fyne.CurrentApp().Driver().AbsolutePositionForObject(o).X }
+		for name, o := range map[string]fyne.CanvasObject{"the grid": s.cellGrid, "the active moves": s.activeRow} {
+			left := x(o) - x(s.body)
+			right := x(s.body) + s.body.Size().Width - (x(o) + o.Size().Width)
+			Expect(left).To(BeNumerically(">", 10), name)
+			Expect(left).To(BeNumerically("~", right, 1.5), name)
+		}
+	})
+
 	It("keeps the names of its overlays in step with the icon assets", func() {
 		for _, key := range []string{NoMove, Checked, CanGet, Highlight} {
 			_, err := icons.Bytes(key)

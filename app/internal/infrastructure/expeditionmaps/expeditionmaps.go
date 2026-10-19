@@ -1,6 +1,5 @@
 // Package expeditionmaps holds the maps of the expeditions that come round every year, Parepare, Torles and Kawrea,
-// with the places on them and what a search of each can turn up. They are embedded in the viewer as the guide of
-// LegendCup has them, and carry the credit that they are owed.
+// with the places on them and what a search of each can turn up. They are embedded in the viewer.
 package expeditionmaps
 
 import (
@@ -18,7 +17,6 @@ var data []byte
 // file is the shape of maps.json. A map is rows of tiles: # a wall, . a floor, S the start, o a rock, g a gate that
 // wants intelligence, T a teleport, and a letter a place.
 type file struct {
-	Source string         `json:"source"`
 	Prices map[string]int `json:"prices"` // what each item sells for
 	Maps   []fileMap      `json:"maps"`
 }
@@ -73,7 +71,7 @@ func build(f file, fm fileMap) (domain.ExpeditionMap, error) {
 		return domain.ExpeditionMap{}, fmt.Errorf("it has no rows")
 	}
 	m := domain.ExpeditionMap{
-		Name: fm.Name, Source: f.Source, Width: len(fm.Rows[0]), Height: len(fm.Rows),
+		Name: fm.Name, Width: len(fm.Rows[0]), Height: len(fm.Rows),
 		Start: domain.Point{X: fm.Start[0], Y: fm.Start[1]},
 	}
 	for y, row := range fm.Rows {

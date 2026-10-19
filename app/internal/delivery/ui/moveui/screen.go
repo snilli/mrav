@@ -348,11 +348,14 @@ type Screen struct {
 	svc   move.MoveService
 	icons *iconSet
 
-	cells  [domain.Columns][domain.Rows]*cell
-	active [domain.Columns]*picture
-	genus  *widget.Label
-	legend *legend
-	detail *detail
+	cells [domain.Columns][domain.Rows]*cell
+
+	cellGrid  fyne.CanvasObject // the columns of cells, side by side
+	activeRow fyne.CanvasObject // the label and the active moves
+	active    [domain.Columns]*picture
+	genus     *widget.Label
+	legend    *legend
+	detail    *detail
 
 	body    fyne.CanvasObject
 	content fyne.CanvasObject
@@ -381,7 +384,7 @@ func NewScreen(svc move.MoveService, icons IconFunc) *Screen {
 		columns[c] = container.New(layout.NewCustomPaddedVBoxLayout(0), cells...)
 	}
 	slices.Reverse(columns) // the last column is shown first, and the active moves under the columns follow
-	grid := container.New(layout.NewCustomPaddedHBoxLayout(0), columns...)
+	s.cellGrid = container.New(layout.NewCustomPaddedHBoxLayout(0), columns...)
 
 	pictures := make([]fyne.CanvasObject, domain.Columns)
 	for c := range s.active {
@@ -390,11 +393,13 @@ func NewScreen(svc move.MoveService, icons IconFunc) *Screen {
 	}
 	slices.Reverse(pictures)
 	actives := append([]fyne.CanvasObject{profileui.Quiet("Active moves")}, pictures...)
+	s.activeRow = container.NewHBox(actives...)
+	// What shows the moves is in the middle of the panel; the text of the selected move under it starts at the left.
 	s.body = container.NewVBox(
-		s.genus,
-		s.legend.object,
-		grid,
-		container.NewHBox(actives...),
+		container.NewCenter(s.genus),
+		container.NewCenter(s.legend.object),
+		container.NewCenter(s.cellGrid),
+		container.NewCenter(s.activeRow),
 		widget.NewSeparator(),
 		s.detail.content,
 	)
