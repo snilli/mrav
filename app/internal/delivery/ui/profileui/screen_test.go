@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strconv"
 
+	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/driver/software"
 	"fyne.io/fyne/v2/test"
@@ -22,6 +23,23 @@ import (
 	"app/internal/core/profile/domain"
 	mockprofile "app/mock/core/profile"
 )
+
+// labelTexts are the words of every label inside an object, including those of the boxes in containers.
+func labelTexts(o fyne.CanvasObject) []string {
+	switch o := o.(type) {
+	case *widget.Label:
+		return []string{o.Text}
+	case *ToneBox:
+		return []string{o.Box().Text}
+	case *fyne.Container:
+		var texts []string
+		for _, c := range o.Objects {
+			texts = append(texts, labelTexts(c)...)
+		}
+		return texts
+	}
+	return nil
+}
 
 func pixieProfile() domain.Profile {
 	m := monster.Monster{
@@ -41,6 +59,26 @@ func pixieProfile() domain.Profile {
 	}
 }
 
+// within is whether an object is somewhere inside another one, in the containers and scrolls that hold it.
+func within(root, target fyne.CanvasObject) bool {
+	if root == target {
+		return true
+	}
+	var children []fyne.CanvasObject
+	switch r := root.(type) {
+	case *fyne.Container:
+		children = r.Objects
+	case *container.Scroll:
+		children = []fyne.CanvasObject{r.Content}
+	}
+	for _, c := range children {
+		if within(c, target) {
+			return true
+		}
+	}
+	return false
+}
+
 var _ = Describe("Dashboard", func() {
 	var (
 		ctx context.Context
@@ -53,6 +91,35 @@ var _ = Describe("Dashboard", func() {
 		ctx = context.Background()
 		svc = mockprofile.NewMockProfileService(GinkgoT())
 		d = NewDashboard(svc)
+	})
+
+	It("draws the name and the bar of each stat in the colour of the stat", func() {
+		d.apply(pixieProfile(), nil)
+
+		for stat := range monster.StatCount {
+			Expect(d.statNames[stat].String()).To(Equal(StatNames[stat]))
+			Expect(d.statNames[stat].texts[0].Color).To(Equal(StatColors[stat]))
+			Expect(d.statBars[stat].fill.FillColor).To(Equal(StatColors[stat]))
+		}
+	})
+
+	It("shows the peaches, the item and the sale in the header, to be seen at once, and not at the bottom of the vitals", func() {
+		for _, f := range []*Flag{d.goldPeach, d.silverPeach, d.itemUsed, d.errantry} {
+			Expect(within(d.Header(), f)).To(BeTrue())
+			Expect(within(d.Vitals(), f)).To(BeFalse())
+		}
+	})
+
+	It("lays the header out on more lines when it is compact, to be narrower, and puts it back on fewer when it is not", func() {
+		wide := d.Header().MinSize()
+
+		d.Compact(true)
+		narrow := d.Header().MinSize()
+		Expect(narrow.Width).To(BeNumerically("<", wide.Width))
+		Expect(narrow.Height).To(BeNumerically(">", wide.Height))
+
+		d.Compact(false)
+		Expect(d.Header().MinSize()).To(Equal(wide))
 	})
 
 	It("shows who the monster is, how old, how much life it has left, and the money, in the header", func() {
@@ -82,6 +149,13 @@ var _ = Describe("Dashboard", func() {
 		Expect(d.errantry.On()).To(BeTrue())
 	})
 
+	It("says the rank of the monster as a letter, among the vitals", func() {
+		p := pixieProfile()
+		p.Monster.Rank = 3
+		d.apply(p, nil)
+		Expect(d.rank.Text).To(Equal("B"))
+	})
+
 	It("says how tired the monster is in the game's words, and sums up its fights and its ailments", func() {
 		p := pixieProfile()
 		p.Monster.Record = monster.Record{Wins: 12, Losses: 3, KOs: 5, Injuries: 4, Runaways: 6, Sicknesses: 7, Resistance: 8}
@@ -104,7 +178,7 @@ var _ = Describe("Dashboard", func() {
 			Expect(d.date.Visible()).To(BeTrue())
 			Expect(d.date.Text).To(Equal("Y1004 Mar wk 4 (week 191)"))
 			Expect(d.ranchBody.Visible()).To(BeTrue())
-			Expect(d.ranchItem.Title).To(Equal("Ranch · House & stable: May wk 4, in 8 weeks"))
+			Expect(d.upgradeDay.Text).To(Equal("offered May wk 4, in 8 weeks"))
 		})
 
 		It("shows the tournament's countdown among the vitals, and hides it where the year of the first was not read", func() {
@@ -117,29 +191,42 @@ var _ = Describe("Dashboard", func() {
 			Expect(d.tournament.Text).To(Equal("Y1019 Jul wk 1, in 64 weeks"))
 		})
 
-		It("shows each facility: how far it is, what its next step costs, and where that step stands", func() {
+		It("shows each facility: its level as dots, what it gives, its next step, and where that step stands in words", func() {
 			d.apply(ranchProfile(), nil)
 			house, stable, altar := d.facilities[0], d.facilities[1], d.facilities[2]
 			Expect(house.name.Text).To(Equal("House"))
-			Expect(house.level.Text).To(Equal("2/4"))
-			Expect(house.bar.Ratio()).To(BeNumerically("~", 0.5, 1e-9))
-			Expect(house.next.Text).To(Equal("16 places · next 12,000 G · grade 6"))
-			Expect(house.state.txt.Text).To(Equal("15,500 G more"))
+			Expect(house.pips.Done()).To(Equal(2))
+			Expect(house.pips.Total()).To(Equal(4))
+			Expect(house.gives.Text).To(Equal("16 places"))
+			Expect(house.next.Text).To(Equal("next 12,000 G"))
+			Expect(house.state.txt.Text).To(Equal("Needs 15,500 G more"))
 			Expect(house.state.bg.FillColor).To(Equal(toneColors[ToneOrange]))
+			Expect(house.offer.Visible()).To(BeFalse())
 			Expect(stable.name.Text).To(Equal("Stable"))
-			Expect(stable.next.Text).To(Equal("next 30,000 G · grade 7"))
-			Expect(altar.next.Text).To(Equal("fully upgraded"))
-			Expect(altar.state.txt.Text).To(Equal("MAX"))
+			Expect(stable.pips.Total()).To(Equal(2))
+			Expect(stable.gives.Visible()).To(BeFalse(), "the stable gives nothing that is known")
+			Expect(stable.next.Text).To(Equal("next 30,000 G"))
+			Expect(altar.state.txt.Text).To(Equal("Fully upgraded"))
+			Expect(altar.next.Visible()).To(BeFalse(), "there is no next step")
 		})
 
-		It("lights up the main breeds that are unlocked, in a list that opens from its title with the count", func() {
+		It("says under the altar when it is offered, and keeps no room for that under the others", func() {
+			p := ranchProfile()
+			p.Player.Ranch.Altar = 1
+			d.apply(p, nil)
+			Expect(d.facilities[2].offer.Visible()).To(BeTrue())
+			Expect(d.facilities[2].offer.Text).To(Equal("Offered Mar wk 3, 140 weeks after the last step"))
+			Expect(d.facilities[0].offer.Visible()).To(BeFalse())
+		})
+
+		It("lights up the main breeds that are unlocked, in a list under a title with the count", func() {
 			p := ranchProfile()
 			for i := range player.BreedCount {
 				p.Breeds = append(p.Breeds, domain.BreedUnlock{Name: "B" + strconv.Itoa(i), Unlocked: i%2 == 0})
 			}
 			d.apply(p, nil)
 			Expect(d.breeds.Visible()).To(BeTrue())
-			Expect(d.breedsItem.Title).To(Equal("Breeds unlocked 19/38"))
+			Expect(d.breedsTitle.Text).To(Equal("Breeds unlocked 19/38"))
 			Expect(d.breedFlags[0].txt.Text).To(Equal("B0"))
 			Expect(d.breedFlags[0].On()).To(BeTrue())
 			Expect(d.breedFlags[1].On()).To(BeFalse())
@@ -149,15 +236,6 @@ var _ = Describe("Dashboard", func() {
 		It("has no list of breeds when the game does not say which are unlocked", func() {
 			d.apply(ranchProfile(), nil)
 			Expect(d.breeds.Visible()).To(BeFalse())
-		})
-
-		It("keeps the four panels closed until they are opened: the ranch, the breeds, and the expeditions", func() {
-			d.apply(ranchProfile(), nil)
-			for _, panel := range []*widget.Accordion{d.ranchPanel, d.breeds, d.expeditions} {
-				for _, item := range panel.Items {
-					Expect(item.Open).To(BeFalse(), item.Title)
-				}
-			}
 		})
 
 		It("is not shown for a game that keeps no ranch, and not when there is nothing to show", func() {
@@ -173,56 +251,58 @@ var _ = Describe("Dashboard", func() {
 	})
 
 	Describe("the expeditions", func() {
+		// fit is the profile of a monster that is fit for every trip.
+		fit := func(p domain.Profile) domain.Profile {
+			p.Monster.Stats[monster.Life], p.Monster.Fame, p.Monster.Rank = 300, 60, 4
+			return p
+		}
 		dated := func() domain.Profile {
 			p := pixieProfile()
 			p.Player.Ranch = player.Ranch{Known: true, Date: 191, Energy: -5, EnergyKnown: true}
 			return p
 		}
 
-		It("puts the nearest trip on the title of a list that opens to every trip", func() {
-			d.apply(dated(), nil)
+		It("lists the trips, the nearest first, with when it comes", func() {
+			d.apply(fit(dated()), nil)
 			Expect(d.expeditionsBody.Visible()).To(BeTrue())
-			Expect(d.expeditionsItem.Title).To(Equal("Next expedition: Phoenix Volcano Adventure, Jun wk 1, in 9 weeks · not fit yet"))
-			Expect(d.trips[0].name.Text).To(Equal("Phoenix Volcano Adventure"))
+			Expect(d.trips[0].name.Text).To(Equal("Kawrea Volcano (Dr. Talico)"))
 			Expect(d.trips[0].when.Text).To(Equal("Jun wk 1, in 9 weeks"))
-			Expect(d.trips[0].note.Text).To(HavePrefix("the first expedition"))
-			Expect(d.trips[0].note.Visible()).To(BeTrue())
-			Expect(d.trips[1].note.Visible()).To(BeFalse())
+			Expect(d.trips[1].name.Text).To(Equal("Parepare Jungle (Kavaro)"))
+			Expect(d.trips[2].name.Text).To(Equal("Torles Mountains (Rovest)"))
+			Expect(d.trips).To(HaveLen(3))
+			Expect(d.noTrips.Visible()).To(BeFalse())
 		})
 
-		It("marks each condition as met in green and unmet in orange, as the monster stands", func() {
-			d.apply(dated(), nil) // the Pixie: life 111, fame 50, grade E; the first trip asks for 140, 40 and D
-			chips := d.trips[0].chips
-			Expect(chips[0].txt.Text).To(Equal("✗ LIF 140 or more (111)"))
-			Expect(chips[0].bg.FillColor).To(Equal(toneColors[ToneOrange]))
-			Expect(chips[1].txt.Text).To(Equal("✓ Fame 40 or more (50)"))
-			Expect(chips[1].bg.FillColor).To(Equal(toneColors[ToneLimeGreen]))
-			Expect(chips[2].txt.Text).To(Equal("✗ Grade D or higher (E)"))
-		})
+		It("shows only the trips that the monster is fit for, and says so where there are none", func() {
+			d.apply(dated(), nil) // the Pixie: life 111, fame 50, grade E, which is enough for none
+			for _, row := range d.trips {
+				Expect(row.object.Visible()).To(BeFalse())
+			}
+			Expect(d.noTrips.Visible()).To(BeTrue())
+			Expect(d.noTrips.Text).To(Equal("No expedition is open to this monster yet"))
 
-		It("says the energy the monster would start with, and the energy in the game only when it was read", func() {
-			d.apply(dated(), nil)
-			Expect(d.startEnergy.Text).To(HavePrefix("Starts with 140 energy"))
-			Expect(d.gameEnergy.Visible()).To(BeTrue())
-			Expect(d.gameEnergy.Text).To(Equal("Energy in the game now: -5 (it stays after an expedition)"))
-
-			d.apply(pixieProfile(), nil)
-			Expect(d.gameEnergy.Visible()).To(BeFalse())
-		})
-
-		It("says where the monster stands and how far it has walked, only when that was read", func() {
 			p := dated()
+			p.Monster.Stats[monster.Life], p.Monster.Fame, p.Monster.Rank = 150, 40, 2 // enough for Parepare, but not Torles or Kawrea
+			d.apply(p, nil)
+			Expect(d.trips[0].name.Text).To(Equal("Parepare Jungle (Kavaro)"))
+			Expect(d.trips[0].object.Visible()).To(BeTrue())
+			Expect(d.trips[1].object.Visible()).To(BeFalse())
+			Expect(d.noTrips.Visible()).To(BeFalse())
+		})
+
+		It("says nothing of the energy, the place on the map or what a step costs, which the Route page says", func() {
+			p := fit(dated())
 			p.Player.Ranch.Tile, p.Player.Ranch.Steps, p.Player.Ranch.WalkKnown = 911, 2, true
 			d.apply(p, nil)
-			Expect(d.gameWalk.Visible()).To(BeTrue())
-			Expect(d.gameWalk.Text).To(Equal("Position in the game now: X 0, Y 2 · 2 steps walked"))
-
-			d.apply(dated(), nil)
-			Expect(d.gameWalk.Visible()).To(BeFalse())
+			for _, text := range labelTexts(d.ranchBox) {
+				Expect(text).NotTo(ContainSubstring("nergy"))
+				Expect(text).NotTo(ContainSubstring("Position"))
+				Expect(text).NotTo(ContainSubstring("A step costs"))
+			}
 		})
 
 		It("is there for a game that keeps no date, in the order of the calendar, since the invitations are the same", func() {
-			d.apply(pixieProfile(), nil)
+			d.apply(fit(pixieProfile()), nil)
 			Expect(d.expeditionsBody.Visible()).To(BeTrue())
 			Expect(d.trips[0].name.Text).To(Equal("Torles Mountains (Rovest)"))
 			Expect(d.trips[0].when.Text).To(Equal("Feb wk 1"))
@@ -320,9 +400,6 @@ var _ = Describe("Dashboard", func() {
 		}
 		p.Player.Ranch.Energy, p.Player.Ranch.EnergyKnown = 123, true
 		d.apply(p, nil)
-		d.ranchPanel.OpenAll()
-		d.breeds.OpenAll()
-		d.expeditions.OpenAll()
 		Expect(os.MkdirAll(dir, 0o755)).To(Succeed())
 		f, err := os.Create(filepath.Join(dir, "ranch-panel.png"))
 		Expect(err).NotTo(HaveOccurred())

@@ -65,6 +65,10 @@ var _ = Describe("randomize", func() {
 			Expect(p.Ranch.Altar).To(BeNumerically("<=", player.MaxLevel(player.Altar)))
 			Expect(p.Ranch.Grade).To(BeNumerically("<=", 10))
 			Expect(p.Ranch.Date).To(BeNumerically(">=", 0))
+			// on the start of a trip, which is a tile of every map, so that the page of a trip has the monster to show
+			x, y := p.Ranch.Walked()
+			Expect([]int{x, y}).To(Equal([]int{0, 0}))
+			Expect(p.Ranch.WalkKnown).To(BeTrue())
 			Expect(m.Record.Wins).To(BeNumerically(">=", 0))
 		}
 	})

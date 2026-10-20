@@ -24,6 +24,7 @@ type Meter struct {
 	fill   *canvas.Rectangle
 	ratio  float64
 	marker bool
+	color  color.Color // the fill's colour whatever the tone, when it has one
 }
 
 func NewMeter() *Meter { return newMeter(false) }
@@ -43,13 +44,21 @@ func newMeter(marker bool) *Meter {
 	return m
 }
 
+// Colored makes the meter fill in a colour of its own, and not in the colour of the tone it is given.
+func (m *Meter) Colored(c color.Color) *Meter {
+	m.color, m.fill.FillColor = c, c
+	return m
+}
+
 // Set fills the meter to a ratio of 0 to 1, which it keeps to, in the colour of a tone: the accent colour for
-// none. A gauge's marker is always white.
+// none, or the colour the meter was given. A gauge's marker is always white.
 func (m *Meter) Set(ratio float64, tone Tone) {
 	m.ratio = min(max(ratio, 0), 1)
 	switch fill, ok := toneColors[tone]; {
 	case m.marker:
 		m.fill.FillColor = color.White
+	case m.color != nil:
+		m.fill.FillColor = m.color
 	case ok:
 		m.fill.FillColor = fill
 	default:

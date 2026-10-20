@@ -27,7 +27,6 @@ type ExpeditionPlaceQuery struct {
 	predicates  []predicate.ExpeditionPlace
 	withMap     *ExpeditionMapQuery
 	withChances *LootChanceQuery
-	withFKs     bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -336,12 +335,12 @@ func (_q *ExpeditionPlaceQuery) WithChances(opts ...func(*LootChanceQuery)) *Exp
 // Example:
 //
 //	var v []struct {
-//		Name string `json:"name,omitempty"`
+//		MapID int `json:"map_id,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.ExpeditionPlace.Query().
-//		GroupBy(expeditionplace.FieldName).
+//		GroupBy(expeditionplace.FieldMapID).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (_q *ExpeditionPlaceQuery) GroupBy(field string, fields ...string) *ExpeditionPlaceGroupBy {
@@ -359,11 +358,11 @@ func (_q *ExpeditionPlaceQuery) GroupBy(field string, fields ...string) *Expedit
 // Example:
 //
 //	var v []struct {
-//		Name string `json:"name,omitempty"`
+//		MapID int `json:"map_id,omitempty"`
 //	}
 //
 //	client.ExpeditionPlace.Query().
-//		Select(expeditionplace.FieldName).
+//		Select(expeditionplace.FieldMapID).
 //		Scan(ctx, &v)
 func (_q *ExpeditionPlaceQuery) Select(fields ...string) *ExpeditionPlaceSelect {
 	_q.ctx.Fields = append(_q.ctx.Fields, fields...)
@@ -407,19 +406,12 @@ func (_q *ExpeditionPlaceQuery) prepareQuery(ctx context.Context) error {
 func (_q *ExpeditionPlaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*ExpeditionPlace, error) {
 	var (
 		nodes       = []*ExpeditionPlace{}
-		withFKs     = _q.withFKs
 		_spec       = _q.querySpec()
 		loadedTypes = [2]bool{
 			_q.withMap != nil,
 			_q.withChances != nil,
 		}
 	)
-	if _q.withMap != nil {
-		withFKs = true
-	}
-	if withFKs {
-		_spec.Node.Columns = append(_spec.Node.Columns, expeditionplace.ForeignKeys...)
-	}
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*ExpeditionPlace).scanValues(nil, columns)
 	}
@@ -458,10 +450,7 @@ func (_q *ExpeditionPlaceQuery) loadMap(ctx context.Context, query *ExpeditionMa
 	ids := make([]int, 0, len(nodes))
 	nodeids := make(map[int][]*ExpeditionPlace)
 	for i := range nodes {
-		if nodes[i].map_id == nil {
-			continue
-		}
-		fk := *nodes[i].map_id
+		fk := nodes[i].MapID
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}
@@ -497,6 +486,9 @@ func (_q *ExpeditionPlaceQuery) loadChances(ctx context.Context, query *LootChan
 		}
 	}
 	query.withFKs = true
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(lootchance.FieldPlaceID)
+	}
 	query.Where(predicate.LootChance(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(expeditionplace.ChancesColumn), fks...))
 	}))
@@ -505,13 +497,10 @@ func (_q *ExpeditionPlaceQuery) loadChances(ctx context.Context, query *LootChan
 		return err
 	}
 	for _, n := range neighbors {
-		fk := n.place_id
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "place_id" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
+		fk := n.PlaceID
+		node, ok := nodeids[fk]
 		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "place_id" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "place_id" returned %v for node %v`, fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -542,6 +531,9 @@ func (_q *ExpeditionPlaceQuery) querySpec() *sqlgraph.QuerySpec {
 			if fields[i] != expeditionplace.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
+		}
+		if _q.withMap != nil {
+			_spec.Node.AddColumnOnce(expeditionplace.FieldMapID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {

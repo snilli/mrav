@@ -17,6 +17,8 @@ type ExpeditionPlace struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID int `json:"id,omitempty"`
+	// MapID holds the value of the "map_id" field.
+	MapID int `json:"map_id,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
 	// X holds the value of the "x" field.
@@ -30,7 +32,6 @@ type ExpeditionPlace struct {
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the ExpeditionPlaceQuery when eager-loading is set.
 	Edges        ExpeditionPlaceEdges `json:"edges"`
-	map_id       *int
 	selectValues sql.SelectValues
 }
 
@@ -70,12 +71,10 @@ func (*ExpeditionPlace) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case expeditionplace.FieldID, expeditionplace.FieldX, expeditionplace.FieldY:
+		case expeditionplace.FieldID, expeditionplace.FieldMapID, expeditionplace.FieldX, expeditionplace.FieldY:
 			values[i] = new(sql.NullInt64)
 		case expeditionplace.FieldName, expeditionplace.FieldBuilding, expeditionplace.FieldStat:
 			values[i] = new(sql.NullString)
-		case expeditionplace.ForeignKeys[0]: // map_id
-			values[i] = new(sql.NullInt64)
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -97,6 +96,12 @@ func (_m *ExpeditionPlace) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
 			_m.ID = int(value.Int64)
+		case expeditionplace.FieldMapID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field map_id", values[i])
+			} else if value.Valid {
+				_m.MapID = int(value.Int64)
+			}
 		case expeditionplace.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
@@ -126,13 +131,6 @@ func (_m *ExpeditionPlace) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field stat", values[i])
 			} else if value.Valid {
 				_m.Stat = expeditionplace.Stat(value.String)
-			}
-		case expeditionplace.ForeignKeys[0]:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for edge-field map_id", value)
-			} else if value.Valid {
-				_m.map_id = new(int)
-				*_m.map_id = int(value.Int64)
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -180,6 +178,9 @@ func (_m *ExpeditionPlace) String() string {
 	var builder strings.Builder
 	builder.WriteString("ExpeditionPlace(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
+	builder.WriteString("map_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.MapID))
+	builder.WriteString(", ")
 	builder.WriteString("name=")
 	builder.WriteString(_m.Name)
 	builder.WriteString(", ")

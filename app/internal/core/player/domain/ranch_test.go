@@ -20,6 +20,31 @@ var _ = Describe("Ranch", func() {
 		Entry("week 860 is March, week 1, of 1018: the reading that this was worked out from", 860, domain.Date{Year: 1018, Month: 3, Week: 1}),
 	)
 
+	DescribeTable("moves the date to a month and a week of the year that it is in, or of the next where the game had not begun by then",
+		func(weeks, month, week, wantYear int) {
+			got := at(weeks).InWeek(month, week)
+			Expect(got.Known).To(BeTrue())
+			Expect(got.Calendar()).To(Equal(domain.Date{Year: wantYear, Month: month, Week: week}))
+		},
+		Entry("February, week 1, in the year of March, week 4 of 1004", 191, 2, 1, 1004),
+		Entry("December, week 4, of that year", 191, 12, 4, 1004),
+		Entry("the week that it is in already", 191, 3, 4, 1004),
+		Entry("April, week 1, of the first year, which is the first week of the game", 0, 4, 1, 1000),
+		Entry("January, week 1, of the first year, which is before the game began, so of the next", 0, 1, 1, 1001),
+	)
+
+	DescribeTable("puts the monster on a tile of an expedition's map, as far right and up of the start as it is told, and knows where it is",
+		func(x, y int) {
+			got := domain.Ranch{Known: true}.WalkedTo(x, y)
+			gotX, gotY := got.Walked()
+			Expect([]int{gotX, gotY}).To(Equal([]int{x, y}))
+			Expect(got.WalkKnown).To(BeTrue())
+		},
+		Entry("on the start", 0, 0),
+		Entry("right and up", 3, 5),
+		Entry("left and below, which a monster can be", -4, -2),
+	)
+
 	It("writes a date as the game would: the year, the month and the week", func() {
 		Expect(domain.Date{Year: 1002, Month: 5, Week: 4}.String()).To(Equal("Y1002 May wk 4"))
 		Expect(domain.Date{Year: 1000, Month: 1, Week: 1}.String()).To(Equal("Y1000 Jan wk 1"))

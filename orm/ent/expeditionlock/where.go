@@ -54,6 +54,11 @@ func IDLTE(id int) predicate.ExpeditionLock {
 	return predicate.ExpeditionLock(sql.FieldLTE(FieldID, id))
 }
 
+// MapID applies equality check predicate on the "map_id" field. It's identical to MapIDEQ.
+func MapID(v int) predicate.ExpeditionLock {
+	return predicate.ExpeditionLock(sql.FieldEQ(FieldMapID, v))
+}
+
 // X applies equality check predicate on the "x" field. It's identical to XEQ.
 func X(v int) predicate.ExpeditionLock {
 	return predicate.ExpeditionLock(sql.FieldEQ(FieldX, v))
@@ -67,6 +72,26 @@ func Y(v int) predicate.ExpeditionLock {
 // MinInt applies equality check predicate on the "min_int" field. It's identical to MinIntEQ.
 func MinInt(v int) predicate.ExpeditionLock {
 	return predicate.ExpeditionLock(sql.FieldEQ(FieldMinInt, v))
+}
+
+// MapIDEQ applies the EQ predicate on the "map_id" field.
+func MapIDEQ(v int) predicate.ExpeditionLock {
+	return predicate.ExpeditionLock(sql.FieldEQ(FieldMapID, v))
+}
+
+// MapIDNEQ applies the NEQ predicate on the "map_id" field.
+func MapIDNEQ(v int) predicate.ExpeditionLock {
+	return predicate.ExpeditionLock(sql.FieldNEQ(FieldMapID, v))
+}
+
+// MapIDIn applies the In predicate on the "map_id" field.
+func MapIDIn(vs ...int) predicate.ExpeditionLock {
+	return predicate.ExpeditionLock(sql.FieldIn(FieldMapID, vs...))
+}
+
+// MapIDNotIn applies the NotIn predicate on the "map_id" field.
+func MapIDNotIn(vs ...int) predicate.ExpeditionLock {
+	return predicate.ExpeditionLock(sql.FieldNotIn(FieldMapID, vs...))
 }
 
 // XEQ applies the EQ predicate on the "x" field.

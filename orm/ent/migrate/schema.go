@@ -69,9 +69,9 @@ var (
 		},
 		Indexes: []*schema.Index{
 			{
-				Name:    "expeditionlock_x_y_map_id",
+				Name:    "expeditionlock_map_id_x_y",
 				Unique:  true,
-				Columns: []*schema.Column{ExpeditionLocksColumns[1], ExpeditionLocksColumns[2], ExpeditionLocksColumns[4]},
+				Columns: []*schema.Column{ExpeditionLocksColumns[4], ExpeditionLocksColumns[1], ExpeditionLocksColumns[2]},
 			},
 		},
 	}
@@ -82,6 +82,7 @@ var (
 		{Name: "rows", Type: field.TypeString, Size: 2147483647},
 		{Name: "start_x", Type: field.TypeInt},
 		{Name: "start_y", Type: field.TypeInt},
+		{Name: "portals", Type: field.TypeJSON, Nullable: true},
 	}
 	// ExpeditionMapsTable holds the schema information for the "expedition_maps" table.
 	ExpeditionMapsTable = &schema.Table{
@@ -114,9 +115,9 @@ var (
 		},
 		Indexes: []*schema.Index{
 			{
-				Name:    "expeditionplace_name_map_id",
+				Name:    "expeditionplace_map_id_name",
 				Unique:  true,
-				Columns: []*schema.Column{ExpeditionPlacesColumns[1], ExpeditionPlacesColumns[6]},
+				Columns: []*schema.Column{ExpeditionPlacesColumns[6], ExpeditionPlacesColumns[1]},
 			},
 		},
 	}
@@ -186,6 +187,11 @@ var (
 				Unique:  true,
 				Columns: []*schema.Column{LootChancesColumns[1], LootChancesColumns[2], LootChancesColumns[3], LootChancesColumns[6]},
 			},
+			{
+				Name:    "lootchance_place_id_good_min_stat",
+				Unique:  false,
+				Columns: []*schema.Column{LootChancesColumns[6], LootChancesColumns[1], LootChancesColumns[4]},
+			},
 		},
 	}
 	// MovesColumns holds the columns for the "moves" table.
@@ -205,6 +211,7 @@ var (
 		{Name: "description", Type: field.TypeString, Size: 2147483647},
 		{Name: "unlock_never", Type: field.TypeBool},
 		{Name: "unlock", Type: field.TypeJSON},
+		{Name: "acquire", Type: field.TypeJSON, Nullable: true},
 		{Name: "icon", Type: field.TypeString},
 		{Name: "genus_id", Type: field.TypeInt},
 	}
@@ -216,7 +223,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "moves_genus_moves",
-				Columns:    []*schema.Column{MovesColumns[16]},
+				Columns:    []*schema.Column{MovesColumns[17]},
 				RefColumns: []*schema.Column{GenusColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -225,12 +232,12 @@ var (
 			{
 				Name:    "move_genus_id_memory_slot",
 				Unique:  true,
-				Columns: []*schema.Column{MovesColumns[16], MovesColumns[1]},
+				Columns: []*schema.Column{MovesColumns[17], MovesColumns[1]},
 			},
 			{
 				Name:    "move_genus_id_col_row",
 				Unique:  true,
-				Columns: []*schema.Column{MovesColumns[16], MovesColumns[2], MovesColumns[3]},
+				Columns: []*schema.Column{MovesColumns[17], MovesColumns[2], MovesColumns[3]},
 			},
 		},
 	}

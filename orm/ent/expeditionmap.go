@@ -3,8 +3,10 @@
 package ent
 
 import (
+	"encoding/json"
 	"fmt"
 	"orm/ent/expeditionmap"
+	"orm/stored"
 	"strings"
 
 	"entgo.io/ent"
@@ -24,6 +26,8 @@ type ExpeditionMap struct {
 	StartX int `json:"start_x,omitempty"`
 	// StartY holds the value of the "start_y" field.
 	StartY int `json:"start_y,omitempty"`
+	// Portals holds the value of the "portals" field.
+	Portals []stored.Portal `json:"portals,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the ExpeditionMapQuery when eager-loading is set.
 	Edges        ExpeditionMapEdges `json:"edges"`
@@ -64,6 +68,8 @@ func (*ExpeditionMap) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case expeditionmap.FieldPortals:
+			values[i] = new([]byte)
 		case expeditionmap.FieldID, expeditionmap.FieldStartX, expeditionmap.FieldStartY:
 			values[i] = new(sql.NullInt64)
 		case expeditionmap.FieldName, expeditionmap.FieldRows:
@@ -112,6 +118,14 @@ func (_m *ExpeditionMap) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field start_y", values[i])
 			} else if value.Valid {
 				_m.StartY = int(value.Int64)
+			}
+		case expeditionmap.FieldPortals:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field portals", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.Portals); err != nil {
+					return fmt.Errorf("unmarshal field portals: %w", err)
+				}
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -170,6 +184,9 @@ func (_m *ExpeditionMap) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("start_y=")
 	builder.WriteString(fmt.Sprintf("%v", _m.StartY))
+	builder.WriteString(", ")
+	builder.WriteString("portals=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Portals))
 	builder.WriteByte(')')
 	return builder.String()
 }

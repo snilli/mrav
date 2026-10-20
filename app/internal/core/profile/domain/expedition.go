@@ -1,9 +1,6 @@
 package domain
 
 import (
-	"fmt"
-	"strconv"
-
 	monster "app/internal/core/monster/domain"
 )
 
@@ -24,33 +21,53 @@ type Expedition struct {
 	Name        string
 	Host        string // who invites the monster, where the guide says
 	Month, Week int
-	Life, Fame  int  // the least a monster needs of each
-	Rank        int  // the lowest grade of the monster, from 0 for E to 5 for S
-	First       bool // the first expedition, which is made once and unlocks all the others
+	Life, Fame  int // the least a monster needs of each
+	Rank        int // the lowest grade of the monster, from 0 for E to 5 for S
 }
 
-// Expeditions are the trips, in the order of the calendar.
+// Expeditions are the trips, in the order of the calendar. The first expedition, Phoenix Volcano Adventure, is not one of
+// them: it can be made once only, and the game does not say, where this viewer reads it, whether it was.
 var Expeditions = []Expedition{
 	{Name: "Torles Mountains", Host: "Rovest", Month: 2, Week: 1, Life: 210, Fame: 50, Rank: 2},
-	{Name: "Phoenix Volcano Adventure", Month: 6, Week: 1, Life: 140, Fame: 40, Rank: 1, First: true},
 	{Name: "Kawrea Volcano", Host: "Dr. Talico", Month: 6, Week: 1, Life: 280, Fame: 50, Rank: 3},
 	{Name: "Parepare Jungle", Host: "Kavaro", Month: 10, Week: 1, Life: 140, Fame: 40, Rank: 2},
 }
 
-// Condition is one thing an invitation asks of the monster, and where the monster stands on it.
+// ConditionKind is what an invitation asks of a monster.
+type ConditionKind int
+
+const (
+	CondLife ConditionKind = iota
+	CondFame
+	CondGrade
+)
+
+// Condition is one thing an invitation asks of the monster: the least it must have, and what it has. A grade is its rank,
+// from 0 for E to 5 for S.
 type Condition struct {
-	Text string
-	Have string
-	Met  bool
+	Kind       ConditionKind
+	Need, Have int
+}
+
+// Met says whether the monster has enough.
+func (c Condition) Met() bool { return c.Have >= c.Need }
+
+// Fit says whether the monster has enough for every condition of the invitation.
+func (e Expedition) Fit(m monster.Monster) bool {
+	for _, c := range e.Conditions(m) {
+		if !c.Met() {
+			return false
+		}
+	}
+	return true
 }
 
 // Conditions are what the invitation asks of a monster: its life, its fame and its grade.
 func (e Expedition) Conditions(m monster.Monster) []Condition {
-	life := m.Stats[monster.Life]
 	return []Condition{
-		{Text: fmt.Sprintf("LIF %d or more", e.Life), Have: strconv.Itoa(life), Met: life >= e.Life},
-		{Text: fmt.Sprintf("Fame %d or more", e.Fame), Have: strconv.Itoa(m.Fame), Met: m.Fame >= e.Fame},
-		{Text: fmt.Sprintf("Grade %s or higher", RankLetter(e.Rank)), Have: RankLetter(m.Rank), Met: m.Rank >= e.Rank},
+		{Kind: CondLife, Need: e.Life, Have: m.Stats[monster.Life]},
+		{Kind: CondFame, Need: e.Fame, Have: m.Fame},
+		{Kind: CondGrade, Need: e.Rank, Have: m.Rank},
 	}
 }
 

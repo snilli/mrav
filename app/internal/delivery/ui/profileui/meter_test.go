@@ -1,6 +1,8 @@
 package profileui
 
 import (
+	"image/color"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/test"
 	. "github.com/onsi/ginkgo/v2"
@@ -45,6 +47,19 @@ var _ = Describe("Meter", func() {
 		m := sized(NewMeter())
 		m.Set(0.5, ToneNone)
 		Expect(m.fill.FillColor).To(Equal(toneColors[ToneAccent]))
+	})
+
+	It("fills in the colour it was given, whatever the tone, until it is a gauge, which marks in white", func() {
+		blue := color.NRGBA{B: 255, A: 255}
+		m := sized(NewMeter().Colored(blue))
+		m.Set(0.5, ToneRed)
+		Expect(m.fill.FillColor).To(Equal(blue))
+		m.Set(0.5, ToneNone)
+		Expect(m.fill.FillColor).To(Equal(blue))
+
+		g := sized(NewGauge().Colored(blue))
+		g.Set(0.5, ToneRed)
+		Expect(g.fill.FillColor).To(Equal(color.White))
 	})
 
 	It("grows with the width it is given", func() {

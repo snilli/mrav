@@ -83,8 +83,8 @@ func randomize(rng *rand.Rand, genera []domain.Genus, m *monster.Monster, p *pla
 		Altar: rng.IntN(player.MaxLevel(player.Altar) + 1),
 		// an expedition's energy, which the game can take a little below nothing
 		Energy: rng.IntN(300) - 10, EnergyKnown: true,
-		Tile: rng.IntN(32 * 32), Steps: rng.IntN(100), WalkKnown: true,
-	}
+		Steps: rng.IntN(100),
+	}.WalkedTo(0, 0) // on the start of a trip, a tile of every map
 	for breed := range p.Ranch.Unlocked {
 		p.Ranch.Unlocked[breed] = flag()
 	}

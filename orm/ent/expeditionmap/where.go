@@ -284,6 +284,16 @@ func StartYLTE(v int) predicate.ExpeditionMap {
 	return predicate.ExpeditionMap(sql.FieldLTE(FieldStartY, v))
 }
 
+// PortalsIsNil applies the IsNil predicate on the "portals" field.
+func PortalsIsNil() predicate.ExpeditionMap {
+	return predicate.ExpeditionMap(sql.FieldIsNull(FieldPortals))
+}
+
+// PortalsNotNil applies the NotNil predicate on the "portals" field.
+func PortalsNotNil() predicate.ExpeditionMap {
+	return predicate.ExpeditionMap(sql.FieldNotNull(FieldPortals))
+}
+
 // HasPlaces applies the HasEdge predicate on the "places" edge.
 func HasPlaces() predicate.ExpeditionMap {
 	return predicate.ExpeditionMap(func(s *sql.Selector) {

@@ -94,6 +94,16 @@ var _ = Describe("newWindow", func() {
 		Expect(w.Content()).NotTo(BeNil())
 		Expect(w.Content()).NotTo(BeAssignableToTypeOf(&container.AppTabs{}))
 	})
+
+	It("opens at startSize, which is smaller than the screen of the game, to sit beside it and not cover it", func() {
+		a := test.NewTempApp(GinkgoTB())
+		p := newParts(a,
+			mockprofile.NewMockProfileService(GinkgoT()), mockmove.NewMockMoveService(GinkgoT()),
+			mocktraining.NewMockTrainingService(GinkgoT()), mockitem.NewMockItemService(GinkgoT()), nil)
+
+		w := newWindow(a, p, nil)
+		Expect(w.Canvas().Size()).To(Equal(startSize))
+	})
 })
 
 var _ = Describe("loaders", func() {
@@ -103,7 +113,7 @@ var _ = Describe("loaders", func() {
 			mockprofile.NewMockProfileService(GinkgoT()), mockmove.NewMockMoveService(GinkgoT()),
 			mocktraining.NewMockTrainingService(GinkgoT()), mockitem.NewMockItemService(GinkgoT()), nil)
 
-		Expect(loaders(p)).To(ConsistOf(p.Dashboard, p.Moves, p.Training, p.Items, p.Route))
+		Expect(loaders(p)).To(ConsistOf(p.Dashboard, p.Moves, p.Training, p.Items, p.Route, p.Errantry))
 	})
 })
 

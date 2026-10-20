@@ -38,3 +38,16 @@ var _ = Describe("UnlockRule.Holds", func() {
 		Entry("never wins over conditions", domain.UnlockRule{Never: true, All: []domain.Condition{domain.NatureAtLeast{Min: 0}}}, false),
 	)
 })
+
+var _ = Describe("UnlockRule.Nature", func() {
+	DescribeTable("says whether a move asks for a good nature, a bad one or neither, by the nature its rule wants",
+		func(r domain.UnlockRule, want domain.Nature) { Expect(r.Nature()).To(Equal(want)) },
+		Entry("no condition", domain.UnlockRule{}, domain.NatureNone),
+		Entry("a nature of at least 20 is a good one", rule(domain.NatureAtLeast{Min: 20}), domain.NatureGood),
+		Entry("a nature of at most -20 is a bad one", rule(domain.NatureAtMost{Max: -20}), domain.NatureBad),
+		Entry("at least 0 does not ask for a good one", rule(domain.NatureAtLeast{Min: 0}), domain.NatureNone),
+		Entry("at most 0 does not ask for a bad one", rule(domain.NatureAtMost{Max: 0}), domain.NatureNone),
+		Entry("other conditions say nothing of it", rule(domain.MoveUsedAtLeast{Slot: 3, Min: 30}), domain.NatureNone),
+		Entry("it is found among other conditions", rule(domain.MoveUsedAtLeast{Slot: 3, Min: 30}, domain.NatureAtMost{Max: -50}), domain.NatureBad),
+	)
+})

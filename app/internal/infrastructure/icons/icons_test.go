@@ -31,8 +31,6 @@ var _ = Describe("icons", func() {
 		},
 		Entry("an empty cell", "No_Move", 48, 32),
 		Entry("the selection", "hilight", 48, 32),
-		Entry("learned", "skillchecked", 16, 16),
-		Entry("can learn", "skillget", 16, 16),
 	)
 
 	It("serves a move icon as a 48x32 PNG", func() {

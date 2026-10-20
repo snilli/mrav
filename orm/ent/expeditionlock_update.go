@@ -28,6 +28,20 @@ func (_u *ExpeditionLockUpdate) Where(ps ...predicate.ExpeditionLock) *Expeditio
 	return _u
 }
 
+// SetMapID sets the "map_id" field.
+func (_u *ExpeditionLockUpdate) SetMapID(v int) *ExpeditionLockUpdate {
+	_u.mutation.SetMapID(v)
+	return _u
+}
+
+// SetNillableMapID sets the "map_id" field if the given value is not nil.
+func (_u *ExpeditionLockUpdate) SetNillableMapID(v *int) *ExpeditionLockUpdate {
+	if v != nil {
+		_u.SetMapID(*v)
+	}
+	return _u
+}
+
 // SetX sets the "x" field.
 func (_u *ExpeditionLockUpdate) SetX(v int) *ExpeditionLockUpdate {
 	_u.mutation.ResetX()
@@ -88,12 +102,6 @@ func (_u *ExpeditionLockUpdate) SetNillableMinInt(v *int) *ExpeditionLockUpdate 
 // AddMinInt adds value to the "min_int" field.
 func (_u *ExpeditionLockUpdate) AddMinInt(v int) *ExpeditionLockUpdate {
 	_u.mutation.AddMinInt(v)
-	return _u
-}
-
-// SetMapID sets the "map" edge to the ExpeditionMap entity by ID.
-func (_u *ExpeditionLockUpdate) SetMapID(id int) *ExpeditionLockUpdate {
-	_u.mutation.SetMapID(id)
 	return _u
 }
 
@@ -242,6 +250,20 @@ type ExpeditionLockUpdateOne struct {
 	mutation *ExpeditionLockMutation
 }
 
+// SetMapID sets the "map_id" field.
+func (_u *ExpeditionLockUpdateOne) SetMapID(v int) *ExpeditionLockUpdateOne {
+	_u.mutation.SetMapID(v)
+	return _u
+}
+
+// SetNillableMapID sets the "map_id" field if the given value is not nil.
+func (_u *ExpeditionLockUpdateOne) SetNillableMapID(v *int) *ExpeditionLockUpdateOne {
+	if v != nil {
+		_u.SetMapID(*v)
+	}
+	return _u
+}
+
 // SetX sets the "x" field.
 func (_u *ExpeditionLockUpdateOne) SetX(v int) *ExpeditionLockUpdateOne {
 	_u.mutation.ResetX()
@@ -302,12 +324,6 @@ func (_u *ExpeditionLockUpdateOne) SetNillableMinInt(v *int) *ExpeditionLockUpda
 // AddMinInt adds value to the "min_int" field.
 func (_u *ExpeditionLockUpdateOne) AddMinInt(v int) *ExpeditionLockUpdateOne {
 	_u.mutation.AddMinInt(v)
-	return _u
-}
-
-// SetMapID sets the "map" edge to the ExpeditionMap entity by ID.
-func (_u *ExpeditionLockUpdateOne) SetMapID(id int) *ExpeditionLockUpdateOne {
-	_u.mutation.SetMapID(id)
 	return _u
 }
 

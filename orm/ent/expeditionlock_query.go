@@ -24,7 +24,6 @@ type ExpeditionLockQuery struct {
 	inters     []Interceptor
 	predicates []predicate.ExpeditionLock
 	withMap    *ExpeditionMapQuery
-	withFKs    bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -299,12 +298,12 @@ func (_q *ExpeditionLockQuery) WithMap(opts ...func(*ExpeditionMapQuery)) *Exped
 // Example:
 //
 //	var v []struct {
-//		X int `json:"x,omitempty"`
+//		MapID int `json:"map_id,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.ExpeditionLock.Query().
-//		GroupBy(expeditionlock.FieldX).
+//		GroupBy(expeditionlock.FieldMapID).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (_q *ExpeditionLockQuery) GroupBy(field string, fields ...string) *ExpeditionLockGroupBy {
@@ -322,11 +321,11 @@ func (_q *ExpeditionLockQuery) GroupBy(field string, fields ...string) *Expediti
 // Example:
 //
 //	var v []struct {
-//		X int `json:"x,omitempty"`
+//		MapID int `json:"map_id,omitempty"`
 //	}
 //
 //	client.ExpeditionLock.Query().
-//		Select(expeditionlock.FieldX).
+//		Select(expeditionlock.FieldMapID).
 //		Scan(ctx, &v)
 func (_q *ExpeditionLockQuery) Select(fields ...string) *ExpeditionLockSelect {
 	_q.ctx.Fields = append(_q.ctx.Fields, fields...)
@@ -370,18 +369,11 @@ func (_q *ExpeditionLockQuery) prepareQuery(ctx context.Context) error {
 func (_q *ExpeditionLockQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*ExpeditionLock, error) {
 	var (
 		nodes       = []*ExpeditionLock{}
-		withFKs     = _q.withFKs
 		_spec       = _q.querySpec()
 		loadedTypes = [1]bool{
 			_q.withMap != nil,
 		}
 	)
-	if _q.withMap != nil {
-		withFKs = true
-	}
-	if withFKs {
-		_spec.Node.Columns = append(_spec.Node.Columns, expeditionlock.ForeignKeys...)
-	}
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*ExpeditionLock).scanValues(nil, columns)
 	}
@@ -413,10 +405,7 @@ func (_q *ExpeditionLockQuery) loadMap(ctx context.Context, query *ExpeditionMap
 	ids := make([]int, 0, len(nodes))
 	nodeids := make(map[int][]*ExpeditionLock)
 	for i := range nodes {
-		if nodes[i].map_id == nil {
-			continue
-		}
-		fk := *nodes[i].map_id
+		fk := nodes[i].MapID
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}
@@ -466,6 +455,9 @@ func (_q *ExpeditionLockQuery) querySpec() *sqlgraph.QuerySpec {
 			if fields[i] != expeditionlock.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
+		}
+		if _q.withMap != nil {
+			_spec.Node.AddColumnOnce(expeditionlock.FieldMapID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {

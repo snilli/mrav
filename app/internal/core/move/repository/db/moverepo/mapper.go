@@ -15,6 +15,10 @@ func toMove(e *ent.Move, genus monster.Genus) (movedomain.Move, error) {
 	if err != nil {
 		return movedomain.Move{}, err
 	}
+	acquire, err := domainAcquire(e.Acquire)
+	if err != nil {
+		return movedomain.Move{}, err
+	}
 	return movedomain.Move{
 		Genus:       genus,
 		MemorySlot:  e.MemorySlot,
@@ -30,8 +34,45 @@ func toMove(e *ent.Move, genus monster.Genus) (movedomain.Move, error) {
 		Extra:       domainExtra(e.Extra),
 		Description: e.Description,
 		Unlock:      movedomain.UnlockRule{Never: e.UnlockNever, All: conds},
+		Acquire:     acquire,
 		Icon:        e.Icon,
 	}, nil
+}
+
+// errantryPlaces is how many places the errantry has, which an entry of moves.acquire names from 1.
+const errantryPlaces = 5
+
+// domainAcquire reads the JSON shape of moves.acquire back into the places that teach a move. No entries is nil. A place that
+// the errantry does not have, or a gate that does not rise, is an error.
+func domainAcquire(es []stored.Acquire) ([]movedomain.Acquire, error) {
+	if len(es) == 0 {
+		return nil, nil
+	}
+	out := make([]movedomain.Acquire, len(es))
+	for i, e := range es {
+		if e.Place < 1 || e.Place > errantryPlaces {
+			return nil, fmt.Errorf("acquire entry %d: place %d is not one of the %d places", i, e.Place, errantryPlaces)
+		}
+		a := movedomain.Acquire{
+			Place: e.Place, Priority: e.Priority, Auto: e.Auto, Nature: e.Nature,
+			SubIn: genera(e.SubIn), SubNotIn: genera(e.SubNotIn),
+		}
+		if e.Chain != nil {
+			a.Chain = &movedomain.Chain{Slot: e.Chain.Slot, Uses: e.Chain.Uses}
+		}
+		for _, g := range e.Gates {
+			if g.Max <= g.Min {
+				return nil, fmt.Errorf("acquire entry %d: gate from %d to %d does not rise", i, g.Min, g.Max)
+			}
+			stats := make([]monster.Stat, len(g.Stats))
+			for k, s := range g.Stats {
+				stats[k] = monster.Stat(s)
+			}
+			a.Gates = append(a.Gates, movedomain.Gate{Stats: stats, Min: g.Min, Max: g.Max})
+		}
+		out[i] = a
+	}
+	return out, nil
 }
 
 func domainExtra(e *stored.Extra) *movedomain.Extra {
@@ -47,6 +88,9 @@ func domainExtra(e *stored.Extra) *movedomain.Extra {
 }
 
 func genera(ids []int) []monster.Genus {
+	if len(ids) == 0 {
+		return nil
+	}
 	out := make([]monster.Genus, len(ids))
 	for i, id := range ids {
 		out[i] = monster.Genus(id)

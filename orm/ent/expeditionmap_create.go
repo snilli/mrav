@@ -9,6 +9,7 @@ import (
 	"orm/ent/expeditionlock"
 	"orm/ent/expeditionmap"
 	"orm/ent/expeditionplace"
+	"orm/stored"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -44,6 +45,12 @@ func (_c *ExpeditionMapCreate) SetStartX(v int) *ExpeditionMapCreate {
 // SetStartY sets the "start_y" field.
 func (_c *ExpeditionMapCreate) SetStartY(v int) *ExpeditionMapCreate {
 	_c.mutation.SetStartY(v)
+	return _c
+}
+
+// SetPortals sets the "portals" field.
+func (_c *ExpeditionMapCreate) SetPortals(v []stored.Portal) *ExpeditionMapCreate {
+	_c.mutation.SetPortals(v)
 	return _c
 }
 
@@ -185,6 +192,10 @@ func (_c *ExpeditionMapCreate) createSpec() (*ExpeditionMap, *sqlgraph.CreateSpe
 	if value, ok := _c.mutation.StartY(); ok {
 		_spec.SetField(expeditionmap.FieldStartY, field.TypeInt, value)
 		_node.StartY = value
+	}
+	if value, ok := _c.mutation.Portals(); ok {
+		_spec.SetField(expeditionmap.FieldPortals, field.TypeJSON, value)
+		_node.Portals = value
 	}
 	if nodes := _c.mutation.PlacesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -330,6 +341,24 @@ func (u *ExpeditionMapUpsert) AddStartY(v int) *ExpeditionMapUpsert {
 	return u
 }
 
+// SetPortals sets the "portals" field.
+func (u *ExpeditionMapUpsert) SetPortals(v []stored.Portal) *ExpeditionMapUpsert {
+	u.Set(expeditionmap.FieldPortals, v)
+	return u
+}
+
+// UpdatePortals sets the "portals" field to the value that was provided on create.
+func (u *ExpeditionMapUpsert) UpdatePortals() *ExpeditionMapUpsert {
+	u.SetExcluded(expeditionmap.FieldPortals)
+	return u
+}
+
+// ClearPortals clears the value of the "portals" field.
+func (u *ExpeditionMapUpsert) ClearPortals() *ExpeditionMapUpsert {
+	u.SetNull(expeditionmap.FieldPortals)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create.
 // Using this option is equivalent to using:
 //
@@ -437,6 +466,27 @@ func (u *ExpeditionMapUpsertOne) AddStartY(v int) *ExpeditionMapUpsertOne {
 func (u *ExpeditionMapUpsertOne) UpdateStartY() *ExpeditionMapUpsertOne {
 	return u.Update(func(s *ExpeditionMapUpsert) {
 		s.UpdateStartY()
+	})
+}
+
+// SetPortals sets the "portals" field.
+func (u *ExpeditionMapUpsertOne) SetPortals(v []stored.Portal) *ExpeditionMapUpsertOne {
+	return u.Update(func(s *ExpeditionMapUpsert) {
+		s.SetPortals(v)
+	})
+}
+
+// UpdatePortals sets the "portals" field to the value that was provided on create.
+func (u *ExpeditionMapUpsertOne) UpdatePortals() *ExpeditionMapUpsertOne {
+	return u.Update(func(s *ExpeditionMapUpsert) {
+		s.UpdatePortals()
+	})
+}
+
+// ClearPortals clears the value of the "portals" field.
+func (u *ExpeditionMapUpsertOne) ClearPortals() *ExpeditionMapUpsertOne {
+	return u.Update(func(s *ExpeditionMapUpsert) {
+		s.ClearPortals()
 	})
 }
 
@@ -710,6 +760,27 @@ func (u *ExpeditionMapUpsertBulk) AddStartY(v int) *ExpeditionMapUpsertBulk {
 func (u *ExpeditionMapUpsertBulk) UpdateStartY() *ExpeditionMapUpsertBulk {
 	return u.Update(func(s *ExpeditionMapUpsert) {
 		s.UpdateStartY()
+	})
+}
+
+// SetPortals sets the "portals" field.
+func (u *ExpeditionMapUpsertBulk) SetPortals(v []stored.Portal) *ExpeditionMapUpsertBulk {
+	return u.Update(func(s *ExpeditionMapUpsert) {
+		s.SetPortals(v)
+	})
+}
+
+// UpdatePortals sets the "portals" field to the value that was provided on create.
+func (u *ExpeditionMapUpsertBulk) UpdatePortals() *ExpeditionMapUpsertBulk {
+	return u.Update(func(s *ExpeditionMapUpsert) {
+		s.UpdatePortals()
+	})
+}
+
+// ClearPortals clears the value of the "portals" field.
+func (u *ExpeditionMapUpsertBulk) ClearPortals() *ExpeditionMapUpsertBulk {
+	return u.Update(func(s *ExpeditionMapUpsert) {
+		s.ClearPortals()
 	})
 }
 

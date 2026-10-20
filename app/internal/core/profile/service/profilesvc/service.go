@@ -44,12 +44,15 @@ func (s *Service) Current(ctx context.Context) (domain.Profile, error) {
 	if err != nil {
 		return domain.Profile{}, err
 	}
-	// The worth of a search of each place of the maps is the database's to work out, for how this monster searches.
-	maps, err := s.repo.ListExpeditionMaps(ctx, domain.Searcher{
-		Intelligence: m.Stats[monster.Int], Skill: m.Stats[monster.Skill], GoodNature: m.Nature > 0,
-	})
+	shared, err := s.repo.ListExpeditionMaps(ctx)
 	if err != nil {
 		return domain.Profile{}, err
+	}
+	// What a search of each place turns up is how this monster would search it: by its intelligence and skill, and its nature.
+	by := domain.Searcher{Intelligence: m.Stats[monster.Int], Skill: m.Stats[monster.Skill], GoodNature: m.Nature > 0}
+	var maps []domain.ExpeditionMap
+	for _, sm := range shared { // copies, for the maps that the repository gave are shared
+		maps = append(maps, sm.For(by))
 	}
 
 	drug := "---"

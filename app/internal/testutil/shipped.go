@@ -15,6 +15,11 @@ var ErrNoShippedDB = errors.New("no data/mrav.sqlite above the working directory
 // OpenShipped opens the database the project ships, data/mrav.sqlite, which it finds by looking up from the
 // directory of the test. Close it when done.
 func OpenShipped(ctx context.Context) (*orm.Client, error) {
+	return OpenShippedTraced(ctx, nil)
+}
+
+// OpenShippedTraced is OpenShipped with trace told of every statement that the repositories send through it.
+func OpenShippedTraced(ctx context.Context, trace func(query string, args []any)) (*orm.Client, error) {
 	dir, err := os.Getwd()
 	if err != nil {
 		return nil, err
@@ -22,7 +27,10 @@ func OpenShipped(ctx context.Context) (*orm.Client, error) {
 	for {
 		path := filepath.Join(dir, "data", "mrav.sqlite")
 		if _, err := os.Stat(path); err == nil {
-			return orm.Open(ctx, path)
+			if trace == nil {
+				return orm.Open(ctx, path)
+			}
+			return orm.OpenTraced(ctx, path, trace)
 		}
 		parent := filepath.Dir(dir)
 		if parent == dir {

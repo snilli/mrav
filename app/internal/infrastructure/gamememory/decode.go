@@ -35,6 +35,15 @@ func (r *reader) i32(addr uint32) int {
 	return int(int32(binary.LittleEndian.Uint32(r.read(addr, 4))))
 }
 
+// natureSwing is how far the nature moves from its base, up to 100 either way: the sine of the nature, a turn being
+// 4096, as the game keeps it in whole numbers over 4096, and then 100 of that, each rounded to the nearest whole number,
+// away from zero when it is halfway. MR2AV cut the sine toward zero instead, which is a step off for half of the angles,
+// -10, -6, 89 and 959 among them.
+func natureSwing(nature int) int {
+	sine := math.Round(math.Sin(math.Pi*float64(nature)/2048) * 4096)
+	return int(math.Round(sine * 100 / 4096))
+}
+
 // decode reads the monster out of the game's RAM the way MR2AV does: a byte is unsigned, a stat and the nature
 // are two bytes and signed, the nature base and the form are signed bytes. It is apperr.ErrNotFound when no
 // monster is loaded, and the memory's own error when the memory cannot be read.
@@ -54,9 +63,8 @@ func decode(l Layout, mem Memory) (monster.Monster, error) {
 		return monster.Monster{}, apperr.NotFound("monster", noMonster)
 	}
 
-	// The nature shown is the base plus a swing of the sine of the nature, up to 100 either way, cut toward zero.
 	natureBase := int(int8(r.u8(l.NatureBase)))
-	swing := int(math.Sin(math.Pi*float64(r.i16(l.Nature))/2048) * 100)
+	swing := natureSwing(r.i16(l.Nature))
 
 	fatigue := r.u8(l.Fatigue)
 	switch {
@@ -71,6 +79,7 @@ func decode(l Layout, mem Memory) (monster.Monster, error) {
 		SubGenus:        monster.Genus(sub),
 		Nature:          natureBase + swing,
 		NatureBase:      natureBase,
+		PatchedSwim:     l.PatchedSwim,
 		Age:             r.i16(l.Age),
 		Lifespan:        r.i16(l.Lifespan),
 		InitialLifespan: r.i16(l.InitialLifespan),

@@ -292,6 +292,24 @@ func (_u *MoveUpdate) AppendUnlock(v []stored.Condition) *MoveUpdate {
 	return _u
 }
 
+// SetAcquire sets the "acquire" field.
+func (_u *MoveUpdate) SetAcquire(v []stored.Acquire) *MoveUpdate {
+	_u.mutation.SetAcquire(v)
+	return _u
+}
+
+// AppendAcquire appends value to the "acquire" field.
+func (_u *MoveUpdate) AppendAcquire(v []stored.Acquire) *MoveUpdate {
+	_u.mutation.AppendAcquire(v)
+	return _u
+}
+
+// ClearAcquire clears the value of the "acquire" field.
+func (_u *MoveUpdate) ClearAcquire() *MoveUpdate {
+	_u.mutation.ClearAcquire()
+	return _u
+}
+
 // SetIcon sets the "icon" field.
 func (_u *MoveUpdate) SetIcon(v string) *MoveUpdate {
 	_u.mutation.SetIcon(v)
@@ -472,6 +490,17 @@ func (_u *MoveUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		_spec.AddModifier(func(u *sql.UpdateBuilder) {
 			sqljson.Append(u, move.FieldUnlock, value)
 		})
+	}
+	if value, ok := _u.mutation.Acquire(); ok {
+		_spec.SetField(move.FieldAcquire, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedAcquire(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, move.FieldAcquire, value)
+		})
+	}
+	if _u.mutation.AcquireCleared() {
+		_spec.ClearField(move.FieldAcquire, field.TypeJSON)
 	}
 	if value, ok := _u.mutation.Icon(); ok {
 		_spec.SetField(move.FieldIcon, field.TypeString, value)
@@ -787,6 +816,24 @@ func (_u *MoveUpdateOne) AppendUnlock(v []stored.Condition) *MoveUpdateOne {
 	return _u
 }
 
+// SetAcquire sets the "acquire" field.
+func (_u *MoveUpdateOne) SetAcquire(v []stored.Acquire) *MoveUpdateOne {
+	_u.mutation.SetAcquire(v)
+	return _u
+}
+
+// AppendAcquire appends value to the "acquire" field.
+func (_u *MoveUpdateOne) AppendAcquire(v []stored.Acquire) *MoveUpdateOne {
+	_u.mutation.AppendAcquire(v)
+	return _u
+}
+
+// ClearAcquire clears the value of the "acquire" field.
+func (_u *MoveUpdateOne) ClearAcquire() *MoveUpdateOne {
+	_u.mutation.ClearAcquire()
+	return _u
+}
+
 // SetIcon sets the "icon" field.
 func (_u *MoveUpdateOne) SetIcon(v string) *MoveUpdateOne {
 	_u.mutation.SetIcon(v)
@@ -997,6 +1044,17 @@ func (_u *MoveUpdateOne) sqlSave(ctx context.Context) (_node *Move, err error) {
 		_spec.AddModifier(func(u *sql.UpdateBuilder) {
 			sqljson.Append(u, move.FieldUnlock, value)
 		})
+	}
+	if value, ok := _u.mutation.Acquire(); ok {
+		_spec.SetField(move.FieldAcquire, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedAcquire(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, move.FieldAcquire, value)
+		})
+	}
+	if _u.mutation.AcquireCleared() {
+		_spec.ClearField(move.FieldAcquire, field.TypeJSON)
 	}
 	if value, ok := _u.mutation.Icon(); ok {
 		_spec.SetField(move.FieldIcon, field.TypeString, value)

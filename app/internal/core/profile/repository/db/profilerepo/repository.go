@@ -3,6 +3,7 @@ package profilerepo
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"orm"
@@ -12,15 +13,24 @@ import (
 	entexpeditionlock "orm/ent/expeditionlock"
 	entexpeditionmap "orm/ent/expeditionmap"
 	entexpeditionplace "orm/ent/expeditionplace"
+	entlootchance "orm/ent/lootchance"
 
 	monster "app/internal/core/monster/domain"
 	"app/internal/core/profile"
 	"app/internal/core/profile/domain"
+	"app/internal/infrastructure/memo"
 )
 
-// Repository reads the data the Monster page names things from through Ent's query builder.
+// Repository reads the data the Monster page names things from through Ent's query builder. None of it changes while the
+// viewer runs, so each answer is read once and kept: the pages ask twice a second, and what they are given is shared, so they
+// must not write to it.
 type Repository struct {
-	client *orm.Client
+	client  *orm.Client
+	genera  memo.Cache[struct{}, map[monster.Genus]string]
+	breeds  memo.Cache[int, []domain.BreedRule]
+	cocoons memo.Cache[struct{}, []domain.CocoonRule]
+	desires memo.Cache[struct{}, map[int]string]
+	maps    memo.Cache[struct{}, []domain.ExpeditionMap]
 }
 
 func New(client *orm.Client) profile.ProfileRepository {
@@ -28,6 +38,10 @@ func New(client *orm.Client) profile.ProfileRepository {
 }
 
 func (r *Repository) ListGenusNames(ctx context.Context) (map[monster.Genus]string, error) {
+	return r.genera.Get(struct{}{}, func() (map[monster.Genus]string, error) { return r.loadGenusNames(ctx) })
+}
+
+func (r *Repository) loadGenusNames(ctx context.Context) (map[monster.Genus]string, error) {
 	rows, err := r.client.Genus.Query().All(ctx)
 	if err != nil {
 		return nil, err
@@ -40,6 +54,10 @@ func (r *Repository) ListGenusNames(ctx context.Context) (map[monster.Genus]stri
 }
 
 func (r *Repository) ListBreedRules(ctx context.Context, main int) ([]domain.BreedRule, error) {
+	return r.breeds.Get(main, func() ([]domain.BreedRule, error) { return r.loadBreedRules(ctx, main) })
+}
+
+func (r *Repository) loadBreedRules(ctx context.Context, main int) ([]domain.BreedRule, error) {
 	rows, err := r.client.Breed.Query().
 		Where(entbreed.MainGenus(main)).
 		Order(ent.Asc(entbreed.FieldSubGenus), ent.Asc(entbreed.FieldSeq)).
@@ -65,6 +83,10 @@ func (r *Repository) ListBreedRules(ctx context.Context, main int) ([]domain.Bre
 }
 
 func (r *Repository) ListCocoonRules(ctx context.Context) ([]domain.CocoonRule, error) {
+	return r.cocoons.Get(struct{}{}, func() ([]domain.CocoonRule, error) { return r.loadCocoonRules(ctx) })
+}
+
+func (r *Repository) loadCocoonRules(ctx context.Context) ([]domain.CocoonRule, error) {
 	rows, err := r.client.Cocoon.Query().Order(ent.Asc(entcocoon.FieldID)).All(ctx)
 	if err != nil {
 		return nil, err
@@ -81,6 +103,10 @@ func (r *Repository) ListCocoonRules(ctx context.Context) ([]domain.CocoonRule, 
 }
 
 func (r *Repository) ListDesireNames(ctx context.Context) (map[int]string, error) {
+	return r.desires.Get(struct{}{}, func() (map[int]string, error) { return r.loadDesireNames(ctx) })
+}
+
+func (r *Repository) loadDesireNames(ctx context.Context) (map[int]string, error) {
 	rows, err := r.client.Item.Query().All(ctx)
 	if err != nil {
 		return nil, err
@@ -92,38 +118,52 @@ func (r *Repository) ListDesireNames(ctx context.Context) (map[int]string, error
 	return names, nil
 }
 
-// worthSQL works out what a search of each place is worth in gold on average, for a monster that searches as the
-// arguments say: the chance of each item at the tier of the stat that the building is searched by, which is the
-// highest tier that starts no higher than the stat, by what the item sells for, which is nothing where it is not
-// sold. The items are joined by id, so that two items of a name are not counted for one chance. The arguments are
-// whether the nature is good, the skill and the intelligence.
-const worthSQL = `
-SELECT p.id, SUM(c.pct / 100.0 * CASE WHEN i.sale_price GLOB '[0-9]*' THEN CAST(i.sale_price AS INTEGER) ELSE 0 END)
-FROM expedition_places p
-JOIN loot_chances c ON c.place_id = p.id AND c.good = ?
-JOIN items i ON i.id = c.item_id
-WHERE c.min_stat = (
-	SELECT MAX(t.min_stat) FROM loot_chances t
-	WHERE t.place_id = p.id AND t.good = c.good
-	  AND t.min_stat <= CASE p.stat WHEN 'skill' THEN ? ELSE ? END)
-GROUP BY p.id`
+// ListExpeditionMaps reads the maps, their places, their locks and the tables of chances of the places, each with a
+// statement that looks the rows up by an index and gives them in the order of it, and puts them together here: what a
+// search is worth to a monster is the domain's to work out from the tables, not the database's.
+func (r *Repository) ListExpeditionMaps(ctx context.Context) ([]domain.ExpeditionMap, error) {
+	return r.maps.Get(struct{}{}, func() ([]domain.ExpeditionMap, error) { return r.loadExpeditionMaps(ctx) })
+}
 
-func (r *Repository) ListExpeditionMaps(ctx context.Context, by domain.Searcher) ([]domain.ExpeditionMap, error) {
-	rows, err := r.client.ExpeditionMap.Query().
-		Order(ent.Asc(entexpeditionmap.FieldID)).
-		WithPlaces(func(q *ent.ExpeditionPlaceQuery) { q.Order(ent.Asc(entexpeditionplace.FieldName)) }).
-		WithLocks(func(q *ent.ExpeditionLockQuery) { q.Order(ent.Asc(entexpeditionlock.FieldID)) }).
-		All(ctx)
+func (r *Repository) loadExpeditionMaps(ctx context.Context) ([]domain.ExpeditionMap, error) {
+	rows, err := r.client.ExpeditionMap.Query().Order(ent.Asc(entexpeditionmap.FieldID)).All(ctx)
 	if err != nil {
 		return nil, err
 	}
-	worth, err := r.worths(ctx, by)
+	places, err := r.client.ExpeditionPlace.Query().
+		Order(ent.Asc(entexpeditionplace.FieldMapID), ent.Asc(entexpeditionplace.FieldName)).All(ctx)
 	if err != nil {
 		return nil, err
 	}
+	locks, err := r.client.ExpeditionLock.Query().
+		Order(ent.Asc(entexpeditionlock.FieldMapID), ent.Asc(entexpeditionlock.FieldX), ent.Asc(entexpeditionlock.FieldY)).All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	rules, err := r.client.LootChance.Query().WithItem().
+		Order(ent.Asc(entlootchance.FieldPlaceID), ent.Asc(entlootchance.FieldGood), ent.Asc(entlootchance.FieldMinStat)).All(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	chances := make(map[int][]domain.Chance, len(places)) // by the id of the place
+	for _, c := range rules {
+		chances[c.PlaceID] = append(chances[c.PlaceID], domain.Chance{
+			Good: c.Good, MinStat: c.MinStat, Slot: c.Slot, Item: c.Edges.Item.Name, Pct: c.Pct, Price: price(c.Edges.Item.SalePrice),
+		})
+	}
+	placesOf := make(map[int][]*ent.ExpeditionPlace, len(rows)) // by the id of the map
+	for _, p := range places {
+		placesOf[p.MapID] = append(placesOf[p.MapID], p)
+	}
+	locksOf := make(map[int][]*ent.ExpeditionLock, len(rows))
+	for _, l := range locks {
+		locksOf[l.MapID] = append(locksOf[l.MapID], l)
+	}
+
 	maps := make([]domain.ExpeditionMap, len(rows))
 	for i, row := range rows {
-		m, err := mapOf(row, worth)
+		m, err := mapOf(row, placesOf[row.ID], locksOf[row.ID], chances)
 		if err != nil {
 			return nil, fmt.Errorf("map %q: %w", row.Name, err)
 		}
@@ -132,27 +172,18 @@ func (r *Repository) ListExpeditionMaps(ctx context.Context, by domain.Searcher)
 	return maps, nil
 }
 
-// worths is what a search of each place is worth, by the id of the place; a place without chances is not in it.
-func (r *Repository) worths(ctx context.Context, by domain.Searcher) (map[int]float64, error) {
-	rows, err := r.client.DB.QueryContext(ctx, worthSQL, by.GoodNature, by.Skill, by.Intelligence)
-	if err != nil {
-		return nil, err
+// price is what an item sells for, in gold: the price that the data has for it, 0 where it is not a number, as it is not for
+// what is not sold.
+func price(sale string) int {
+	n, err := strconv.Atoi(sale)
+	if err != nil || n < 0 {
+		return 0
 	}
-	defer rows.Close()
-	worth := map[int]float64{}
-	for rows.Next() {
-		var id int
-		var gold float64
-		if err := rows.Scan(&id, &gold); err != nil {
-			return nil, err
-		}
-		worth[id] = gold
-	}
-	return worth, rows.Err()
+	return n
 }
 
-// mapOf reads the tiles of a stored map, and gives its places what a search of them is worth.
-func mapOf(row *ent.ExpeditionMap, worth map[int]float64) (domain.ExpeditionMap, error) {
+// mapOf reads the tiles of a stored map, and gives it its places with their tables of chances and its locks.
+func mapOf(row *ent.ExpeditionMap, places []*ent.ExpeditionPlace, locks []*ent.ExpeditionLock, chances map[int][]domain.Chance) (domain.ExpeditionMap, error) {
 	lines := strings.Split(row.Rows, "\n")
 	m := domain.ExpeditionMap{
 		Name: row.Name, Width: len(lines[0]), Height: len(lines),
@@ -177,13 +208,17 @@ func mapOf(row *ent.ExpeditionMap, worth map[int]float64) (domain.ExpeditionMap,
 			}
 		}
 	}
-	for _, l := range row.Edges.Locks {
+	for _, l := range locks {
 		m.Locks = append(m.Locks, domain.Lock{At: domain.Point{X: l.X, Y: l.Y}, MinINT: l.MinInt})
 	}
-	for _, p := range row.Edges.Places {
+	for _, p := range places {
 		m.Spots = append(m.Spots, domain.Spot{
-			Name: p.Name, At: domain.Point{X: p.X, Y: p.Y}, Building: p.Building, Value: worth[p.ID],
+			Name: p.Name, At: domain.Point{X: p.X, Y: p.Y}, Building: p.Building,
+			BySkill: p.Stat == entexpeditionplace.StatSkill, Chances: chances[p.ID],
 		})
+	}
+	for _, p := range row.Portals {
+		m.Portals = append(m.Portals, domain.Portal{Label: p.Label, At: domain.Point{X: p.X, Y: p.Y}, To: p.To})
 	}
 	return m, nil
 }

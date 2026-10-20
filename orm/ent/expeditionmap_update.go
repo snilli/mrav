@@ -10,9 +10,11 @@ import (
 	"orm/ent/expeditionmap"
 	"orm/ent/expeditionplace"
 	"orm/ent/predicate"
+	"orm/stored"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
 )
 
@@ -96,6 +98,24 @@ func (_u *ExpeditionMapUpdate) SetNillableStartY(v *int) *ExpeditionMapUpdate {
 // AddStartY adds value to the "start_y" field.
 func (_u *ExpeditionMapUpdate) AddStartY(v int) *ExpeditionMapUpdate {
 	_u.mutation.AddStartY(v)
+	return _u
+}
+
+// SetPortals sets the "portals" field.
+func (_u *ExpeditionMapUpdate) SetPortals(v []stored.Portal) *ExpeditionMapUpdate {
+	_u.mutation.SetPortals(v)
+	return _u
+}
+
+// AppendPortals appends value to the "portals" field.
+func (_u *ExpeditionMapUpdate) AppendPortals(v []stored.Portal) *ExpeditionMapUpdate {
+	_u.mutation.AppendPortals(v)
+	return _u
+}
+
+// ClearPortals clears the value of the "portals" field.
+func (_u *ExpeditionMapUpdate) ClearPortals() *ExpeditionMapUpdate {
+	_u.mutation.ClearPortals()
 	return _u
 }
 
@@ -257,6 +277,17 @@ func (_u *ExpeditionMapUpdate) sqlSave(ctx context.Context) (_node int, err erro
 	}
 	if value, ok := _u.mutation.AddedStartY(); ok {
 		_spec.AddField(expeditionmap.FieldStartY, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.Portals(); ok {
+		_spec.SetField(expeditionmap.FieldPortals, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedPortals(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, expeditionmap.FieldPortals, value)
+		})
+	}
+	if _u.mutation.PortalsCleared() {
+		_spec.ClearField(expeditionmap.FieldPortals, field.TypeJSON)
 	}
 	if _u.mutation.PlacesCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -435,6 +466,24 @@ func (_u *ExpeditionMapUpdateOne) SetNillableStartY(v *int) *ExpeditionMapUpdate
 // AddStartY adds value to the "start_y" field.
 func (_u *ExpeditionMapUpdateOne) AddStartY(v int) *ExpeditionMapUpdateOne {
 	_u.mutation.AddStartY(v)
+	return _u
+}
+
+// SetPortals sets the "portals" field.
+func (_u *ExpeditionMapUpdateOne) SetPortals(v []stored.Portal) *ExpeditionMapUpdateOne {
+	_u.mutation.SetPortals(v)
+	return _u
+}
+
+// AppendPortals appends value to the "portals" field.
+func (_u *ExpeditionMapUpdateOne) AppendPortals(v []stored.Portal) *ExpeditionMapUpdateOne {
+	_u.mutation.AppendPortals(v)
+	return _u
+}
+
+// ClearPortals clears the value of the "portals" field.
+func (_u *ExpeditionMapUpdateOne) ClearPortals() *ExpeditionMapUpdateOne {
+	_u.mutation.ClearPortals()
 	return _u
 }
 
@@ -626,6 +675,17 @@ func (_u *ExpeditionMapUpdateOne) sqlSave(ctx context.Context) (_node *Expeditio
 	}
 	if value, ok := _u.mutation.AddedStartY(); ok {
 		_spec.AddField(expeditionmap.FieldStartY, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.Portals(); ok {
+		_spec.SetField(expeditionmap.FieldPortals, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedPortals(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, expeditionmap.FieldPortals, value)
+		})
+	}
+	if _u.mutation.PortalsCleared() {
+		_spec.ClearField(expeditionmap.FieldPortals, field.TypeJSON)
 	}
 	if _u.mutation.PlacesCleared() {
 		edge := &sqlgraph.EdgeSpec{

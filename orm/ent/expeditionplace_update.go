@@ -29,6 +29,20 @@ func (_u *ExpeditionPlaceUpdate) Where(ps ...predicate.ExpeditionPlace) *Expedit
 	return _u
 }
 
+// SetMapID sets the "map_id" field.
+func (_u *ExpeditionPlaceUpdate) SetMapID(v int) *ExpeditionPlaceUpdate {
+	_u.mutation.SetMapID(v)
+	return _u
+}
+
+// SetNillableMapID sets the "map_id" field if the given value is not nil.
+func (_u *ExpeditionPlaceUpdate) SetNillableMapID(v *int) *ExpeditionPlaceUpdate {
+	if v != nil {
+		_u.SetMapID(*v)
+	}
+	return _u
+}
+
 // SetName sets the "name" field.
 func (_u *ExpeditionPlaceUpdate) SetName(v string) *ExpeditionPlaceUpdate {
 	_u.mutation.SetName(v)
@@ -110,12 +124,6 @@ func (_u *ExpeditionPlaceUpdate) SetNillableStat(v *expeditionplace.Stat) *Exped
 	if v != nil {
 		_u.SetStat(*v)
 	}
-	return _u
-}
-
-// SetMapID sets the "map" edge to the ExpeditionMap entity by ID.
-func (_u *ExpeditionPlaceUpdate) SetMapID(id int) *ExpeditionPlaceUpdate {
-	_u.mutation.SetMapID(id)
 	return _u
 }
 
@@ -358,6 +366,20 @@ type ExpeditionPlaceUpdateOne struct {
 	mutation *ExpeditionPlaceMutation
 }
 
+// SetMapID sets the "map_id" field.
+func (_u *ExpeditionPlaceUpdateOne) SetMapID(v int) *ExpeditionPlaceUpdateOne {
+	_u.mutation.SetMapID(v)
+	return _u
+}
+
+// SetNillableMapID sets the "map_id" field if the given value is not nil.
+func (_u *ExpeditionPlaceUpdateOne) SetNillableMapID(v *int) *ExpeditionPlaceUpdateOne {
+	if v != nil {
+		_u.SetMapID(*v)
+	}
+	return _u
+}
+
 // SetName sets the "name" field.
 func (_u *ExpeditionPlaceUpdateOne) SetName(v string) *ExpeditionPlaceUpdateOne {
 	_u.mutation.SetName(v)
@@ -439,12 +461,6 @@ func (_u *ExpeditionPlaceUpdateOne) SetNillableStat(v *expeditionplace.Stat) *Ex
 	if v != nil {
 		_u.SetStat(*v)
 	}
-	return _u
-}
-
-// SetMapID sets the "map" edge to the ExpeditionMap entity by ID.
-func (_u *ExpeditionPlaceUpdateOne) SetMapID(id int) *ExpeditionPlaceUpdateOne {
-	_u.mutation.SetMapID(id)
 	return _u
 }
 

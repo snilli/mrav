@@ -5,6 +5,7 @@ package demoui
 import (
 	"context"
 	"math/rand/v2"
+	"slices"
 	"strconv"
 	"time"
 
@@ -15,6 +16,7 @@ import (
 	monster "app/internal/core/monster/domain"
 	"app/internal/core/move/domain"
 	player "app/internal/core/player/domain"
+	profiledomain "app/internal/core/profile/domain"
 	"app/internal/infrastructure/fakemonster"
 	"app/internal/infrastructure/fakeplayer"
 )
@@ -28,14 +30,18 @@ type Panel struct {
 	usesValue int
 	rng       *rand.Rand
 
-	genus     *widget.Select
-	stats     [monster.StatCount]*widget.Entry
-	nature    *widget.Entry
-	subGenus  *widget.Entry
-	uses      *widget.Entry
-	learnAll  *widget.Button
-	forgetAll *widget.Button
-	random    *widget.Button
+	genus                       *widget.Select
+	tripX, tripY, steps, energy *widget.Entry  // where the monster is on a trip's map, how far it has walked, its energy left
+	rank                        *widget.Select // the grade of the monster, E to S
+	month                       *widget.Select // the month and the week of the ranch's date, which the trips and the Route page go by
+	week                        *widget.Select
+	stats                       [monster.StatCount]*widget.Entry
+	nature                      *widget.Entry
+	subGenus                    *widget.Entry
+	uses                        *widget.Entry
+	learnAll                    *widget.Button
+	forgetAll                   *widget.Button
+	random                      *widget.Button
 
 	growth                                                                             [monster.StatCount]*widget.Entry
 	age, lifespan, initial, fatigue, stress, fame, form, spoil, fear, lifeStage, money *widget.Entry
@@ -67,9 +73,45 @@ func New(monsters *fakemonster.Source, players *fakeplayer.Source, genera []doma
 			p.usesValue = n
 		}
 	}
+	ranks := make([]string, 6)
+	for i := range ranks {
+		ranks[i] = profiledomain.RankLetter(i)
+	}
+	p.rank = widget.NewSelect(ranks, func(letter string) {
+		if i := slices.Index(ranks, letter); i >= 0 {
+			p.monsters.Update(func(m *monster.Monster) { m.Rank = i })
+		}
+	})
+	months := player.MonthNames[:]
+	p.month = widget.NewSelect(months, func(name string) {
+		if i := slices.Index(months, name); i >= 0 { // the week is left as it is
+			p.players.Update(func(pl *player.Player) { pl.Ranch = pl.Ranch.InWeek(i+1, pl.Ranch.Calendar().Week) })
+		}
+	})
+	weeks := []string{"1", "2", "3", "4"}
+	p.week = widget.NewSelect(weeks, func(name string) {
+		if i := slices.Index(weeks, name); i >= 0 { // and the month
+			p.players.Update(func(pl *player.Player) { pl.Ranch = pl.Ranch.InWeek(pl.Ranch.Calendar().Month, i+1) })
+		}
+	})
+	p.tripX = p.playerEntry(func(pl *player.Player, n int) {
+		_, y := pl.Ranch.Walked()
+		pl.Ranch = pl.Ranch.WalkedTo(n, y)
+	})
+	p.tripY = p.playerEntry(func(pl *player.Player, n int) {
+		x, _ := pl.Ranch.Walked()
+		pl.Ranch = pl.Ranch.WalkedTo(x, n)
+	})
+	p.steps = p.playerEntry(func(pl *player.Player, n int) { pl.Ranch.Steps = n })
+	p.energy = p.playerEntry(func(pl *player.Player, n int) { pl.Ranch.Energy, pl.Ranch.EnergyKnown = n, true })
 	items = append(items,
 		widget.NewFormItem("Nature", p.nature),
 		widget.NewFormItem("Sub-genus", p.subGenus),
+		widget.NewFormItem("Rank", p.rank),
+		widget.NewFormItem("Month and week", container.NewGridWithColumns(2, p.month, p.week)),
+		widget.NewFormItem("On a trip: right, up", container.NewGridWithColumns(2, p.tripX, p.tripY)),
+		widget.NewFormItem("Steps walked", p.steps),
+		widget.NewFormItem("Energy left", p.energy),
 		widget.NewFormItem("Uses of each move", p.uses),
 	)
 
@@ -219,4 +261,13 @@ func (p *Panel) sync(m monster.Monster, pl player.Player) {
 	show(p.fear, m.Fear)
 	show(p.lifeStage, m.LifeStage)
 	show(p.money, pl.Money)
+	x, y := pl.Ranch.Walked()
+	show(p.tripX, x)
+	show(p.tripY, y)
+	show(p.steps, pl.Ranch.Steps)
+	show(p.energy, pl.Ranch.Energy)
+	cal := pl.Ranch.Calendar()
+	p.rank.SetSelected(profiledomain.RankLetter(m.Rank))
+	p.month.SetSelected(player.MonthNames[cal.Month-1])
+	p.week.SetSelected(strconv.Itoa(cal.Week))
 }

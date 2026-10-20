@@ -8,7 +8,9 @@ import (
 	"image/png"
 	"os"
 	"path/filepath"
+	"slices"
 
+	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/driver/software"
 	"fyne.io/fyne/v2/test"
@@ -20,22 +22,37 @@ import (
 	"app/internal/core/apperr"
 	monster "app/internal/core/monster/domain"
 	"app/internal/core/training/domain"
+	"app/internal/delivery/ui/profileui"
 	mocktraining "app/mock/core/training"
 )
 
 // trainingOf is the Training page of a monster at its life stage 4 whose growth rates are all 2, with a training
 // boost of the bits given, in a table whose every text says where it is from, as "k1 (a/b)". Its motivation for
-// the first drill is 85 and for the swims 100.
+// the first drill is 85 and for the swim 100.
 func trainingOf(boost int) domain.Training {
 	var gains []domain.Gain
 	for _, kind := range []int{domain.KindLight, domain.KindHeavy, domain.KindHeavySecondary} {
-		gains = append(gains, domain.Gain{LifeStage: 4, GrowthRate: 2, Kind: kind, Text: fmt.Sprintf("k%d (a/b)", kind)})
+		gains = append(gains, domain.Gain{LifeStage: 4, GrowthRate: 2, Kind: kind, Text: fmt.Sprintf("range%d (k%d/b)", kind, kind)})
 	}
 	m := monster.Monster{
 		LifeStage: 4, TrainBoost: boost, Growth: [monster.StatCount]int{2, 2, 2, 2, 2, 2},
 		Motivation: [monster.DrillCount]int{85, 20, 30, 40, 50, 60, 70, 80, 90, 100},
 	}
 	return domain.Build(m, domain.NewGains(gains))
+}
+
+// withAccordion is whether there is an accordion anywhere in an object, in the containers and scrolls that hold it.
+func withAccordion(o fyne.CanvasObject) bool {
+	var children []fyne.CanvasObject
+	switch o := o.(type) {
+	case *widget.Accordion:
+		return true
+	case *fyne.Container:
+		children = o.Objects
+	case *container.Scroll:
+		children = []fyne.CanvasObject{o.Content}
+	}
+	return slices.ContainsFunc(children, withAccordion)
 }
 
 var _ = Describe("Screen", func() {
@@ -52,24 +69,46 @@ var _ = Describe("Screen", func() {
 		s = NewScreen(svc)
 	})
 
-	It("lists the eleven drills in the order of the page, with nothing selected and only the footnote to read", func() {
-		Expect(s.rows).To(HaveLen(11))
+	It("lists the ten drills in the order of the page, the swim once, by names that are not buttons, for nothing is shown by tapping", func() {
+		Expect(s.rows).To(HaveLen(10))
 		Expect(s.rows[0].name.Text).To(Equal("Domino"))
-		Expect(s.rows[10].name.Text).To(Equal("Swim (Patched/HM)"))
-		Expect(s.detail.Text).To(Equal(footnote))
+		Expect(s.rows[9].name.Text).To(Equal("Swim"))
+		Expect(s.rows[0].name).To(BeAssignableToTypeOf(&widget.Label{}))
 	})
 
-	It("shows what each drill gives in short, a light drill's stat alone and a heavy drill's two", func() {
+	It("shows what each drill gives as what each outcome of it gives, not as a range, a light drill's stat alone and a heavy drill's two", func() {
 		s.apply(trainingOf(0), nil)
-		Expect(s.rows[0].gain.Text).To(Equal("POW +k0"))
-		Expect(s.rows[6].gain.Text).To(Equal("POW +k1 / LIF +k3"))
+		Expect(s.rows[0].gain.String()).To(Equal("POW (k0/b)"))
+		Expect(s.rows[6].gain.String()).To(Equal("POW (k1/b) / LIF (k3/b)"))
+	})
+
+	It("names each stat of a drill in the colour of the stat, and says the rest in the colour of the text", func() {
+		s.apply(trainingOf(0), nil)
+
+		colours := map[string]color.Color{}
+		for _, seg := range s.rows[6].gain.Segments() {
+			colours[seg.Text] = seg.Color
+		}
+		Expect(colours).To(HaveKeyWithValue("POW", profileui.StatColors[monster.Pow]))
+		Expect(colours).To(HaveKeyWithValue("LIF", profileui.StatColors[monster.Life]))
+		Expect(colours[" (k1/b)"]).To(Equal(theme.Color(theme.ColorNameForeground)))
+		Expect(colours[" / "]).To(Equal(theme.Color(theme.ColorNameForeground)))
 	})
 
 	It("shows N/A where the table has no gain", func() {
 		t := trainingOf(0)
 		t.Drills[0].Primary = "N/A"
 		s.apply(t, nil)
-		Expect(s.rows[0].gain.Text).To(Equal("N/A"))
+		Expect(s.rows[0].gain.String()).To(Equal("N/A"))
+	})
+
+	It("gives the column of the drills the room that its longest name needs, and no more", func() {
+		var longest float32
+		for _, r := range s.rows {
+			longest = max(longest, r.name.MinSize().Width)
+		}
+		Expect(columns[0]).To(BeNumerically(">=", longest))
+		Expect(columns[0]).To(BeNumerically("<", longest+10))
 	})
 
 	It("shows how keen the monster is for each drill, as a bar and a percent", func() {
@@ -77,7 +116,6 @@ var _ = Describe("Screen", func() {
 		Expect(s.rows[0].percent.Text).To(Equal("85%"))
 		Expect(s.rows[0].bar.Ratio()).To(BeNumerically("~", 0.85, 1e-9))
 		Expect(s.rows[9].percent.Text).To(Equal("100%"))
-		Expect(s.rows[10].percent.Text).To(Equal("100%")) // both swims are the pool's
 	})
 
 	It("stars the drills the monster specialises in, and highlights the ones it is also keen on", func() {
@@ -86,7 +124,6 @@ var _ = Describe("Screen", func() {
 		Expect(s.rows[1].star.Text).To(Equal("★"))
 		Expect(s.rows[2].star.Text).To(BeEmpty())
 		Expect(s.rows[9].star.Text).To(Equal("★"))
-		Expect(s.rows[10].star.Text).To(Equal("★"))
 
 		Expect(s.rows[0].bg.FillColor).To(Equal(recommendedFill))   // 85% is keen
 		Expect(s.rows[1].bg.FillColor).To(Equal(color.Transparent)) // 20% is not
@@ -110,39 +147,8 @@ var _ = Describe("Screen", func() {
 		Expect(s.places.Text).To(Equal("Good places: Pool, Torble Sea"))
 	})
 
-	It("shows every number of the drill that is tapped, and marks the row", func() {
-		s.apply(trainingOf(0), nil)
-		test.Tap(s.rows[6].name)
-		Expect(s.detail.Text).To(ContainSubstring("POW +k1 (a/b)"))
-		Expect(s.detail.Text).To(ContainSubstring("LIF +k3 (a/b)"))
-		Expect(s.detail.Text).To(HaveSuffix(footnote))
-		Expect(s.rows[6].name.Importance).To(Equal(widget.HighImportance))
-		Expect(s.rows[0].name.Importance).To(Equal(widget.LowImportance))
-
-		test.Tap(s.rows[0].name)
-		Expect(s.detail.Text).To(ContainSubstring("POW +k0 (a/b)"))
-		Expect(s.detail.Text).NotTo(ContainSubstring("LIF"))
-		Expect(s.rows[6].name.Importance).To(Equal(widget.LowImportance))
-	})
-
-	It("is a panel that is closed until it is opened, and says on its title how many drills are worth doing", func() {
-		Expect(s.item.Title).To(Equal("Training"))
-
-		s.apply(trainingOf(1<<0|1<<9), nil) // Domino at 85%, and both swims at 100%, which are specialties
-		Expect(s.item.Title).To(Equal("Training · 3 recommended"))
-
-		s.apply(trainingOf(0), nil)
-		Expect(s.item.Title).To(Equal("Training"))
-	})
-
-	It("shows the new numbers for the drill that stays selected when the page is loaded again", func() {
-		s.apply(trainingOf(0), nil)
-		test.Tap(s.rows[6].name)
-
-		other := trainingOf(0)
-		other.Drills[6].Primary = "changed"
-		s.apply(other, nil)
-		Expect(s.detail.Text).To(ContainSubstring("POW +changed"))
+	It("shows its table at once, with no panel to open, because the column that holds it already says what it is", func() {
+		Expect(withAccordion(s.Content())).To(BeFalse())
 	})
 
 	It("shows why there is nothing to show, in place of the page", func() {
@@ -160,12 +166,6 @@ var _ = Describe("Screen", func() {
 		Expect(s.status.Text).To(Equal("Error: db gone"))
 	})
 
-	It("keeps the footnote when a drill is tapped while there is no page", func() {
-		s.apply(domain.Training{}, errors.New("db gone"))
-		test.Tap(s.rows[6].name)
-		Expect(s.detail.Text).To(Equal(footnote))
-	})
-
 	It("asks the service for the current page and shows it", func() {
 		svc.EXPECT().Current(ctx).Return(trainingOf(1), nil)
 		s.Load(ctx)
@@ -179,8 +179,6 @@ var _ = Describe("Screen", func() {
 			Skip("set SCREENSHOT_DIR to write the screenshots")
 		}
 		s.apply(trainingOf(1<<0|1<<2|1<<10), nil)
-		s.panel.OpenAll()
-		test.Tap(s.rows[6].name)
 		Expect(os.MkdirAll(dir, 0o755)).To(Succeed())
 		f, err := os.Create(filepath.Join(dir, "training-table.png"))
 		Expect(err).NotTo(HaveOccurred())

@@ -65,6 +65,14 @@ func (r Ranch) Walked() (x, y int) {
 	return r.Tile%MapWidth - StartColumn, StartRow - r.Tile/MapWidth
 }
 
+// WalkedTo is the ranch with the monster put x tiles right of the start of the trip and y tiles up, as Walked says it, and
+// known to be there.
+func (r Ranch) WalkedTo(x, y int) Ranch {
+	r.Tile = (StartRow-y)*MapWidth + StartColumn + x
+	r.WalkKnown = true
+	return r
+}
+
 // BreedCount is how many main breeds the game has, Pixie to Naga.
 const BreedCount = 38
 
@@ -83,6 +91,17 @@ func (r Ranch) Calendar() Date {
 		Month: w%weeksPerYear/WeeksPerMonth + 1,
 		Week:  w%WeeksPerMonth + 1,
 	}
+}
+
+// InWeek is the ranch with its date moved to a month and a week, from 1, of the year that the date is in, or of the next
+// year where the game had not begun by then. A ranch that is moved is known.
+func (r Ranch) InWeek(month, week int) Ranch {
+	date := (r.Date+startWeek)/weeksPerYear*weeksPerYear + (month-1)*WeeksPerMonth + week - 1 - startWeek
+	if date < 0 {
+		date += weeksPerYear
+	}
+	r.Known, r.Date = true, date
+	return r
 }
 
 // WeeksUntil is how many weeks there are from now until the calendar next reaches a week of the year, 0 when it is

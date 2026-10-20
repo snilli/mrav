@@ -54,6 +54,11 @@ func IDLTE(id int) predicate.LootChance {
 	return predicate.LootChance(sql.FieldLTE(FieldID, id))
 }
 
+// PlaceID applies equality check predicate on the "place_id" field. It's identical to PlaceIDEQ.
+func PlaceID(v int) predicate.LootChance {
+	return predicate.LootChance(sql.FieldEQ(FieldPlaceID, v))
+}
+
 // Good applies equality check predicate on the "good" field. It's identical to GoodEQ.
 func Good(v bool) predicate.LootChance {
 	return predicate.LootChance(sql.FieldEQ(FieldGood, v))
@@ -77,6 +82,26 @@ func MinStat(v int) predicate.LootChance {
 // Pct applies equality check predicate on the "pct" field. It's identical to PctEQ.
 func Pct(v float64) predicate.LootChance {
 	return predicate.LootChance(sql.FieldEQ(FieldPct, v))
+}
+
+// PlaceIDEQ applies the EQ predicate on the "place_id" field.
+func PlaceIDEQ(v int) predicate.LootChance {
+	return predicate.LootChance(sql.FieldEQ(FieldPlaceID, v))
+}
+
+// PlaceIDNEQ applies the NEQ predicate on the "place_id" field.
+func PlaceIDNEQ(v int) predicate.LootChance {
+	return predicate.LootChance(sql.FieldNEQ(FieldPlaceID, v))
+}
+
+// PlaceIDIn applies the In predicate on the "place_id" field.
+func PlaceIDIn(vs ...int) predicate.LootChance {
+	return predicate.LootChance(sql.FieldIn(FieldPlaceID, vs...))
+}
+
+// PlaceIDNotIn applies the NotIn predicate on the "place_id" field.
+func PlaceIDNotIn(vs ...int) predicate.LootChance {
+	return predicate.LootChance(sql.FieldNotIn(FieldPlaceID, vs...))
 }
 
 // GoodEQ applies the EQ predicate on the "good" field.

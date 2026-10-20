@@ -44,6 +44,8 @@ const (
 	FieldUnlockNever = "unlock_never"
 	// FieldUnlock holds the string denoting the unlock field in the database.
 	FieldUnlock = "unlock"
+	// FieldAcquire holds the string denoting the acquire field in the database.
+	FieldAcquire = "acquire"
 	// FieldIcon holds the string denoting the icon field in the database.
 	FieldIcon = "icon"
 	// EdgeGenus holds the string denoting the genus edge name in mutations.
@@ -77,6 +79,7 @@ var Columns = []string{
 	FieldDescription,
 	FieldUnlockNever,
 	FieldUnlock,
+	FieldAcquire,
 	FieldIcon,
 }
 

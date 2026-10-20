@@ -7,8 +7,8 @@ import (
 	"fyne.io/fyne/v2/theme"
 )
 
-// Theme is the default theme with less padding around everything, so that a screen of numbers fits a window
-// without scrolling.
+// Theme is the default theme with less padding around everything and smaller text, so that a screen of numbers fits a
+// window without scrolling, and the window is small enough to sit beside the game.
 func Theme() fyne.Theme { return denseTheme{theme.DefaultTheme()} }
 
 type denseTheme struct{ fyne.Theme }
@@ -27,6 +27,8 @@ func (t denseTheme) Size(name fyne.ThemeSizeName) float32 {
 		return 4
 	case theme.SizeNamePadding:
 		return 3
+	case theme.SizeNameText:
+		return 12
 	}
 	return t.Theme.Size(name)
 }

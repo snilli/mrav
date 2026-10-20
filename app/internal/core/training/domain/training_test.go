@@ -37,7 +37,7 @@ var _ = Describe("Gains", func() {
 var _ = Describe("Drills", func() {
 	It("lists the drills in the order of the page, a heavy one with its two stats, as a copy that is safe to change", func() {
 		drills := domain.Drills()
-		Expect(drills).To(HaveLen(11))
+		Expect(drills).To(HaveLen(10))
 		Expect(drills[0]).To(Equal(domain.Drill{Name: "Domino", Primary: monster.Pow}))
 		Expect(drills[6]).To(Equal(domain.Drill{Name: "Pull", Heavy: true, Primary: monster.Pow, Secondary: monster.Life, Slot: 6}))
 
@@ -50,14 +50,14 @@ var _ = Describe("Build", func() {
 	// Life, Pow, Int, Skill, Speed, Defense
 	m := monster.Monster{LifeStage: 4, Growth: [monster.StatCount]int{1, 2, 3, 4, 0, 2}}
 
-	It("offers the eleven drills of the page, in its order", func() {
+	It("offers the ten drills of the page, in its order, with one swim", func() {
 		var names []string
 		for _, d := range domain.Build(m, everyGain()).Drills {
 			names = append(names, d.Drill.Name)
 		}
 		Expect(names).To(Equal([]string{
 			"Domino", "Study", "Run", "Shoot", "Dodge", "Endure", "Pull", "Meditate", "Leap",
-			"Swim (Vanilla)", "Swim (Patched/HM)",
+			"Swim",
 		}))
 	})
 
@@ -81,21 +81,36 @@ var _ = Describe("Build", func() {
 		Entry("Pull is heavy: Pow a lot and Life a little", "Pull", "s4-g2-k1", "s4-g1-k3"),
 		Entry("Meditate: Int and Skill", "Meditate", "s4-g3-k1", "s4-g4-k3"),
 		Entry("Leap: Speed and Int", "Leap", "s4-g0-k1", "s4-g3-k3"),
-		Entry("Swim (Vanilla): Life and Defense", "Swim (Vanilla)", "s4-g1-k1", "s4-g2-k3"),
-		Entry("Swim (Patched/HM): Defense and Life", "Swim (Patched/HM)", "s4-g2-k1", "s4-g1-k3"),
+		Entry("Swim, as the vanilla game trains it: Life and Defense", "Swim", "s4-g1-k1", "s4-g2-k3"),
 	)
 
-	It("reads the motivation of each drill from the monster, the two swims sharing one", func() {
+	It("trains Defense and Life with the swim of a game that is patched, the other way round from the vanilla swim", func() {
+		patched := m
+		patched.PatchedSwim = true
+		var swim domain.DrillGains
+		for _, d := range domain.Build(patched, everyGain()).Drills {
+			if d.Drill.Name == "Swim" {
+				swim = d
+			}
+		}
+		Expect(swim.Drill.Primary).To(Equal(monster.Defense))
+		Expect(swim.Drill.Secondary).To(Equal(monster.Life))
+		Expect(swim.Primary).To(Equal("s4-g2-k1"))
+		Expect(swim.Secondary).To(Equal("s4-g1-k3"))
+		Expect(domain.Build(patched, everyGain()).Drills).To(HaveLen(10))
+	})
+
+	It("reads the motivation of each drill from the monster", func() {
 		s := m
 		s.Motivation = [monster.DrillCount]int{10, 20, 30, 40, 50, 60, 70, 80, 90, 100}
 		var got []int
 		for _, d := range domain.Build(s, everyGain()).Drills {
 			got = append(got, d.Motivation)
 		}
-		Expect(got).To(Equal([]int{10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 100}))
+		Expect(got).To(Equal([]int{10, 20, 30, 40, 50, 60, 70, 80, 90, 100}))
 	})
 
-	It("says which drills the monster specialises in, by the bit of each, the swims by the pool", func() {
+	It("says which drills the monster specialises in, by the bit of each, the swim by the pool", func() {
 		s := m
 		s.TrainBoost = 1<<0 | 1<<6 | 1<<9 // Domino, Pull, Pool
 		var got []string
@@ -104,7 +119,7 @@ var _ = Describe("Build", func() {
 				got = append(got, d.Drill.Name)
 			}
 		}
-		Expect(got).To(Equal([]string{"Domino", "Pull", "Swim (Vanilla)", "Swim (Patched/HM)"}))
+		Expect(got).To(Equal([]string{"Domino", "Pull", "Swim"}))
 	})
 
 	It("recommends a drill the monster specialises in and is keen on, keen being the green of MR2AV's motivation boxes", func() {

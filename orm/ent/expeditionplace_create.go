@@ -23,6 +23,12 @@ type ExpeditionPlaceCreate struct {
 	conflict []sql.ConflictOption
 }
 
+// SetMapID sets the "map_id" field.
+func (_c *ExpeditionPlaceCreate) SetMapID(v int) *ExpeditionPlaceCreate {
+	_c.mutation.SetMapID(v)
+	return _c
+}
+
 // SetName sets the "name" field.
 func (_c *ExpeditionPlaceCreate) SetName(v string) *ExpeditionPlaceCreate {
 	_c.mutation.SetName(v)
@@ -50,12 +56,6 @@ func (_c *ExpeditionPlaceCreate) SetBuilding(v string) *ExpeditionPlaceCreate {
 // SetStat sets the "stat" field.
 func (_c *ExpeditionPlaceCreate) SetStat(v expeditionplace.Stat) *ExpeditionPlaceCreate {
 	_c.mutation.SetStat(v)
-	return _c
-}
-
-// SetMapID sets the "map" edge to the ExpeditionMap entity by ID.
-func (_c *ExpeditionPlaceCreate) SetMapID(id int) *ExpeditionPlaceCreate {
-	_c.mutation.SetMapID(id)
 	return _c
 }
 
@@ -113,6 +113,9 @@ func (_c *ExpeditionPlaceCreate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (_c *ExpeditionPlaceCreate) check() error {
+	if _, ok := _c.mutation.MapID(); !ok {
+		return &ValidationError{Name: "map_id", err: errors.New(`ent: missing required field "ExpeditionPlace.map_id"`)}
+	}
 	if _, ok := _c.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "ExpeditionPlace.name"`)}
 	}
@@ -217,7 +220,7 @@ func (_c *ExpeditionPlaceCreate) createSpec() (*ExpeditionPlace, *sqlgraph.Creat
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.map_id = &nodes[0]
+		_node.MapID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := _c.mutation.ChancesIDs(); len(nodes) > 0 {
@@ -243,7 +246,7 @@ func (_c *ExpeditionPlaceCreate) createSpec() (*ExpeditionPlace, *sqlgraph.Creat
 // of the `INSERT` statement. For example:
 //
 //	client.ExpeditionPlace.Create().
-//		SetName(v).
+//		SetMapID(v).
 //		OnConflict(
 //			// Update the row with the new values
 //			// the was proposed for insertion.
@@ -252,7 +255,7 @@ func (_c *ExpeditionPlaceCreate) createSpec() (*ExpeditionPlace, *sqlgraph.Creat
 //		// Override some of the fields with custom
 //		// update values.
 //		Update(func(u *ent.ExpeditionPlaceUpsert) {
-//			SetName(v+v).
+//			SetMapID(v+v).
 //		}).
 //		Exec(ctx)
 func (_c *ExpeditionPlaceCreate) OnConflict(opts ...sql.ConflictOption) *ExpeditionPlaceUpsertOne {
@@ -287,6 +290,18 @@ type (
 		*sql.UpdateSet
 	}
 )
+
+// SetMapID sets the "map_id" field.
+func (u *ExpeditionPlaceUpsert) SetMapID(v int) *ExpeditionPlaceUpsert {
+	u.Set(expeditionplace.FieldMapID, v)
+	return u
+}
+
+// UpdateMapID sets the "map_id" field to the value that was provided on create.
+func (u *ExpeditionPlaceUpsert) UpdateMapID() *ExpeditionPlaceUpsert {
+	u.SetExcluded(expeditionplace.FieldMapID)
+	return u
+}
 
 // SetName sets the "name" field.
 func (u *ExpeditionPlaceUpsert) SetName(v string) *ExpeditionPlaceUpsert {
@@ -398,6 +413,20 @@ func (u *ExpeditionPlaceUpsertOne) Update(set func(*ExpeditionPlaceUpsert)) *Exp
 		set(&ExpeditionPlaceUpsert{UpdateSet: update})
 	}))
 	return u
+}
+
+// SetMapID sets the "map_id" field.
+func (u *ExpeditionPlaceUpsertOne) SetMapID(v int) *ExpeditionPlaceUpsertOne {
+	return u.Update(func(s *ExpeditionPlaceUpsert) {
+		s.SetMapID(v)
+	})
+}
+
+// UpdateMapID sets the "map_id" field to the value that was provided on create.
+func (u *ExpeditionPlaceUpsertOne) UpdateMapID() *ExpeditionPlaceUpsertOne {
+	return u.Update(func(s *ExpeditionPlaceUpsert) {
+		s.UpdateMapID()
+	})
 }
 
 // SetName sets the "name" field.
@@ -618,7 +647,7 @@ func (_c *ExpeditionPlaceCreateBulk) ExecX(ctx context.Context) {
 //		// Override some of the fields with custom
 //		// update values.
 //		Update(func(u *ent.ExpeditionPlaceUpsert) {
-//			SetName(v+v).
+//			SetMapID(v+v).
 //		}).
 //		Exec(ctx)
 func (_c *ExpeditionPlaceCreateBulk) OnConflict(opts ...sql.ConflictOption) *ExpeditionPlaceUpsertBulk {
@@ -685,6 +714,20 @@ func (u *ExpeditionPlaceUpsertBulk) Update(set func(*ExpeditionPlaceUpsert)) *Ex
 		set(&ExpeditionPlaceUpsert{UpdateSet: update})
 	}))
 	return u
+}
+
+// SetMapID sets the "map_id" field.
+func (u *ExpeditionPlaceUpsertBulk) SetMapID(v int) *ExpeditionPlaceUpsertBulk {
+	return u.Update(func(s *ExpeditionPlaceUpsert) {
+		s.SetMapID(v)
+	})
+}
+
+// UpdateMapID sets the "map_id" field to the value that was provided on create.
+func (u *ExpeditionPlaceUpsertBulk) UpdateMapID() *ExpeditionPlaceUpsertBulk {
+	return u.Update(func(s *ExpeditionPlaceUpsert) {
+		s.UpdateMapID()
+	})
 }
 
 // SetName sets the "name" field.

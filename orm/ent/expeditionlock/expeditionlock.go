@@ -12,6 +12,8 @@ const (
 	Label = "expedition_lock"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
+	// FieldMapID holds the string denoting the map_id field in the database.
+	FieldMapID = "map_id"
 	// FieldX holds the string denoting the x field in the database.
 	FieldX = "x"
 	// FieldY holds the string denoting the y field in the database.
@@ -34,26 +36,16 @@ const (
 // Columns holds all SQL columns for expeditionlock fields.
 var Columns = []string{
 	FieldID,
+	FieldMapID,
 	FieldX,
 	FieldY,
 	FieldMinInt,
-}
-
-// ForeignKeys holds the SQL foreign-keys that are owned by the "expedition_locks"
-// table and are not defined as standalone fields in the schema.
-var ForeignKeys = []string{
-	"map_id",
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
 	for i := range Columns {
 		if column == Columns[i] {
-			return true
-		}
-	}
-	for i := range ForeignKeys {
-		if column == ForeignKeys[i] {
 			return true
 		}
 	}
@@ -75,6 +67,11 @@ type OrderOption func(*sql.Selector)
 // ByID orders the results by the id field.
 func ByID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// ByMapID orders the results by the map_id field.
+func ByMapID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldMapID, opts...).ToFunc()
 }
 
 // ByX orders the results by the x field.

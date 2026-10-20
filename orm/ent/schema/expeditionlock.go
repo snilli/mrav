@@ -13,6 +13,7 @@ type ExpeditionLock struct{ ent.Schema }
 
 func (ExpeditionLock) Fields() []ent.Field {
 	return []ent.Field{
+		field.Int("map_id"),
 		field.Int("x").NonNegative(),
 		field.Int("y").NonNegative(),
 		field.Int("min_int").Positive(),
@@ -21,10 +22,11 @@ func (ExpeditionLock) Fields() []ent.Field {
 
 func (ExpeditionLock) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("map", ExpeditionMap.Type).Ref("locks").Unique().Required(),
+		edge.From("map", ExpeditionMap.Type).Ref("locks").Field("map_id").Unique().Required(),
 	}
 }
 
 func (ExpeditionLock) Indexes() []ent.Index {
-	return []ent.Index{index.Fields("x", "y").Edges("map").Unique()}
+	// the locks of a map are read by the map, in the order of the tiles
+	return []ent.Index{index.Fields("map_id", "x", "y").Unique()}
 }

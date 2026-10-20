@@ -54,6 +54,11 @@ func IDLTE(id int) predicate.ExpeditionPlace {
 	return predicate.ExpeditionPlace(sql.FieldLTE(FieldID, id))
 }
 
+// MapID applies equality check predicate on the "map_id" field. It's identical to MapIDEQ.
+func MapID(v int) predicate.ExpeditionPlace {
+	return predicate.ExpeditionPlace(sql.FieldEQ(FieldMapID, v))
+}
+
 // Name applies equality check predicate on the "name" field. It's identical to NameEQ.
 func Name(v string) predicate.ExpeditionPlace {
 	return predicate.ExpeditionPlace(sql.FieldEQ(FieldName, v))
@@ -72,6 +77,26 @@ func Y(v int) predicate.ExpeditionPlace {
 // Building applies equality check predicate on the "building" field. It's identical to BuildingEQ.
 func Building(v string) predicate.ExpeditionPlace {
 	return predicate.ExpeditionPlace(sql.FieldEQ(FieldBuilding, v))
+}
+
+// MapIDEQ applies the EQ predicate on the "map_id" field.
+func MapIDEQ(v int) predicate.ExpeditionPlace {
+	return predicate.ExpeditionPlace(sql.FieldEQ(FieldMapID, v))
+}
+
+// MapIDNEQ applies the NEQ predicate on the "map_id" field.
+func MapIDNEQ(v int) predicate.ExpeditionPlace {
+	return predicate.ExpeditionPlace(sql.FieldNEQ(FieldMapID, v))
+}
+
+// MapIDIn applies the In predicate on the "map_id" field.
+func MapIDIn(vs ...int) predicate.ExpeditionPlace {
+	return predicate.ExpeditionPlace(sql.FieldIn(FieldMapID, vs...))
+}
+
+// MapIDNotIn applies the NotIn predicate on the "map_id" field.
+func MapIDNotIn(vs ...int) predicate.ExpeditionPlace {
+	return predicate.ExpeditionPlace(sql.FieldNotIn(FieldMapID, vs...))
 }
 
 // NameEQ applies the EQ predicate on the "name" field.

@@ -12,6 +12,7 @@ type ExpeditionPlace struct{ ent.Schema }
 
 func (ExpeditionPlace) Fields() []ent.Field {
 	return []ent.Field{
+		field.Int("map_id"),
 		// name is the letter that the place has on its map.
 		field.String("name").NotEmpty(),
 		field.Int("x").NonNegative(),
@@ -24,11 +25,12 @@ func (ExpeditionPlace) Fields() []ent.Field {
 
 func (ExpeditionPlace) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("map", ExpeditionMap.Type).Ref("places").Unique().Required(),
-		edge.To("chances", LootChance.Type).StorageKey(edge.Column("place_id")),
+		edge.From("map", ExpeditionMap.Type).Ref("places").Field("map_id").Unique().Required(),
+		edge.To("chances", LootChance.Type),
 	}
 }
 
 func (ExpeditionPlace) Indexes() []ent.Index {
-	return []ent.Index{index.Fields("name").Edges("map").Unique()}
+	// the places of a map, by the letter: one lookup by the map, in the order that they are read
+	return []ent.Index{index.Fields("map_id", "name").Unique()}
 }

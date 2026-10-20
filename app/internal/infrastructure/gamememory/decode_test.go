@@ -229,7 +229,7 @@ func reason(err error) string {
 
 var _ = Describe("decode", func() {
 	DescribeTable("reads the monster from where its game keeps it",
-		func(l Layout, a addresses, name []byte, wantName string) {
+		func(l Layout, a addresses, name []byte, wantName string, patchedSwim bool) {
 			got, err := decode(l, monsterImage(a, name, steamBreeds))
 			Expect(err).NotTo(HaveOccurred())
 
@@ -247,15 +247,15 @@ var _ = Describe("decode", func() {
 				Motivation: [monster.DrillCount]int{10, 20, 30, 40, 50, 60, 70, 80, 90, 100},
 				PlayType:   2, Drug: 38, DrugWeeks: 3, ItemLike: 4, ItemDislike: 130,
 				Rank: 2, LifeStage: 5, LifeType: 3, ArenaSpeed: 4, GutsRate: 5,
-				Specials: 0x0403, PrizeMoney: 12345,
+				Specials: 0x0403, PrizeMoney: 12345, PatchedSwim: patchedSwim,
 				Record: monster.Record{Wins: 12, Losses: 3, KOs: 5, Injuries: 4, Runaways: 6, Sicknesses: 7, Resistance: 8},
 			}
 			want.Learned[3], want.Learned[23] = true, true // only a flag of exactly 1 is learned
 			want.Used[3], want.Used[5], want.Used[7], want.Used[23] = 77, 12, 9, 255
 			Expect(got).To(Equal(want))
 		},
-		Entry("MR2 on the PlayStation", ps1, ps1MR2AV, ps1Name, "Aa 1"),
-		Entry("MR2DX on Steam", steam, steamMR2AV, steamName, "Aa 1"),
+		Entry("MR2 on the PlayStation, whose swim is the vanilla one", ps1, ps1MR2AV, ps1Name, "Aa 1", false),
+		Entry("MR2DX on Steam, whose swim is the patched one", steam, steamMR2AV, steamName, "Aa 1", true),
 	)
 
 	DescribeTable("reads the player's side from where its game keeps it",
@@ -300,7 +300,7 @@ var _ = Describe("decode", func() {
 		Expect(got.Ranch.WalkKnown).To(BeFalse())
 	})
 
-	DescribeTable("works out the nature the way the game shows it: the base plus the sine, cut toward zero",
+	DescribeTable("works out the nature the way the game shows it: the base plus the sine, in two roundings",
 		func(nature int16, base byte, want int) {
 			img := monsterImage(ps1MR2AV, ps1Name, nil)
 			img.i16(ps1MR2AV.nature, nature)
@@ -313,9 +313,14 @@ var _ = Describe("decode", func() {
 		Entry("nothing at all", int16(0), byte(0), 0),
 		Entry("the sine at its top", int16(1024), byte(30), 130),
 		Entry("the sine at its bottom, on a negative base", int16(-1024), byte(0xE2), -130),
-		Entry("a fraction is dropped: 70.7 is 70", int16(512), byte(0), 70),
-		Entry("and toward zero for a negative one: -70.7 is -70", int16(-512), byte(0), -70),
+		Entry("a fraction is rounded, not dropped: 70.7 is 71", int16(512), byte(0), 71),
+		Entry("and away from zero for a negative one: -70.7 is -71", int16(-512), byte(0), -71),
 		Entry("a base of 255 is -1", int16(0), byte(0xFF), -1),
+		// What a breeder saw in the game where the sine alone, cut toward zero, said -1, 0, 13 and 99.
+		Entry("a nature of -10 is -2", int16(-10), byte(0), -2),
+		Entry("a nature of -6 is -1", int16(-6), byte(0), -1),
+		Entry("a nature of 89 is 14", int16(89), byte(0), 14),
+		Entry("a nature of 959 is 100, though the sine is 99.5", int16(959), byte(0), 100),
 	)
 
 	DescribeTable("fixes up the bytes MR2AV fixes up",

@@ -335,12 +335,12 @@ func (_q *LootChanceQuery) WithItem(opts ...func(*ItemQuery)) *LootChanceQuery {
 // Example:
 //
 //	var v []struct {
-//		Good bool `json:"good,omitempty"`
+//		PlaceID int `json:"place_id,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.LootChance.Query().
-//		GroupBy(lootchance.FieldGood).
+//		GroupBy(lootchance.FieldPlaceID).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (_q *LootChanceQuery) GroupBy(field string, fields ...string) *LootChanceGroupBy {
@@ -358,11 +358,11 @@ func (_q *LootChanceQuery) GroupBy(field string, fields ...string) *LootChanceGr
 // Example:
 //
 //	var v []struct {
-//		Good bool `json:"good,omitempty"`
+//		PlaceID int `json:"place_id,omitempty"`
 //	}
 //
 //	client.LootChance.Query().
-//		Select(lootchance.FieldGood).
+//		Select(lootchance.FieldPlaceID).
 //		Scan(ctx, &v)
 func (_q *LootChanceQuery) Select(fields ...string) *LootChanceSelect {
 	_q.ctx.Fields = append(_q.ctx.Fields, fields...)
@@ -413,7 +413,7 @@ func (_q *LootChanceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*L
 			_q.withItem != nil,
 		}
 	)
-	if _q.withPlace != nil || _q.withItem != nil {
+	if _q.withItem != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -456,10 +456,7 @@ func (_q *LootChanceQuery) loadPlace(ctx context.Context, query *ExpeditionPlace
 	ids := make([]int, 0, len(nodes))
 	nodeids := make(map[int][]*LootChance)
 	for i := range nodes {
-		if nodes[i].place_id == nil {
-			continue
-		}
-		fk := *nodes[i].place_id
+		fk := nodes[i].PlaceID
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}
@@ -541,6 +538,9 @@ func (_q *LootChanceQuery) querySpec() *sqlgraph.QuerySpec {
 			if fields[i] != lootchance.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
+		}
+		if _q.withPlace != nil {
+			_spec.Node.AddColumnOnce(lootchance.FieldPlaceID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {

@@ -29,6 +29,7 @@ func (Move) Fields() []ent.Field {
 		field.Text("description"),
 		field.Bool("unlock_never"),
 		field.JSON("unlock", []stored.Condition{}),
+		field.JSON("acquire", []stored.Acquire{}).Optional(),
 		field.String("icon").NotEmpty(),
 	}
 }

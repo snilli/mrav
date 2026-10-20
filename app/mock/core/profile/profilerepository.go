@@ -241,8 +241,8 @@ func (_c *MockProfileRepository_ListDesireNames_Call) RunAndReturn(run func(ctx 
 }
 
 // ListExpeditionMaps provides a mock function for the type MockProfileRepository
-func (_mock *MockProfileRepository) ListExpeditionMaps(ctx context.Context, by domain.Searcher) ([]domain.ExpeditionMap, error) {
-	ret := _mock.Called(ctx, by)
+func (_mock *MockProfileRepository) ListExpeditionMaps(ctx context.Context) ([]domain.ExpeditionMap, error) {
+	ret := _mock.Called(ctx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for ListExpeditionMaps")
@@ -250,18 +250,18 @@ func (_mock *MockProfileRepository) ListExpeditionMaps(ctx context.Context, by d
 
 	var r0 []domain.ExpeditionMap
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, domain.Searcher) ([]domain.ExpeditionMap, error)); ok {
-		return returnFunc(ctx, by)
+	if returnFunc, ok := ret.Get(0).(func(context.Context) ([]domain.ExpeditionMap, error)); ok {
+		return returnFunc(ctx)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, domain.Searcher) []domain.ExpeditionMap); ok {
-		r0 = returnFunc(ctx, by)
+	if returnFunc, ok := ret.Get(0).(func(context.Context) []domain.ExpeditionMap); ok {
+		r0 = returnFunc(ctx)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]domain.ExpeditionMap)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, domain.Searcher) error); ok {
-		r1 = returnFunc(ctx, by)
+	if returnFunc, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = returnFunc(ctx)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -275,24 +275,18 @@ type MockProfileRepository_ListExpeditionMaps_Call struct {
 
 // ListExpeditionMaps is a helper method to define mock.On call
 //   - ctx context.Context
-//   - by domain.Searcher
-func (_e *MockProfileRepository_Expecter) ListExpeditionMaps(ctx any, by any) *MockProfileRepository_ListExpeditionMaps_Call {
-	return &MockProfileRepository_ListExpeditionMaps_Call{Call: _e.mock.On("ListExpeditionMaps", ctx, by)}
+func (_e *MockProfileRepository_Expecter) ListExpeditionMaps(ctx any) *MockProfileRepository_ListExpeditionMaps_Call {
+	return &MockProfileRepository_ListExpeditionMaps_Call{Call: _e.mock.On("ListExpeditionMaps", ctx)}
 }
 
-func (_c *MockProfileRepository_ListExpeditionMaps_Call) Run(run func(ctx context.Context, by domain.Searcher)) *MockProfileRepository_ListExpeditionMaps_Call {
+func (_c *MockProfileRepository_ListExpeditionMaps_Call) Run(run func(ctx context.Context)) *MockProfileRepository_ListExpeditionMaps_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 domain.Searcher
-		if args[1] != nil {
-			arg1 = args[1].(domain.Searcher)
-		}
 		run(
 			arg0,
-			arg1,
 		)
 	})
 	return _c
@@ -303,7 +297,7 @@ func (_c *MockProfileRepository_ListExpeditionMaps_Call) Return(expeditionMaps [
 	return _c
 }
 
-func (_c *MockProfileRepository_ListExpeditionMaps_Call) RunAndReturn(run func(ctx context.Context, by domain.Searcher) ([]domain.ExpeditionMap, error)) *MockProfileRepository_ListExpeditionMaps_Call {
+func (_c *MockProfileRepository_ListExpeditionMaps_Call) RunAndReturn(run func(ctx context.Context) ([]domain.ExpeditionMap, error)) *MockProfileRepository_ListExpeditionMaps_Call {
 	_c.Call.Return(run)
 	return _c
 }

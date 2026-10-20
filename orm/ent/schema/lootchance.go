@@ -14,6 +14,7 @@ type LootChance struct{ ent.Schema }
 
 func (LootChance) Fields() []ent.Field {
 	return []ent.Field{
+		field.Int("place_id"),
 		// good is whether this is the table for a nature above 0.
 		field.Bool("good"),
 		field.Int("tier").NonNegative(),
@@ -26,11 +27,16 @@ func (LootChance) Fields() []ent.Field {
 
 func (LootChance) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("place", ExpeditionPlace.Type).Ref("chances").Unique().Required(),
+		edge.From("place", ExpeditionPlace.Type).Ref("chances").Field("place_id").Unique().Required(),
 		edge.To("item", Item.Type).Unique().Required().StorageKey(edge.Column("item_id")),
 	}
 }
 
 func (LootChance) Indexes() []ent.Index {
-	return []ent.Index{index.Fields("good", "tier", "slot").Edges("place").Unique()}
+	return []ent.Index{
+		index.Fields("good", "tier", "slot").Edges("place").Unique(),
+		// the pages ask for the maps twice a second, and each asks for the chances of a place at the tier of a stat: the
+		// highest min_stat that the stat reaches, and then the rows at that min_stat
+		index.Fields("place_id", "good", "min_stat"),
+	}
 }

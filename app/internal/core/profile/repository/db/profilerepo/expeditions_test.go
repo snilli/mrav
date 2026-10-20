@@ -3,14 +3,15 @@ package profilerepo_test
 import (
 	"context"
 	"errors"
+	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	"orm"
 	"orm/ent"
+	entexpeditionmap "orm/ent/expeditionmap"
 	entexpeditionplace "orm/ent/expeditionplace"
-	entitem "orm/ent/item"
 
 	player "app/internal/core/player/domain"
 	"app/internal/core/profile"
@@ -42,16 +43,19 @@ var _ = Describe("profilerepo expedition maps", Label("integration"), func() {
 			SetMinStat(min).SetPct(pct).SaveX(ctx)
 		slots[key]++
 	}
-	worths := func(by domain.Searcher) map[string]float64 {
-		maps, err := repo.ListExpeditionMaps(ctx, by)
+	// chancesOf is the rows of the tables of a place, by the map and the letter of the place.
+	chancesOf := func(mapName, place string) []domain.Chance {
+		maps, err := repo.ListExpeditionMaps(ctx)
 		Expect(err).NotTo(HaveOccurred())
-		out := map[string]float64{}
 		for _, m := range maps {
 			for _, s := range m.Spots {
-				out[m.Name+"/"+s.Name] = s.Value
+				if m.Name == mapName && s.Name == place {
+					return s.Chances
+				}
 			}
 		}
-		return out
+		Fail("no place " + mapName + "/" + place)
+		return nil
 	}
 
 	BeforeEach(func() {
@@ -86,7 +90,7 @@ var _ = Describe("profilerepo expedition maps", Label("integration"), func() {
 	})
 
 	It("lists the maps in the order they are kept, with their tiles, their start, their places and their locks", func() {
-		maps, err := repo.ListExpeditionMaps(ctx, domain.Searcher{})
+		maps, err := repo.ListExpeditionMaps(ctx)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(maps).To(HaveLen(2))
 
@@ -104,40 +108,63 @@ var _ = Describe("profilerepo expedition maps", Label("integration"), func() {
 		Expect(cave.Spots[0].At).To(Equal(domain.Point{X: 2, Y: 0}))
 		Expect(cave.Spots[0].Building).To(Equal("Mine"))
 		Expect(cave.Spots[1].Name).To(Equal("B"))
+		Expect([]bool{cave.Spots[0].BySkill, cave.Spots[1].BySkill}).To(Equal([]bool{false, true}), "A goes by intelligence, B by skill")
+	})
+
+	It("keeps each place with its own map when there are several, and the places of a map by their letter", func() {
+		cave := client.ExpeditionMap.Query().Where(entexpeditionmap.Name("Cave")).OnlyX(ctx)
+		client.ExpeditionPlace.Create().SetMap(cave).SetName("0").SetX(0).SetY(1).SetBuilding("Door").SetStat(entexpeditionplace.StatInt).SaveX(ctx)
+		client.ExpeditionLock.Create().SetMap(cave).SetX(0).SetY(0).SetMinInt(100).SaveX(ctx)
+		maps, err := repo.ListExpeditionMaps(ctx)
+		Expect(err).NotTo(HaveOccurred())
+
+		names := func(m domain.ExpeditionMap) (out []string) {
+			for _, s := range m.Spots {
+				out = append(out, s.Name)
+			}
+			return out
+		}
+		Expect(names(maps[0])).To(Equal([]string{"0", "A", "B"}))
+		Expect(names(maps[1])).To(Equal([]string{"Z"}))
+		Expect(maps[0].Locks).To(Equal([]domain.Lock{{At: domain.Point{}, MinINT: 100}, {At: domain.Point{X: 1, Y: 1}, MinINT: 300}}),
+			"in the order of the tiles")
+		Expect(maps[1].Locks).To(BeEmpty())
+	})
+
+	It("gives each place every table of chances that it has, whichever the nature and the tier, with the item and what it sells for", func() {
+		Expect(chancesOf("Cave", "A")).To(ConsistOf(
+			domain.Chance{MinStat: 0, Slot: 0, Item: "Gem", Pct: 10, Price: 1000},
+			domain.Chance{MinStat: 0, Slot: 1, Item: "Nuts", Pct: 90, Price: 100},
+			domain.Chance{MinStat: 100, Slot: 0, Item: "Gem", Pct: 20, Price: 1000},
+			domain.Chance{MinStat: 100, Slot: 1, Item: "Nuts", Pct: 80, Price: 100},
+			domain.Chance{Good: true, MinStat: 0, Slot: 0, Item: "Gem", Pct: 50, Price: 1000},
+			domain.Chance{Good: true, MinStat: 100, Slot: 0, Item: "Gem", Pct: 60, Price: 1000},
+		))
+		Expect(chancesOf("Cave", "B")).To(ConsistOf(
+			domain.Chance{MinStat: 0, Slot: 0, Item: "Glue", Pct: 100, Price: 0}, // a price that is not a number is nothing
+			domain.Chance{MinStat: 200, Slot: 0, Item: "Gem", Pct: 100, Price: 1000},
+		))
+	})
+
+	It("keeps the price of each item by the item and not by its name, so that two items of one name do not share one", func() {
+		a := client.ExpeditionPlace.Query().Where(entexpeditionplace.Name("A")).OnlyX(ctx)
+		dear := item(904, "Nuts", "300")
+		chance(a, false, 0, 0, dear, 5)
+		Expect(chancesOf("Cave", "A")).To(ContainElement(domain.Chance{MinStat: 0, Slot: 2, Item: "Nuts", Pct: 5, Price: 300}))
+	})
+
+	It("lists a place that has no chances at all, with none", func() {
+		Expect(chancesOf("Empty", "Z")).To(BeEmpty())
 	})
 
 	It("reads a wall, a rock and a teleport as what they are", func() {
 		client.ExpeditionMap.Create().SetName("Odd").SetRows("#oT\nS..").SetStartX(0).SetStartY(1).SaveX(ctx)
-		maps, err := repo.ListExpeditionMaps(ctx, domain.Searcher{})
+		maps, err := repo.ListExpeditionMaps(ctx)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(maps[2].Tiles[:3]).To(Equal([]domain.Terrain{domain.Wall, domain.Rock, domain.Teleport}))
 		Expect(maps[2].Start).To(Equal(domain.Point{X: 0, Y: 1}))
 	})
 
-	DescribeTable("works out in the database what a search of a place is worth: each item's chance by its price, at the tier of the stat",
-		func(by domain.Searcher, place string, want float64) {
-			Expect(worths(by)["Cave/"+place]).To(BeNumerically("~", want, 1e-9))
-		},
-		Entry("the first tier of intelligence", domain.Searcher{Intelligence: 99}, "A", 190.0),
-		Entry("the second, from where it starts", domain.Searcher{Intelligence: 100}, "A", 280.0),
-		Entry("the second, as high as the stat goes", domain.Searcher{Intelligence: 999}, "A", 280.0),
-		Entry("a good nature has a table of its own", domain.Searcher{Intelligence: 150, GoodNature: true}, "A", 600.0),
-		Entry("a building that is searched by skill takes no notice of intelligence", domain.Searcher{Intelligence: 999, Skill: 0}, "B", 0.0),
-		Entry("and goes by skill", domain.Searcher{Intelligence: 0, Skill: 250}, "B", 1000.0),
-		Entry("an item that cannot be sold is worth nothing", domain.Searcher{Skill: 199}, "B", 0.0),
-	)
-
-	It("adds up the two rows that a table has for one item", func() {
-		gem := client.Item.Query().Where(entitem.Name("Gem")).OnlyX(ctx)
-		a := client.ExpeditionPlace.Query().Where(entexpeditionplace.Name("A")).OnlyX(ctx)
-		chance(a, false, 0, 0, gem, 10) // a second row of Gem in the first tier of A, which had 10 and has 20 now
-		Expect(worths(domain.Searcher{Intelligence: 0})["Cave/A"]).To(BeNumerically("~", 100+100+90, 1e-9))
-	})
-
-	It("gives a place that has no chances at all a worth of nothing, and still lists it", func() {
-		got := worths(domain.Searcher{Intelligence: 500})
-		Expect(got).To(HaveKeyWithValue("Empty/Z", BeNumerically("==", 0)))
-	})
 })
 
 var _ = Describe("profilerepo shipped expedition maps", Label("integration"), func() {
@@ -151,8 +178,11 @@ var _ = Describe("profilerepo shipped expedition maps", Label("integration"), fu
 		}
 		Expect(err).NotTo(HaveOccurred())
 		DeferCleanup(client.Close)
-		got, err := profilerepo.New(client).ListExpeditionMaps(ctx, by)
+		got, err := profilerepo.New(client).ListExpeditionMaps(ctx)
 		Expect(err).NotTo(HaveOccurred())
+		for i := range got {
+			got[i] = got[i].For(by) // what a search of each place is worth to the searcher, which the domain works out
+		}
 		return got
 	}
 	spot := func(m domain.ExpeditionMap, name string) domain.Spot {
@@ -180,6 +210,59 @@ var _ = Describe("profilerepo shipped expedition maps", Label("integration"), fu
 		Entry("Kawrea", 2, "Kawrea Volcano", 26, 28, 10, 3, domain.Point{X: 12, Y: 27}),
 	)
 
+	DescribeTable("has the teleports of a map and where each lands, with the labels that the guide gives them",
+		func(i int, want []domain.Portal) { Expect(maps[i].Portals).To(ConsistOf(want)) },
+		Entry("Parepare, one teleport and the three places where it lands", 0, []domain.Portal{
+			{Label: "T1", At: domain.Point{X: 7, Y: 0}, To: []string{"E1", "E2", "E3"}},
+			{Label: "E1", At: domain.Point{X: 5, Y: 6}}, {Label: "E2", At: domain.Point{X: 9, Y: 3}}, {Label: "E3", At: domain.Point{X: 9, Y: 14}},
+		}),
+		Entry("Torles, five teleports, one of which leads to another", 1, []domain.Portal{
+			{Label: "T1", At: domain.Point{X: 2, Y: 0}, To: []string{"E1", "E2", "E3"}},
+			{Label: "T2", At: domain.Point{X: 9, Y: 9}, To: []string{"E1", "E2", "E3"}},
+			{Label: "T3", At: domain.Point{X: 17, Y: 6}, To: []string{"E1", "E2", "E3"}},
+			{Label: "T4", At: domain.Point{X: 14, Y: 20}, To: []string{"E3", "E4", "E5"}},
+			{Label: "T5", At: domain.Point{X: 25, Y: 4}, To: []string{"E3", "T4"}},
+			{Label: "E1", At: domain.Point{X: 0, Y: 25}}, {Label: "E2", At: domain.Point{X: 13, Y: 20}},
+			{Label: "E3", At: domain.Point{X: 19, Y: 7}}, {Label: "E4", At: domain.Point{X: 0, Y: 9}},
+			{Label: "E5", At: domain.Point{X: 12, Y: 25}},
+		}),
+		Entry("Kawrea, two teleports, one of which has one place to land", 2, []domain.Portal{
+			{Label: "T1", At: domain.Point{X: 7, Y: 4}, To: []string{"E1", "E2", "E3"}},
+			{Label: "T2", At: domain.Point{X: 3, Y: 23}, To: []string{"E4"}},
+			{Label: "E1", At: domain.Point{X: 7, Y: 0}}, {Label: "E2", At: domain.Point{X: 25, Y: 13}},
+			{Label: "E3", At: domain.Point{X: 0, Y: 17}}, {Label: "E4", At: domain.Point{X: 5, Y: 23}},
+		}),
+	)
+
+	It("puts every teleport on a teleport tile, every place to land on a floor tile, and every teleport tile has a label", func() {
+		for _, m := range maps {
+			labels := map[string]bool{}
+			for _, p := range m.Portals {
+				labels[p.Label] = true
+			}
+			teleports := 0
+			for _, p := range m.Portals {
+				tile := m.Tiles[p.At.Y*m.Width+p.At.X]
+				if strings.HasPrefix(p.Label, "T") {
+					teleports++
+					Expect(tile).To(Equal(domain.Teleport), m.Name+" "+p.Label)
+				} else {
+					Expect(tile).To(Equal(domain.Floor), m.Name+" "+p.Label)
+				}
+				for _, to := range p.To {
+					Expect(labels).To(HaveKey(to), m.Name+" "+p.Label+" leads to "+to)
+				}
+			}
+			tiles := 0
+			for _, t := range m.Tiles {
+				if t == domain.Teleport {
+					tiles++
+				}
+			}
+			Expect(tiles).To(Equal(teleports), m.Name)
+		}
+	})
+
 	It("is for every trip the name that the game gives the trip, so that its week finds the map", func() {
 		for _, m := range maps {
 			found := false
@@ -200,6 +283,40 @@ var _ = Describe("profilerepo shipped expedition maps", Label("integration"), fu
 
 		maps = load(domain.Searcher{Intelligence: 150})
 		Expect(spot(maps[0], "A").Value).To(BeNumerically("~", 413.55, 1e-6))
+	})
+
+	It("lists what a search of a place may turn up, with its chance, at the tier of the monster, the likeliest first, and leaves out what it never turns up", func() {
+		// Mamoth Statue, searched by intelligence, the tier of 100 to 199: the web's table for A, with nature above 0 first.
+		good := spot(load(domain.Searcher{Intelligence: 150, GoodNature: true})[0], "A")
+		Expect(good.Loot).To(Equal([]domain.Drop{
+			{Item: "Mint Leaf", Pct: 25, Price: 100},
+			{Item: "Magic Banana", Pct: 25, Price: 100},
+			{Item: "Nuts Oil", Pct: 18.8, Price: 100},
+			{Item: "Griever", Pct: 18.8, Price: 50},
+			{Item: "Zuum Chips", Pct: 12.5, Price: 500},
+		}))
+
+		bad := spot(load(domain.Searcher{Intelligence: 150})[0], "A") // nature 0 or below
+		Expect(bad.Loot).To(Equal([]domain.Drop{
+			{Item: "Pixie Chips", Pct: 18.8, Price: 1000},
+			{Item: "Golem Chips", Pct: 18.8, Price: 500},
+			{Item: "Zuum Chips", Pct: 18.8, Price: 500},
+			{Item: "Magic Banana", Pct: 18.8, Price: 100},
+			{Item: "Mint Leaf", Pct: 12.5, Price: 100},
+			{Item: "Griever", Pct: 12.5, Price: 50},
+		}))
+	})
+
+	It("adds up to the worth of the place, since the worth is what the list sells for at its chances", func() {
+		for _, m := range load(domain.Searcher{Intelligence: 463, Skill: 690, GoodNature: true}) {
+			for _, s := range m.Spots {
+				sum := 0.0
+				for _, d := range s.Loot {
+					sum += d.Pct / 100 * float64(d.Price)
+				}
+				Expect(sum).To(BeNumerically("~", s.Value, 1e-6), m.Name+"/"+s.Name)
+			}
+		}
 	})
 
 	It("finds a monster that is three steps up from the start of Kawrea in June, as the game showed it at X 0, Y 3", func() {

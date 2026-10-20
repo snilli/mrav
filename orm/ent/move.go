@@ -49,6 +49,8 @@ type Move struct {
 	UnlockNever bool `json:"unlock_never,omitempty"`
 	// Unlock holds the value of the "unlock" field.
 	Unlock []stored.Condition `json:"unlock,omitempty"`
+	// Acquire holds the value of the "acquire" field.
+	Acquire []stored.Acquire `json:"acquire,omitempty"`
 	// Icon holds the value of the "icon" field.
 	Icon string `json:"icon,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -82,7 +84,7 @@ func (*Move) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case move.FieldExtra, move.FieldUnlock:
+		case move.FieldExtra, move.FieldUnlock, move.FieldAcquire:
 			values[i] = new([]byte)
 		case move.FieldUnlockNever:
 			values[i] = new(sql.NullBool)
@@ -205,6 +207,14 @@ func (_m *Move) assignValues(columns []string, values []any) error {
 					return fmt.Errorf("unmarshal field unlock: %w", err)
 				}
 			}
+		case move.FieldAcquire:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field acquire", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.Acquire); err != nil {
+					return fmt.Errorf("unmarshal field acquire: %w", err)
+				}
+			}
 		case move.FieldIcon:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field icon", values[i])
@@ -296,6 +306,9 @@ func (_m *Move) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("unlock=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Unlock))
+	builder.WriteString(", ")
+	builder.WriteString("acquire=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Acquire))
 	builder.WriteString(", ")
 	builder.WriteString("icon=")
 	builder.WriteString(_m.Icon)

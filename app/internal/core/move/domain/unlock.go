@@ -55,6 +55,32 @@ type UnlockRule struct {
 	All   []Condition
 }
 
+// Nature is the nature that a move asks of a monster: a good one, a bad one, or none.
+type Nature int
+
+const (
+	NatureNone Nature = iota
+	NatureGood
+	NatureBad
+)
+
+// Nature is the nature that the rule asks for: a good one when it wants more than 0, a bad one when it wants less.
+func (r UnlockRule) Nature() Nature {
+	for _, c := range r.All {
+		switch c := c.(type) {
+		case NatureAtLeast:
+			if c.Min > 0 {
+				return NatureGood
+			}
+		case NatureAtMost:
+			if c.Max < 0 {
+				return NatureBad
+			}
+		}
+	}
+	return NatureNone
+}
+
 // Holds reports whether the monster meets every condition.
 func (r UnlockRule) Holds(m monster.Monster) bool {
 	if r.Never {

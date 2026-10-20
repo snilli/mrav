@@ -57,6 +57,7 @@ type Monster struct {
 	SilverPeach     bool            // eaten
 	ItemUsed        bool            // an item has been used this week
 	Motivation      [DrillCount]int // percent, by drill: Domino, Study, Run, Shoot, Dodge, Endure, Pull, Meditate, Leap, Swim
+	PatchedSwim     bool            // the game trains the swim as the patched game does, which the Steam release does
 	PlayType        int
 	Drug            int // an item id; the drugs are 34 to 41
 	DrugWeeks       int

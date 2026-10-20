@@ -4,6 +4,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	monster "app/internal/core/monster/domain"
 	"app/internal/core/move/domain"
 	"app/internal/delivery/ui/moveui"
 )
@@ -35,6 +36,19 @@ var _ = Describe("NewGridView", func() {
 		Expect(v.Cells[0][1]).To(Equal(moveui.CellView{Icon: "Pixie_2", CanLearn: true}))
 	})
 
+	It("gives each cell the kind of its move, and the nature that the move asks for", func() {
+		kind := domain.Move{Col: 1, Row: 4, Name: "Zap", Icon: "Pixie_4", Kind: domain.KindIntelligence,
+			Unlock: domain.UnlockRule{All: []domain.Condition{domain.NatureAtMost{Max: -20}}}}
+		g := grid()
+		g.Cells[0][3] = domain.Cell{Move: &kind}
+		g.Active[1] = &kind
+		v := moveui.NewGridView(g)
+		Expect(v.Cells[0][3].Kind).To(Equal(domain.KindIntelligence))
+		Expect(v.Cells[0][3].Nature).To(Equal(domain.NatureBad))
+		Expect(v.Cells[0][0].Nature).To(Equal(domain.NatureNone))
+		Expect(v.ActiveKind[1]).To(Equal(domain.KindIntelligence))
+	})
+
 	It("shows a move that is neither learned nor ready to learn as locked", func() {
 		Expect(moveui.NewGridView(grid()).Cells[0][2]).To(Equal(moveui.CellView{Icon: "Pixie_3", Locked: true}))
 	})
@@ -64,6 +78,13 @@ var _ = Describe("NewDetailView", func() {
 		}))
 	})
 
+	It("gives the nature that the move asks for, to show beside its name", func() {
+		good := domain.Move{Name: "Pat", Unlock: domain.UnlockRule{All: []domain.Condition{domain.NatureAtLeast{Min: 50}}}}
+		Expect(moveui.NewDetailView(domain.Cell{Move: &good}).Nature).To(Equal(domain.NatureGood))
+		plain := domain.Move{Name: "Pat"}
+		Expect(moveui.NewDetailView(domain.Cell{Move: &plain}).Nature).To(Equal(domain.NatureNone))
+	})
+
 	It("says in words where the move stands: learned, ready to learn, or not yet", func() {
 		m := domain.Move{Name: "Slap"}
 		Expect(moveui.NewDetailView(domain.Cell{Move: &m, Learned: true}).Status).To(Equal("LEARNED"))
@@ -86,12 +107,12 @@ var _ = Describe("NewDetailView", func() {
 	It("lists what the monster still needs to learn the move, and where it stands on each", func() {
 		m := domain.Move{Name: "Slap"}
 		v := moveui.NewDetailView(domain.Cell{Move: &m, Requirements: []domain.Requirement{
-			{Text: "Pow + Int at least 400", Have: "421", Met: true},
+			{Text: "Pow + Int at least 400", Have: "421", Met: true, Stats: []monster.Stat{monster.Pow, monster.Int}},
 			{Text: "Use Pat at least 50 times", Have: "31 / 50"},
 			{Text: "The game gives no way to learn it"},
 		}})
 		Expect(v.Requirements).To(Equal([]moveui.RequirementView{
-			{Text: "Pow + Int at least 400", Have: "421", Met: true},
+			{Text: "Pow + Int at least 400", Have: "421", Met: true, Stats: []monster.Stat{monster.Pow, monster.Int}},
 			{Text: "Use Pat at least 50 times", Have: "31 / 50"},
 			{Text: "The game gives no way to learn it"},
 		}))

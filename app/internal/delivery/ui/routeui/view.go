@@ -5,6 +5,9 @@ package routeui
 import (
 	"fmt"
 	"math"
+	"slices"
+	"strconv"
+	"strings"
 
 	monster "app/internal/core/monster/domain"
 	player "app/internal/core/player/domain"
@@ -16,7 +19,8 @@ import (
 type View struct {
 	Name         string
 	Summary      string          // what the monster brings to it, and what the route costs and is worth
-	Stops        []string        // the places to search, numbered in the order to go
+	Places       []PlaceView     // the places of the map: those that the route takes in the order to go, then the rest
+	Teleports    []string        // where each teleport of the map leads, a line for each
 	Intelligence int             // the monster's, which says which gates it can find the way through
 	Marker       *domain.Point   // the tile the monster stands on, when it is on the trip of this map; nil otherwise
 	Standing     []profileui.Box // what to say of the monster on the trip: its energy, where it is, its steps
@@ -34,8 +38,7 @@ func NewView(p domain.Profile, m domain.ExpeditionMap) (View, error) {
 		BreakChance:  domain.BreakChance(mon.Stats[monster.Pow]),
 		Intelligence: mon.Stats[monster.Int],
 	}
-	good := mon.Nature > 0 // what a place is worth is already in the maps of the profile, worked out for this monster
-
+	// what a place is worth is in the maps of the profile already, worked out for this monster, with its nature
 	// On its trip, where the monster stands and what it has left are what a route is from, once it has made steps; the
 	// energy that the game keeps from another trip, or from a longer-lived monster, is no more than a mark, so
 	// more than it begins with is not taken for what it has left.
@@ -54,34 +57,97 @@ func NewView(p domain.Profile, m domain.ExpeditionMap) (View, error) {
 	if err != nil {
 		return View{}, err
 	}
-	nature := "bad"
-	if good {
-		nature = "good"
+	v := View{
+		Name: m.Name, Intelligence: walker.Intelligence, Marker: marker, Map: m, Route: route,
+		Places: placeViews(m, route), Teleports: teleports(m),
 	}
-	v := View{Name: m.Name, Intelligence: walker.Intelligence, Marker: marker, Map: m, Route: route}
 	if marker != nil {
 		v.Standing = standing(ranch)
 	}
-	head := fmt.Sprintf("%d energy, ", walker.Energy)
+	// What the panel says elsewhere is not said again here: the energy that a monster on its trip has left and where it is are in
+	// the boxes above the map, what the route is worth is in the heading, the INT is in the gates and the nature in the places.
+	breaks := round(walker.BreakChance * 100)
 	if left {
-		x, y := ranch.Walked()
-		head = fmt.Sprintf("%d energy left, at X %d, Y %d, ", walker.Energy, x, y)
+		v.Summary = fmt.Sprintf("Rocks break %d%%", breaks)
+	} else {
+		v.Summary = fmt.Sprintf("Starts with %d energy · rocks break %d%%", walker.Energy, breaks)
 	}
-	head += fmt.Sprintf("rocks break %d%%, INT %d, %s nature: ", round(walker.BreakChance*100), walker.Intelligence, nature)
-	if len(route.Spots) == 0 {
-		v.Summary = head + "no place is in reach"
-		return v, nil
-	}
-	v.Summary = head + fmt.Sprintf("%s, about %d energy, worth about %s",
-		places(len(route.Spots)), round(route.Cost), profileui.Gold(round(route.Value)))
-	for i, s := range route.Spots {
-		name := s.Name
-		if s.Building != "" {
-			name += " · " + s.Building
-		}
-		v.Stops = append(v.Stops, fmt.Sprintf("%d. %s · %s", i+1, name, profileui.Gold(round(s.Value))))
+	if len(route.Spots) > 0 {
+		v.Summary += fmt.Sprintf(" · the route costs about %d energy", round(route.Cost))
 	}
 	return v, nil
+}
+
+// PlaceView is a place of the map, where it stands in the route, what a search of it is worth, and what it may turn up.
+type PlaceView struct {
+	Name     string // its letter on the map
+	Building string
+	Stop     int    // its number in the route, from 1; 0 where the route leaves it out
+	Worth    string // what a search of it is worth on average, in words; empty where it is worth nothing
+	Loot     []DropView
+}
+
+// DropView is an item that a search may turn up, and the chance that it does.
+type DropView struct {
+	Item   string
+	Chance string // in percent, to one decimal, without a needless .0
+	Story  bool   // an item of the story, which the game gives once
+}
+
+// storyItems are the items that the game gives once, which a guide marks on the maps: what the unlocks wait for.
+var storyItems = map[string]bool{
+	"Old Sheath": true, "Mask": true, "Big Footstep": true, "Fire Feather": true, "Strong Glue": true, "Gold Peach": true,
+}
+
+// placeViews lists the places of the map: the ones that the route takes, in the order to go, and then the ones that it
+// leaves out, by name.
+func placeViews(m domain.ExpeditionMap, route domain.Route) []PlaceView {
+	stop := make(map[string]int, len(route.Spots))
+	var out []PlaceView
+	for i, s := range route.Spots {
+		stop[s.Name] = i + 1
+		out = append(out, placeView(s, i+1))
+	}
+	var rest []PlaceView
+	for _, s := range m.Spots {
+		if stop[s.Name] == 0 {
+			rest = append(rest, placeView(s, 0))
+		}
+	}
+	slices.SortStableFunc(rest, func(a, b PlaceView) int { return strings.Compare(a.Name, b.Name) })
+	return append(out, rest...)
+}
+
+func placeView(s domain.Spot, stop int) PlaceView {
+	p := PlaceView{Name: s.Name, Building: s.Building, Stop: stop}
+	if round(s.Value) > 0 {
+		p.Worth = "about " + profileui.Gold(round(s.Value))
+	}
+	for _, d := range s.Loot {
+		p.Loot = append(p.Loot, DropView{Item: d.Item, Chance: chance(d.Pct), Story: storyItems[d.Item]})
+	}
+	return p
+}
+
+// teleports says where each teleport of the map leads: to the one place there is, or to one of several, chosen at random. The
+// places where a teleport lands lead nowhere, and have no line.
+func teleports(m domain.ExpeditionMap) []string {
+	var lines []string
+	for _, p := range m.Portals {
+		switch n := len(p.To); n {
+		case 0:
+		case 1:
+			lines = append(lines, p.Label+" takes you to "+p.To[0])
+		default:
+			lines = append(lines, p.Label+" takes you to "+strings.Join(p.To[:n-1], ", ")+" or "+p.To[n-1]+", at random")
+		}
+	}
+	return lines
+}
+
+// chance says a chance in percent to one decimal, without the decimal when it is 0: 25%, 18.8%.
+func chance(percent float64) string {
+	return strconv.FormatFloat(math.Round(percent*10)/10, 'f', -1, 64) + "%"
 }
 
 // standing is what the game keeps of a monster on its trip, for boxes above the map: the energy that it has, coloured

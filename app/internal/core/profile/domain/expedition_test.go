@@ -9,7 +9,7 @@ import (
 )
 
 var _ = Describe("Expeditions", func() {
-	It("are four, in the order of the calendar, each in the first week of its month", func() {
+	It("are three, in the order of the calendar, each in the first week of its month", func() {
 		var names []string
 		last := 0
 		for _, e := range domain.Expeditions {
@@ -18,37 +18,32 @@ var _ = Describe("Expeditions", func() {
 			Expect(e.Month).To(BeNumerically(">=", last))
 			last = e.Month
 		}
-		Expect(names).To(Equal([]string{"Torles Mountains", "Phoenix Volcano Adventure", "Kawrea Volcano", "Parepare Jungle"}))
+		Expect(names).To(Equal([]string{"Torles Mountains", "Kawrea Volcano", "Parepare Jungle"}))
 	})
 
-	It("have one that comes first, once, and unlocks the others", func() {
-		first := 0
+	It("leave out the first expedition, Phoenix Volcano Adventure, which can be made once only and of which the game does not say whether it was", func() {
 		for _, e := range domain.Expeditions {
-			if e.First {
-				first++
-				Expect(e.Name).To(Equal("Phoenix Volcano Adventure"))
-			}
+			Expect(e.Name).NotTo(Equal("Phoenix Volcano Adventure"))
 		}
-		Expect(first).To(Equal(1))
 	})
 
-	It("ask a monster for life, fame and a grade, and say where it stands on each", func() {
+	It("ask a monster for life, fame and a grade, and say how much of each it has, a grade as its rank", func() {
 		torles := domain.Expeditions[0] // Life 210, Fame 50, grade C
 		m := monster.Monster{Stats: [monster.StatCount]int{monster.Life: 305}, Fame: 40, Rank: 3}
 		Expect(torles.Conditions(m)).To(Equal([]domain.Condition{
-			{Text: "LIF 210 or more", Have: "305", Met: true},
-			{Text: "Fame 50 or more", Have: "40", Met: false},
-			{Text: "Grade C or higher", Have: "B", Met: true},
+			{Kind: domain.CondLife, Need: 210, Have: 305},
+			{Kind: domain.CondFame, Need: 50, Have: 40},
+			{Kind: domain.CondGrade, Need: 2, Have: 3},
 		}))
 	})
 
 	It("take the exact amount as enough, and a lower grade as not", func() {
-		kawrea := domain.Expeditions[2] // Life 280, Fame 50, grade B
+		kawrea := domain.Expeditions[1] // Life 280, Fame 50, grade B
 		m := monster.Monster{Stats: [monster.StatCount]int{monster.Life: 280}, Fame: 50, Rank: 2}
 		conditions := kawrea.Conditions(m)
-		Expect(conditions[0].Met).To(BeTrue())
-		Expect(conditions[1].Met).To(BeTrue())
-		Expect(conditions[2].Met).To(BeFalse()) // grade C, not B
+		Expect(conditions[0].Met()).To(BeTrue())
+		Expect(conditions[1].Met()).To(BeTrue())
+		Expect(conditions[2].Met()).To(BeFalse()) // grade C, not B
 	})
 
 	DescribeTable("RankLetter writes a rank as the game's letter",

@@ -32,10 +32,10 @@ type BreedView struct {
 type FacilityView struct {
 	Name       string
 	Level, Max int
-	Ratio      float64
-	Detail     string // what its level gives, where it gives something
-	Next       string // the next step and what it costs, or why there is none
-	State      Box    // where that step stands: ready, what is missing, or the top
+	Gives      string // what its level gives, where it gives something
+	Next       string // what its next step costs; empty where there is none
+	State      Box    // where that step stands, in words: ready, what it needs, or that there is nothing more to do
+	Offer      string // when the game offers its steps, where that is a time of its own: the altar's
 }
 
 var facilityNames = [...]string{player.House: "House", player.Barn: "Stable", player.Altar: "Altar"}
@@ -85,47 +85,52 @@ func inWeeks(weeks int) string {
 func newFacilityView(f player.Facility, p player.Player) FacilityView {
 	r := p.Ranch
 	level, top := r.Level(f), player.MaxLevel(f)
-	v := FacilityView{Name: facilityNames[f], Level: level, Max: top, Ratio: float64(level) / float64(top)}
+	v := FacilityView{Name: facilityNames[f], Level: level, Max: top}
 	if f == player.House {
-		v.Detail = fmt.Sprintf("%d places", r.Slots())
+		v.Gives = fmt.Sprintf("%d places", r.Slots())
 	}
 	switch up, ok := r.Next(f); {
 	case ok:
 		v.Next = "next " + Gold(up.Cost)
-		if up.Grade > 0 {
-			v.Next += fmt.Sprintf(" · grade %d", up.Grade)
-		}
 		if f == player.Altar { // its own time: not the house's and the stable's May
 			month, week := player.UpgradeTime(f)
-			v.Next += fmt.Sprintf(" · %s wk %d, %d weeks after the last step", player.MonthNames[month-1], week, player.AltarWait)
+			v.Offer = fmt.Sprintf("Offered %s wk %d, %d weeks after the last step", player.MonthNames[month-1], week, player.AltarWait)
 		}
 		v.State = upgradeState(up, r.Grade, p.Money)
-		if f == player.Altar && v.State.Text == "READY" {
+		if f == player.Altar && v.State.Text == "Ready" {
 			// the gold is all that is known: when it last had a step is not kept anywhere that is read
-			v.State = Box{Text: "gold is enough", Tone: ToneLightGreen}
+			v.State = Box{Text: "Gold is enough", Tone: ToneLightGreen}
 		}
 	case f == player.Altar && level == 0:
-		v.Detail, v.Next = "none", "no altar yet"
+		v.State = Box{Text: "No altar yet", Tone: ToneGray}
 	default:
-		v.Next, v.State = "fully upgraded", Box{Text: "MAX", Tone: ToneGray}
+		v.State = Box{Text: "Fully upgraded", Tone: ToneGray}
 	}
 	return v
 }
 
 // upgradeState says whether an upgrade can be had: ready when the breeder's grade is enough and the gold on hand is
-// the cost and the game's 5,000 more, and otherwise what is missing.
+// the cost and the game's 5,000 more, and otherwise in words what it needs.
 func upgradeState(up player.Upgrade, grade, money int) Box {
 	var missing []string
 	if grade < up.Grade {
-		missing = append(missing, fmt.Sprintf("grade %d", up.Grade))
+		missing = append(missing, fmt.Sprintf("breeder grade %d (now %d)", up.Grade, grade))
 	}
 	if need := up.GoldNeeded(); money < need {
 		missing = append(missing, Gold(need-money)+" more")
 	}
 	if len(missing) == 0 {
-		return Box{Text: "READY", Tone: ToneLimeGreen}
+		return Box{Text: "Ready", Tone: ToneLimeGreen}
 	}
-	return Box{Text: strings.Join(missing, " · "), Tone: ToneOrange}
+	return Box{Text: needs(missing), Tone: ToneOrange}
+}
+
+// needs says what is lacking as a sentence: "Needs a", "Needs a and b", "Needs a, b and c".
+func needs(items []string) string {
+	if len(items) < 2 {
+		return "Needs " + strings.Join(items, "")
+	}
+	return "Needs " + strings.Join(items[:len(items)-1], ", ") + " and " + items[len(items)-1]
 }
 
 // Gold writes an amount of gold with a comma between thousands: 12,000 G.

@@ -113,6 +113,12 @@ func (_c *MoveCreate) SetUnlock(v []stored.Condition) *MoveCreate {
 	return _c
 }
 
+// SetAcquire sets the "acquire" field.
+func (_c *MoveCreate) SetAcquire(v []stored.Acquire) *MoveCreate {
+	_c.mutation.SetAcquire(v)
+	return _c
+}
+
 // SetIcon sets the "icon" field.
 func (_c *MoveCreate) SetIcon(v string) *MoveCreate {
 	_c.mutation.SetIcon(v)
@@ -318,6 +324,10 @@ func (_c *MoveCreate) createSpec() (*Move, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Unlock(); ok {
 		_spec.SetField(move.FieldUnlock, field.TypeJSON, value)
 		_node.Unlock = value
+	}
+	if value, ok := _c.mutation.Acquire(); ok {
+		_spec.SetField(move.FieldAcquire, field.TypeJSON, value)
+		_node.Acquire = value
 	}
 	if value, ok := _c.mutation.Icon(); ok {
 		_spec.SetField(move.FieldIcon, field.TypeString, value)
@@ -623,6 +633,24 @@ func (u *MoveUpsert) SetUnlock(v []stored.Condition) *MoveUpsert {
 // UpdateUnlock sets the "unlock" field to the value that was provided on create.
 func (u *MoveUpsert) UpdateUnlock() *MoveUpsert {
 	u.SetExcluded(move.FieldUnlock)
+	return u
+}
+
+// SetAcquire sets the "acquire" field.
+func (u *MoveUpsert) SetAcquire(v []stored.Acquire) *MoveUpsert {
+	u.Set(move.FieldAcquire, v)
+	return u
+}
+
+// UpdateAcquire sets the "acquire" field to the value that was provided on create.
+func (u *MoveUpsert) UpdateAcquire() *MoveUpsert {
+	u.SetExcluded(move.FieldAcquire)
+	return u
+}
+
+// ClearAcquire clears the value of the "acquire" field.
+func (u *MoveUpsert) ClearAcquire() *MoveUpsert {
+	u.SetNull(move.FieldAcquire)
 	return u
 }
 
@@ -948,6 +976,27 @@ func (u *MoveUpsertOne) SetUnlock(v []stored.Condition) *MoveUpsertOne {
 func (u *MoveUpsertOne) UpdateUnlock() *MoveUpsertOne {
 	return u.Update(func(s *MoveUpsert) {
 		s.UpdateUnlock()
+	})
+}
+
+// SetAcquire sets the "acquire" field.
+func (u *MoveUpsertOne) SetAcquire(v []stored.Acquire) *MoveUpsertOne {
+	return u.Update(func(s *MoveUpsert) {
+		s.SetAcquire(v)
+	})
+}
+
+// UpdateAcquire sets the "acquire" field to the value that was provided on create.
+func (u *MoveUpsertOne) UpdateAcquire() *MoveUpsertOne {
+	return u.Update(func(s *MoveUpsert) {
+		s.UpdateAcquire()
+	})
+}
+
+// ClearAcquire clears the value of the "acquire" field.
+func (u *MoveUpsertOne) ClearAcquire() *MoveUpsertOne {
+	return u.Update(func(s *MoveUpsert) {
+		s.ClearAcquire()
 	})
 }
 
@@ -1438,6 +1487,27 @@ func (u *MoveUpsertBulk) SetUnlock(v []stored.Condition) *MoveUpsertBulk {
 func (u *MoveUpsertBulk) UpdateUnlock() *MoveUpsertBulk {
 	return u.Update(func(s *MoveUpsert) {
 		s.UpdateUnlock()
+	})
+}
+
+// SetAcquire sets the "acquire" field.
+func (u *MoveUpsertBulk) SetAcquire(v []stored.Acquire) *MoveUpsertBulk {
+	return u.Update(func(s *MoveUpsert) {
+		s.SetAcquire(v)
+	})
+}
+
+// UpdateAcquire sets the "acquire" field to the value that was provided on create.
+func (u *MoveUpsertBulk) UpdateAcquire() *MoveUpsertBulk {
+	return u.Update(func(s *MoveUpsert) {
+		s.UpdateAcquire()
+	})
+}
+
+// ClearAcquire clears the value of the "acquire" field.
+func (u *MoveUpsertBulk) ClearAcquire() *MoveUpsertBulk {
+	return u.Update(func(s *MoveUpsert) {
+		s.ClearAcquire()
 	})
 }
 

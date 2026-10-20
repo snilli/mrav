@@ -6,6 +6,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 )
@@ -33,8 +34,10 @@ var toneColors = map[Tone]color.Color{
 // ToneBox shows a value on the colour of its tone: black text, or white on the two dark fills.
 type ToneBox struct {
 	widget.BaseWidget
-	bg  *canvas.Rectangle
-	txt *canvas.Text
+	bg      *canvas.Rectangle
+	txt     *canvas.Text
+	box     Box
+	compact bool
 }
 
 func NewToneBox() *ToneBox {
@@ -54,7 +57,19 @@ func (b *ToneBox) Large() *ToneBox {
 	return b
 }
 
+// Compact makes the box small, for the corner of an icon: small bold text with hardly any room round it.
+func (b *ToneBox) Compact() *ToneBox {
+	b.txt.TextSize = 10
+	b.txt.TextStyle = fyne.TextStyle{Bold: true}
+	b.compact = true
+	return b
+}
+
+// Box is what the box was last given to show.
+func (b *ToneBox) Box() Box { return b.box }
+
 func (b *ToneBox) Set(box Box) {
+	b.box = box
 	b.txt.Text = box.Text
 	if fill, ok := toneColors[box.Tone]; ok {
 		b.bg.FillColor, b.txt.Color = fill, color.Black
@@ -68,7 +83,11 @@ func (b *ToneBox) Set(box Box) {
 }
 
 func (b *ToneBox) CreateRenderer() fyne.WidgetRenderer {
-	return widget.NewSimpleRenderer(container.NewStack(b.bg, container.NewPadded(b.txt)))
+	padded := fyne.CanvasObject(container.NewPadded(b.txt))
+	if b.compact {
+		padded = container.New(layout.NewCustomPaddedLayout(0, 0, 2, 2), b.txt)
+	}
+	return widget.NewSimpleRenderer(container.NewStack(b.bg, padded))
 }
 
 func setVisible(o fyne.CanvasObject, on bool) {

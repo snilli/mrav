@@ -83,6 +83,7 @@ type MonsterView struct {
 	Spoil           string
 	Fear            string
 	Fame            Box
+	Rank            string // the grade of the monster as the game writes it, E to S
 	Stress          string
 	Fatigue         string
 	LifeIndex       Box
@@ -149,6 +150,7 @@ func NewMonsterView(p domain.Profile, o Options) MonsterView {
 		Spoil:           strconv.Itoa(m.Spoil),
 		Fear:            strconv.Itoa(m.Fear),
 		Fame:            Box{Text: strconv.Itoa(m.Fame)},
+		Rank:            domain.RankLetter(m.Rank),
 		Stress:          strconv.Itoa(m.Stress),
 		Fatigue:         strconv.Itoa(m.Fatigue),
 		LifeIndex:       lifeIndexBox(m),

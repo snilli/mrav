@@ -18,6 +18,8 @@ type LootChance struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID int `json:"id,omitempty"`
+	// PlaceID holds the value of the "place_id" field.
+	PlaceID int `json:"place_id,omitempty"`
 	// Good holds the value of the "good" field.
 	Good bool `json:"good,omitempty"`
 	// Tier holds the value of the "tier" field.
@@ -31,7 +33,6 @@ type LootChance struct {
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the LootChanceQuery when eager-loading is set.
 	Edges        LootChanceEdges `json:"edges"`
-	place_id     *int
 	item_id      *int
 	selectValues sql.SelectValues
 }
@@ -78,11 +79,9 @@ func (*LootChance) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case lootchance.FieldPct:
 			values[i] = new(sql.NullFloat64)
-		case lootchance.FieldID, lootchance.FieldTier, lootchance.FieldSlot, lootchance.FieldMinStat:
+		case lootchance.FieldID, lootchance.FieldPlaceID, lootchance.FieldTier, lootchance.FieldSlot, lootchance.FieldMinStat:
 			values[i] = new(sql.NullInt64)
-		case lootchance.ForeignKeys[0]: // place_id
-			values[i] = new(sql.NullInt64)
-		case lootchance.ForeignKeys[1]: // item_id
+		case lootchance.ForeignKeys[0]: // item_id
 			values[i] = new(sql.NullInt64)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -105,6 +104,12 @@ func (_m *LootChance) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
 			_m.ID = int(value.Int64)
+		case lootchance.FieldPlaceID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field place_id", values[i])
+			} else if value.Valid {
+				_m.PlaceID = int(value.Int64)
+			}
 		case lootchance.FieldGood:
 			if value, ok := values[i].(*sql.NullBool); !ok {
 				return fmt.Errorf("unexpected type %T for field good", values[i])
@@ -136,13 +141,6 @@ func (_m *LootChance) assignValues(columns []string, values []any) error {
 				_m.Pct = value.Float64
 			}
 		case lootchance.ForeignKeys[0]:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for edge-field place_id", value)
-			} else if value.Valid {
-				_m.place_id = new(int)
-				*_m.place_id = int(value.Int64)
-			}
-		case lootchance.ForeignKeys[1]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field item_id", value)
 			} else if value.Valid {
@@ -195,6 +193,9 @@ func (_m *LootChance) String() string {
 	var builder strings.Builder
 	builder.WriteString("LootChance(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
+	builder.WriteString("place_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.PlaceID))
+	builder.WriteString(", ")
 	builder.WriteString("good=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Good))
 	builder.WriteString(", ")

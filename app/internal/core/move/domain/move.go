@@ -46,5 +46,6 @@ type Move struct {
 	Extra                    *Extra
 	Description              string
 	Unlock                   UnlockRule
-	Icon                     string // asset key, "Pixie_1"
+	Acquire                  []Acquire // the places of the errantry that teach it, and what each asks
+	Icon                     string    // asset key, "Pixie_1"
 }

@@ -2,7 +2,6 @@ package profileui
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"fyne.io/fyne/v2"
@@ -52,67 +51,65 @@ type Dashboard struct {
 	opts Options
 	last *domain.Profile // what is shown, to show it again when an option changes
 
-	gutsPerSecond  *widget.Check // beside the guts rate, which it changes
-	growthFromZero *widget.Check // above the growth rates, which it changes
-	status         *widget.Label
-	headerBody     fyne.CanvasObject
-	vitalsBody     fyne.CanvasObject
-	header         fyne.CanvasObject
-	vitals         fyne.CanvasObject
+	gutsPerSecond   *widget.Check // beside the guts rate, which it changes
+	growthFromZero  *widget.Check // above the growth rates, which it changes
+	status          *widget.Label
+	headerBody      fyne.CanvasObject
+	vitalsBody      fyne.CanvasObject
+	whoRow, lifeRow Beside // how the rows of the header are laid out, side by side or stacked
+	header          fyne.CanvasObject
+	vitals          fyne.CanvasObject
 
 	breed                                         *ToneBox
 	givenName, genus, age, stage, lifespan, money *widget.Label
 	lifespanBar, lifeIndexBar                     *Meter
 	lifeIndex                                     *ToneBox
 
-	stats                                         [monster.StatCount]*widget.Label
-	statBars                                      [monster.StatCount]*Meter
-	growth                                        [monster.StatCount]*ToneBox
-	statTotal                                     *widget.Label
-	fatigue, stress                               *widget.Label
-	fatigueBar, stressBar, natureGauge            *Meter
-	nature                                        *ToneBox
-	loyalty, form, natureBase, lifeType, playType *widget.Label
-	prize, nextSale, drug, drugTip                *widget.Label
-	tournament                                    *widget.Label
-	tournamentRow                                 fyne.CanvasObject // hidden where the game's year of the first one was not read
-	fame, guts, arena, specials, like, dislike    *ToneBox
-	goldPeach, silverPeach, itemUsed, errantry    *Flag
-	cocoon                                        fyne.CanvasObject
-	cupJellies                                    *ToneBox
-	cocoonDone                                    *Flag
+	stats                                               [monster.StatCount]*widget.Label
+	statBars                                            [monster.StatCount]*Meter
+	statNames                                           [monster.StatCount]*ColorText // each in the colour of its stat
+	growth                                              [monster.StatCount]*ToneBox
+	statTotal                                           *widget.Label
+	fatigue, stress                                     *widget.Label
+	fatigueBar, stressBar, natureGauge                  *Meter
+	nature                                              *ToneBox
+	loyalty, rank, form, natureBase, lifeType, playType *widget.Label
+	prize, nextSale, drug, drugTip                      *widget.Label
+	tournament                                          *widget.Label
+	tournamentRow                                       fyne.CanvasObject // hidden where the game's year of the first one was not read
+	fame, guts, arena, specials, like, dislike          *ToneBox
+	goldPeach, silverPeach, itemUsed, errantry          *Flag
+	cocoon                                              fyne.CanvasObject
+	cupJellies                                          *ToneBox
+	cocoonDone                                          *Flag
 
 	date                         *widget.Label // the game's date in the header, where the game keeps one
 	fatigueWord, record, history *widget.Label
-	ranchBody                    fyne.CanvasObject // the panel of upgrades, hidden where the game keeps no ranch
-	ranchPanel                   *widget.Accordion // closed until opened, titled with the day of the upgrades
-	ranchItem                    *widget.AccordionItem
+	ranchBody                    fyne.CanvasObject // the upgrades, hidden where the game keeps no ranch
+	upgradeDay                   *widget.Label     // when the game offers the house's and the stable's upgrades
 	facilities                   [3]facilityRow
-	breeds                       *widget.Accordion // the main breeds, lit where unlocked, opening from the count
-	breedsItem                   *widget.AccordionItem
+	breeds                       *fyne.Container // the main breeds, lit where unlocked, under a title with the count
+	breedsTitle                  *widget.Label
 	breedFlags                   [player.BreedCount]*Flag
 
-	ranchBox                       fyne.CanvasObject // the ranch's panel, and the expeditions under it
-	expeditionsBody                fyne.CanvasObject
-	expeditions                    *widget.Accordion // the trips, opening from the nearest one
-	expeditionsItem                *widget.AccordionItem
-	startEnergy, gameEnergy, costs *widget.Label
-	gameWalk                       *widget.Label
-	trips                          []tripRow
+	ranchBox        fyne.CanvasObject // the ranch's upgrades, the breeds and the expeditions
+	expeditionsBody fyne.CanvasObject
+	noTrips         *widget.Label // says that no trip is open to the monster, when none is
+	trips           []tripRow
 }
 
-// tripRow is an expedition in the list: where, when, and the three things its invitation asks of the monster.
+// tripRow is an expedition in the list: where, and when.
 type tripRow struct {
-	name, when, note *widget.Label
-	chips            [3]*ToneBox
-	object           fyne.CanvasObject
+	name, when *widget.Label
+	object     fyne.CanvasObject
 }
 
-// facilityRow is a facility of the ranch in the panel: its name, how far it is, and its next step.
+// facilityRow is a facility of the ranch: its name, how far it is as dots, what it gives, its next step and, in words,
+// where that step stands.
 type facilityRow struct {
-	name, level, next *widget.Label
-	bar               *Meter
-	state             *ToneBox
+	name, gives, next, offer *widget.Label
+	pips                     *Pips
+	state                    *ToneBox
 }
 
 func NewDashboard(svc profile.ProfileService) *Dashboard {
@@ -130,11 +127,12 @@ func NewDashboard(svc profile.ProfileService) *Dashboard {
 	d.lifespanBar, d.lifeIndexBar, d.lifeIndex = NewMeter(), NewMeter(), box()
 
 	for stat := range d.stats {
-		d.stats[stat], d.statBars[stat], d.growth[stat] = label(), NewMeter(), box()
+		d.stats[stat], d.statBars[stat], d.growth[stat] = label(), NewMeter().Colored(StatColors[stat]), box()
+		d.statNames[stat] = NewColorText(Segment{Text: StatNames[stat], Color: StatColors[stat]})
 	}
 	d.statTotal, d.fatigue, d.stress = label(), label(), label()
 	d.fatigueBar, d.stressBar, d.natureGauge, d.nature = NewMeter(), NewMeter(), NewGauge(), box()
-	d.loyalty, d.form, d.natureBase, d.lifeType, d.playType = label(), label(), label(), label(), label()
+	d.loyalty, d.rank, d.form, d.natureBase, d.lifeType, d.playType = label(), label(), label(), label(), label(), label()
 	d.prize, d.nextSale, d.drug, d.drugTip = label(), label(), label(), label()
 	d.tournament = label()
 	d.tournamentRow = fact("IMA-FIMBA", d.tournament)
@@ -162,7 +160,12 @@ func NewDashboard(svc profile.ProfileService) *Dashboard {
 
 // barRow is a bar between its name and what it says, in the columns that every such row shares.
 func barRow(name string, bar fyne.CanvasObject, rest ...fyne.CanvasObject) fyne.CanvasObject {
-	cells := append([]fyne.CanvasObject{widget.NewLabel(name), bar}, rest...)
+	return namedBarRow(widget.NewLabel(name), bar, rest...)
+}
+
+// namedBarRow is a barRow of a name that is not just text, such as a stat's in its colour.
+func namedBarRow(name, bar fyne.CanvasObject, rest ...fyne.CanvasObject) fyne.CanvasObject {
+	cells := append([]fyne.CanvasObject{name, bar}, rest...)
 	return container.New(Columns{nameWidth, 0, valueWidth, chipWidth}, cells...)
 }
 
@@ -179,15 +182,25 @@ func fact(name string, value fyne.CanvasObject) fyne.CanvasObject {
 }
 
 func (d *Dashboard) buildHeader() fyne.CanvasObject {
-	who := container.NewHBox(
-		d.breed, d.givenName, d.genus, layout.NewSpacer(),
-		d.age, d.stage, d.date, widget.NewLabel("Money"), d.money,
+	who := container.New(&d.whoRow,
+		container.NewHBox(d.breed, d.givenName, d.genus),
+		container.NewHBox(d.age, d.stage, d.date, widget.NewLabel("Money"), d.money),
 	)
-	life := container.NewGridWithColumns(2,
+	life := container.New(&d.lifeRow,
 		container.New(Columns{80, 0, 120}, widget.NewLabel("Lifespan"), d.lifespanBar, d.lifespan),
 		container.New(Columns{80, 0, 140}, widget.NewLabel("Life Index"), d.lifeIndexBar, d.lifeIndex),
 	)
-	return container.NewVBox(who, life)
+	d.lifeRow.Even = true
+	// The flags are under the name, where they are seen at once: they need more room than the header has beside it.
+	flags := container.NewHBox(d.goldPeach, d.silverPeach, d.itemUsed, d.errantry)
+	return container.NewVBox(who, flags, life)
+}
+
+// Compact puts each row of the header on two lines, who it is over how old, and the life span over the life index, to
+// make the header narrow enough for a window of one column; or back on one line each.
+func (d *Dashboard) Compact(on bool) {
+	d.whoRow.Stacked, d.lifeRow.Stacked = on, on
+	d.headerBody.Refresh()
 }
 
 // buildVitals puts what a breeder reads first on top, the stats and then how worn the monster is, and what is
@@ -196,8 +209,8 @@ func (d *Dashboard) buildVitals() fyne.CanvasObject {
 	stats := container.NewVBox(
 		container.New(Columns{nameWidth, 0, valueWidth, chipWidth}, Quiet("Stats"), layout.NewSpacer(), layout.NewSpacer(), d.growthFromZero),
 	)
-	for stat, name := range StatNames {
-		stats.Add(barRow(name, d.statBars[stat], d.stats[stat], d.growth[stat]))
+	for stat := range StatNames {
+		stats.Add(namedBarRow(d.statNames[stat], d.statBars[stat], d.stats[stat], d.growth[stat]))
 	}
 	stats.Add(barRow("BST", layout.NewSpacer(), d.statTotal))
 
@@ -211,7 +224,7 @@ func (d *Dashboard) buildVitals() fyne.CanvasObject {
 		return container.NewGridWithColumns(2, left, right)
 	}
 	facts := container.NewVBox(
-		fact("Loyalty", d.loyalty),
+		pair(fact("Loyalty", d.loyalty), fact("Rank", d.rank)),
 		pair(fact("Fame", d.fame), fact("Form", d.form)),
 		pair(fact("Guts Rate", container.NewHBox(d.guts, d.gutsPerSecond)), fact("Arena SPD", d.arena)),
 		pair(fact("Base Nature", d.natureBase), fact("Play Type", d.playType)),
@@ -242,73 +255,60 @@ func (d *Dashboard) buildVitals() fyne.CanvasObject {
 		widget.NewSeparator(),
 		facts,
 		d.cocoon,
-		widget.NewSeparator(),
-		container.NewHBox(d.goldPeach, d.silverPeach, d.itemUsed, d.errantry),
 	)
 }
 
-// buildRanch is the panel of the ranch's upgrades, closed until it is opened and titled with the day they are
-// offered: for the house, the stable and the altar, how far each is, the next step and what it costs, and whether
-// that step can be had.
-func (d *Dashboard) buildRanch() fyne.CanvasObject {
-	rows := container.NewVBox()
-	for i := range d.facilities {
-		row := &d.facilities[i]
-		row.name, row.level, row.next = widget.NewLabel(""), widget.NewLabel(""), Quiet("")
-		row.bar, row.state = NewMeter(), NewToneBox()
-		rows.Add(container.NewVBox(
-			container.New(Columns{70, 0, 44, 190}, row.name, row.bar, row.level, row.state),
-			row.next,
-		))
-	}
-	d.ranchItem = widget.NewAccordionItem("Ranch", rows)
-	d.ranchPanel = widget.NewAccordion(d.ranchItem)
-	return d.ranchPanel
+// section is the heading of a part of the page: its title, and to the right of it a line that says when.
+func section(title string, when *widget.Label) fyne.CanvasObject {
+	return container.NewHBox(widget.NewLabelWithStyle(title, fyne.TextAlignLeading, fyne.TextStyle{Bold: true}), layout.NewSpacer(), when)
 }
 
-// buildBreeds is the panel of the main breeds, lit where unlocked, closed until it is opened and titled with how
-// many are.
+// buildRanch is the ranch's upgrades, under a heading that says when the game offers them: for the house, the
+// stable and the altar, how far each is as dots, what it gives, its next step and what it costs, and in words where that
+// step stands.
+func (d *Dashboard) buildRanch() fyne.CanvasObject {
+	d.upgradeDay = Quiet("")
+	rows := container.NewVBox(section("Upgrades", d.upgradeDay))
+	for i := range d.facilities {
+		row := &d.facilities[i]
+		row.name = widget.NewLabelWithStyle("", fyne.TextAlignLeading, fyne.TextStyle{Bold: true})
+		row.gives, row.next, row.offer = Quiet(""), Quiet(""), Quiet("")
+		row.pips, row.state = NewPips(), NewToneBox()
+		rows.Add(container.NewVBox(
+			container.NewHBox(row.name, row.pips, row.gives, layout.NewSpacer(), row.next),
+			container.NewHBox(row.state, layout.NewSpacer()), // as wide as its words, under the name
+			row.offer,
+		))
+	}
+	return rows
+}
+
+// buildBreeds is the main breeds, lit where unlocked, under a title with how many are.
 func (d *Dashboard) buildBreeds() {
 	flags := make([]fyne.CanvasObject, player.BreedCount)
 	for i := range d.breedFlags {
 		d.breedFlags[i] = NewFlag("", ToneLimeGreen)
 		flags[i] = d.breedFlags[i]
 	}
-	d.breedsItem = widget.NewAccordionItem("Breeds unlocked", container.NewGridWithColumns(5, flags...))
-	d.breeds = widget.NewAccordion(d.breedsItem)
+	d.breedsTitle = widget.NewLabelWithStyle("", fyne.TextAlignLeading, fyne.TextStyle{Bold: true})
+	d.breeds = container.NewVBox(widget.NewSeparator(), d.breedsTitle, container.NewGridWithColumns(5, flags...))
 	d.breeds.Hide()
 }
 
-// buildExpeditions is the list of expeditions, which opens from the nearest one: the energy a monster would start
-// with, and for each trip when it comes and what its invitation asks of the monster.
+// buildExpeditions is the list of expeditions that the monster is fit for, nearest first: for each trip its name and
+// when it comes.
 func (d *Dashboard) buildExpeditions() fyne.CanvasObject {
-	d.startEnergy, d.gameEnergy, d.costs = Quiet(""), Quiet(""), Quiet("")
-	d.gameEnergy.Hide()
-	d.gameWalk = Quiet("")
-	d.gameWalk.Hide()
-	d.costs.Wrapping = fyne.TextWrapWord
-	body := container.NewVBox(d.startEnergy, d.gameEnergy, d.gameWalk)
+	d.noTrips = Quiet("")
+	box := container.NewVBox(widget.NewSeparator(), section("Expeditions", Quiet("")), d.noTrips)
 	for range domain.Expeditions {
 		row := &tripRow{
 			name: widget.NewLabelWithStyle("", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
 			when: widget.NewLabel(""),
-			note: Quiet(""),
 		}
-		for i := range row.chips {
-			row.chips[i] = NewToneBox()
-		}
-		row.object = container.NewVBox(
-			container.NewHBox(row.name, layout.NewSpacer(), row.when),
-			row.note,
-			container.NewGridWithColumns(len(row.chips), row.chips[0], row.chips[1], row.chips[2]),
-		)
+		row.object = container.NewHBox(row.name, layout.NewSpacer(), row.when)
 		d.trips = append(d.trips, *row)
-		body.Add(row.object)
+		box.Add(row.object)
 	}
-	body.Add(d.costs)
-	d.expeditionsItem = widget.NewAccordionItem("Expeditions", body)
-	d.expeditions = widget.NewAccordion(d.expeditionsItem)
-	box := container.NewVBox(widget.NewSeparator(), d.expeditions)
 	box.Hide()
 	return box
 }
@@ -382,6 +382,7 @@ func (d *Dashboard) show(v MonsterView) {
 	d.natureGauge.Set(v.Bars.Nature.Ratio, ToneNone)
 
 	d.loyalty.SetText(v.Loyalty + " (spoil " + v.Spoil + " / fear " + v.Fear + ")")
+	d.rank.SetText(v.Rank)
 	d.fame.Set(v.Fame)
 	d.form.SetText(v.Form)
 	d.natureBase.SetText(v.NatureBase)
@@ -415,15 +416,10 @@ func (d *Dashboard) show(v MonsterView) {
 	d.showExpeditions(v.Expeditions)
 }
 
-// showExpeditions shows the trips, nearest first, and what the monster has for each.
+// showExpeditions shows the trips that the monster is fit for, nearest first, or says that there are none.
 func (d *Dashboard) showExpeditions(e ExpeditionsView) {
-	d.expeditionsItem.Title = e.Title
-	d.startEnergy.SetText(e.StartEnergy)
-	d.gameEnergy.SetText(e.GameEnergy)
-	setVisible(d.gameEnergy, e.GameEnergy != "")
-	d.gameWalk.SetText(e.GameWalk)
-	setVisible(d.gameWalk, e.GameWalk != "")
-	d.costs.SetText(e.Costs)
+	d.noTrips.SetText(e.None)
+	setVisible(d.noTrips, e.None != "")
 	for i, row := range d.trips {
 		if i >= len(e.Trips) {
 			row.object.Hide()
@@ -433,21 +429,7 @@ func (d *Dashboard) showExpeditions(e ExpeditionsView) {
 		row.object.Show()
 		row.name.SetText(trip.Name)
 		row.when.SetText(trip.When)
-		row.note.SetText(trip.Note)
-		setVisible(row.note, trip.Note != "")
-		for j, chip := range row.chips {
-			if j >= len(trip.Conditions) {
-				continue
-			}
-			c := trip.Conditions[j]
-			mark, tone := "✗", ToneOrange
-			if c.Met {
-				mark, tone = "✓", ToneLimeGreen
-			}
-			chip.Set(Box{Text: fmt.Sprintf("%s %s (%s)", mark, c.Text, c.Have), Tone: tone})
-		}
 	}
-	d.expeditions.Refresh()
 }
 
 // showRanch shows the ranch's date and its panel of upgrades, or hides them when the game keeps no ranch.
@@ -457,18 +439,17 @@ func (d *Dashboard) showRanch(r RanchView) {
 	d.date.SetText(r.Date)
 	d.tournament.SetText(r.Tournament)
 	setVisible(d.tournamentRow, r.Tournament != "")
-	d.ranchItem.Title = "Ranch · House & stable: " + r.UpgradeDay
-	d.ranchPanel.Refresh()
+	d.upgradeDay.SetText("offered " + r.UpgradeDay)
 	for i, f := range r.Facilities {
 		row := d.facilities[i]
 		row.name.SetText(f.Name)
-		row.level.SetText(fmt.Sprintf("%d/%d", f.Level, f.Max))
-		row.bar.Set(f.Ratio, ToneNone)
-		next := f.Next
-		if f.Detail != "" {
-			next = f.Detail + " · " + next
-		}
-		row.next.SetText(next)
+		row.pips.Set(f.Level, f.Max)
+		row.gives.SetText(f.Gives)
+		setVisible(row.gives, f.Gives != "")
+		row.next.SetText(f.Next)
+		setVisible(row.next, f.Next != "")
+		row.offer.SetText(f.Offer)
+		setVisible(row.offer, f.Offer != "")
 		row.state.Set(f.State)
 	}
 	for i, flag := range d.breedFlags {
@@ -480,7 +461,6 @@ func (d *Dashboard) showRanch(r RanchView) {
 		flag.SetText(r.Breeds[i].Name)
 		flag.Set(r.Breeds[i].Unlocked)
 	}
-	d.breedsItem.Title = r.BreedsTitle
+	d.breedsTitle.SetText(r.BreedsTitle)
 	setVisible(d.breeds, len(r.Breeds) > 0)
-	d.breeds.Refresh()
 }

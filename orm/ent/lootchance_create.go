@@ -23,6 +23,12 @@ type LootChanceCreate struct {
 	conflict []sql.ConflictOption
 }
 
+// SetPlaceID sets the "place_id" field.
+func (_c *LootChanceCreate) SetPlaceID(v int) *LootChanceCreate {
+	_c.mutation.SetPlaceID(v)
+	return _c
+}
+
 // SetGood sets the "good" field.
 func (_c *LootChanceCreate) SetGood(v bool) *LootChanceCreate {
 	_c.mutation.SetGood(v)
@@ -50,12 +56,6 @@ func (_c *LootChanceCreate) SetMinStat(v int) *LootChanceCreate {
 // SetPct sets the "pct" field.
 func (_c *LootChanceCreate) SetPct(v float64) *LootChanceCreate {
 	_c.mutation.SetPct(v)
-	return _c
-}
-
-// SetPlaceID sets the "place" edge to the ExpeditionPlace entity by ID.
-func (_c *LootChanceCreate) SetPlaceID(id int) *LootChanceCreate {
-	_c.mutation.SetPlaceID(id)
 	return _c
 }
 
@@ -109,6 +109,9 @@ func (_c *LootChanceCreate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (_c *LootChanceCreate) check() error {
+	if _, ok := _c.mutation.PlaceID(); !ok {
+		return &ValidationError{Name: "place_id", err: errors.New(`ent: missing required field "LootChance.place_id"`)}
+	}
 	if _, ok := _c.mutation.Good(); !ok {
 		return &ValidationError{Name: "good", err: errors.New(`ent: missing required field "LootChance.good"`)}
 	}
@@ -211,7 +214,7 @@ func (_c *LootChanceCreate) createSpec() (*LootChance, *sqlgraph.CreateSpec) {
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.place_id = &nodes[0]
+		_node.PlaceID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := _c.mutation.ItemIDs(); len(nodes) > 0 {
@@ -238,7 +241,7 @@ func (_c *LootChanceCreate) createSpec() (*LootChance, *sqlgraph.CreateSpec) {
 // of the `INSERT` statement. For example:
 //
 //	client.LootChance.Create().
-//		SetGood(v).
+//		SetPlaceID(v).
 //		OnConflict(
 //			// Update the row with the new values
 //			// the was proposed for insertion.
@@ -247,7 +250,7 @@ func (_c *LootChanceCreate) createSpec() (*LootChance, *sqlgraph.CreateSpec) {
 //		// Override some of the fields with custom
 //		// update values.
 //		Update(func(u *ent.LootChanceUpsert) {
-//			SetGood(v+v).
+//			SetPlaceID(v+v).
 //		}).
 //		Exec(ctx)
 func (_c *LootChanceCreate) OnConflict(opts ...sql.ConflictOption) *LootChanceUpsertOne {
@@ -282,6 +285,18 @@ type (
 		*sql.UpdateSet
 	}
 )
+
+// SetPlaceID sets the "place_id" field.
+func (u *LootChanceUpsert) SetPlaceID(v int) *LootChanceUpsert {
+	u.Set(lootchance.FieldPlaceID, v)
+	return u
+}
+
+// UpdatePlaceID sets the "place_id" field to the value that was provided on create.
+func (u *LootChanceUpsert) UpdatePlaceID() *LootChanceUpsert {
+	u.SetExcluded(lootchance.FieldPlaceID)
+	return u
+}
 
 // SetGood sets the "good" field.
 func (u *LootChanceUpsert) SetGood(v bool) *LootChanceUpsert {
@@ -405,6 +420,20 @@ func (u *LootChanceUpsertOne) Update(set func(*LootChanceUpsert)) *LootChanceUps
 		set(&LootChanceUpsert{UpdateSet: update})
 	}))
 	return u
+}
+
+// SetPlaceID sets the "place_id" field.
+func (u *LootChanceUpsertOne) SetPlaceID(v int) *LootChanceUpsertOne {
+	return u.Update(func(s *LootChanceUpsert) {
+		s.SetPlaceID(v)
+	})
+}
+
+// UpdatePlaceID sets the "place_id" field to the value that was provided on create.
+func (u *LootChanceUpsertOne) UpdatePlaceID() *LootChanceUpsertOne {
+	return u.Update(func(s *LootChanceUpsert) {
+		s.UpdatePlaceID()
+	})
 }
 
 // SetGood sets the "good" field.
@@ -639,7 +668,7 @@ func (_c *LootChanceCreateBulk) ExecX(ctx context.Context) {
 //		// Override some of the fields with custom
 //		// update values.
 //		Update(func(u *ent.LootChanceUpsert) {
-//			SetGood(v+v).
+//			SetPlaceID(v+v).
 //		}).
 //		Exec(ctx)
 func (_c *LootChanceCreateBulk) OnConflict(opts ...sql.ConflictOption) *LootChanceUpsertBulk {
@@ -706,6 +735,20 @@ func (u *LootChanceUpsertBulk) Update(set func(*LootChanceUpsert)) *LootChanceUp
 		set(&LootChanceUpsert{UpdateSet: update})
 	}))
 	return u
+}
+
+// SetPlaceID sets the "place_id" field.
+func (u *LootChanceUpsertBulk) SetPlaceID(v int) *LootChanceUpsertBulk {
+	return u.Update(func(s *LootChanceUpsert) {
+		s.SetPlaceID(v)
+	})
+}
+
+// UpdatePlaceID sets the "place_id" field to the value that was provided on create.
+func (u *LootChanceUpsertBulk) UpdatePlaceID() *LootChanceUpsertBulk {
+	return u.Update(func(s *LootChanceUpsert) {
+		s.UpdatePlaceID()
+	})
 }
 
 // SetGood sets the "good" field.

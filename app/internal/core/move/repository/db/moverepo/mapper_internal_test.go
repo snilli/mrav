@@ -48,3 +48,46 @@ var _ = Describe("domainConditions", func() {
 		Expect(got).To(BeNil())
 	})
 })
+
+var _ = Describe("domainAcquire", func() {
+	It("reads every field of an entry", func() {
+		got, err := domainAcquire([]stored.Acquire{{
+			Place: 4, Priority: 2, Auto: 3, Nature: -20,
+			Gates:    []stored.Gate{{Stats: []int{1, 3}, Min: 250, Max: 400}},
+			Chain:    &stored.Chain{Slot: 7, Uses: 50},
+			SubIn:    []int{16},
+			SubNotIn: []int{0, 26},
+		}})
+		Expect(err).NotTo(HaveOccurred())
+		Expect(got).To(Equal([]movedomain.Acquire{{
+			Place: 4, Priority: 2, Auto: 3, Nature: -20,
+			Gates:    []movedomain.Gate{{Stats: []monster.Stat{monster.Pow, monster.Skill}, Min: 250, Max: 400}},
+			Chain:    &movedomain.Chain{Slot: 7, Uses: 50},
+			SubIn:    []monster.Genus{16},
+			SubNotIn: []monster.Genus{0, 26},
+		}}))
+	})
+
+	It("reads an entry of nothing but a place as one that asks for nothing", func() {
+		got, err := domainAcquire([]stored.Acquire{{Place: 1, Priority: 1}})
+		Expect(err).NotTo(HaveOccurred())
+		Expect(got).To(Equal([]movedomain.Acquire{{Place: 1, Priority: 1}}))
+	})
+
+	DescribeTable("rejects what it cannot read, naming it",
+		func(in stored.Acquire, want string) {
+			_, err := domainAcquire([]stored.Acquire{in})
+			Expect(err).To(MatchError(ContainSubstring(want)))
+		},
+		Entry("a place before the first", stored.Acquire{Place: 0}, "place 0"),
+		Entry("a place after the last", stored.Acquire{Place: 6}, "place 6"),
+		Entry("a gate whose top is not above its bottom",
+			stored.Acquire{Place: 1, Gates: []stored.Gate{{Stats: []int{1}, Min: 250, Max: 250}}}, "gate"),
+	)
+
+	It("reads no entries as nil", func() {
+		got, err := domainAcquire(nil)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(got).To(BeNil())
+	})
+})

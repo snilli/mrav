@@ -12,6 +12,8 @@ const (
 	Label = "loot_chance"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
+	// FieldPlaceID holds the string denoting the place_id field in the database.
+	FieldPlaceID = "place_id"
 	// FieldGood holds the string denoting the good field in the database.
 	FieldGood = "good"
 	// FieldTier holds the string denoting the tier field in the database.
@@ -47,6 +49,7 @@ const (
 // Columns holds all SQL columns for lootchance fields.
 var Columns = []string{
 	FieldID,
+	FieldPlaceID,
 	FieldGood,
 	FieldTier,
 	FieldSlot,
@@ -57,7 +60,6 @@ var Columns = []string{
 // ForeignKeys holds the SQL foreign-keys that are owned by the "loot_chances"
 // table and are not defined as standalone fields in the schema.
 var ForeignKeys = []string{
-	"place_id",
 	"item_id",
 }
 
@@ -93,6 +95,11 @@ type OrderOption func(*sql.Selector)
 // ByID orders the results by the id field.
 func ByID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// ByPlaceID orders the results by the place_id field.
+func ByPlaceID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPlaceID, opts...).ToFunc()
 }
 
 // ByGood orders the results by the good field.

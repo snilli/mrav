@@ -1547,6 +1547,42 @@ func (m *ExpeditionLockMutation) IDs(ctx context.Context) ([]int, error) {
 	}
 }
 
+// SetMapID sets the "map_id" field.
+func (m *ExpeditionLockMutation) SetMapID(i int) {
+	m._map = &i
+}
+
+// MapID returns the value of the "map_id" field in the mutation.
+func (m *ExpeditionLockMutation) MapID() (r int, exists bool) {
+	v := m._map
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMapID returns the old "map_id" field's value of the ExpeditionLock entity.
+// If the ExpeditionLock object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ExpeditionLockMutation) OldMapID(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMapID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMapID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMapID: %w", err)
+	}
+	return oldValue.MapID, nil
+}
+
+// ResetMapID resets all changes to the "map_id" field.
+func (m *ExpeditionLockMutation) ResetMapID() {
+	m._map = nil
+}
+
 // SetX sets the "x" field.
 func (m *ExpeditionLockMutation) SetX(i int) {
 	m.x = &i
@@ -1715,27 +1751,15 @@ func (m *ExpeditionLockMutation) ResetMinInt() {
 	m.addmin_int = nil
 }
 
-// SetMapID sets the "map" edge to the ExpeditionMap entity by id.
-func (m *ExpeditionLockMutation) SetMapID(id int) {
-	m._map = &id
-}
-
 // ClearMap clears the "map" edge to the ExpeditionMap entity.
 func (m *ExpeditionLockMutation) ClearMap() {
 	m.cleared_map = true
+	m.clearedFields[expeditionlock.FieldMapID] = struct{}{}
 }
 
 // MapCleared reports if the "map" edge to the ExpeditionMap entity was cleared.
 func (m *ExpeditionLockMutation) MapCleared() bool {
 	return m.cleared_map
-}
-
-// MapID returns the "map" edge ID in the mutation.
-func (m *ExpeditionLockMutation) MapID() (id int, exists bool) {
-	if m._map != nil {
-		return *m._map, true
-	}
-	return
 }
 
 // MapIDs returns the "map" edge IDs in the mutation.
@@ -1788,7 +1812,10 @@ func (m *ExpeditionLockMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ExpeditionLockMutation) Fields() []string {
-	fields := make([]string, 0, 3)
+	fields := make([]string, 0, 4)
+	if m._map != nil {
+		fields = append(fields, expeditionlock.FieldMapID)
+	}
 	if m.x != nil {
 		fields = append(fields, expeditionlock.FieldX)
 	}
@@ -1806,6 +1833,8 @@ func (m *ExpeditionLockMutation) Fields() []string {
 // schema.
 func (m *ExpeditionLockMutation) Field(name string) (ent.Value, bool) {
 	switch name {
+	case expeditionlock.FieldMapID:
+		return m.MapID()
 	case expeditionlock.FieldX:
 		return m.X()
 	case expeditionlock.FieldY:
@@ -1821,6 +1850,8 @@ func (m *ExpeditionLockMutation) Field(name string) (ent.Value, bool) {
 // database failed.
 func (m *ExpeditionLockMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
+	case expeditionlock.FieldMapID:
+		return m.OldMapID(ctx)
 	case expeditionlock.FieldX:
 		return m.OldX(ctx)
 	case expeditionlock.FieldY:
@@ -1836,6 +1867,13 @@ func (m *ExpeditionLockMutation) OldField(ctx context.Context, name string) (ent
 // type.
 func (m *ExpeditionLockMutation) SetField(name string, value ent.Value) error {
 	switch name {
+	case expeditionlock.FieldMapID:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMapID(v)
+		return nil
 	case expeditionlock.FieldX:
 		v, ok := value.(int)
 		if !ok {
@@ -1945,6 +1983,9 @@ func (m *ExpeditionLockMutation) ClearField(name string) error {
 // It returns an error if the field is not defined in the schema.
 func (m *ExpeditionLockMutation) ResetField(name string) error {
 	switch name {
+	case expeditionlock.FieldMapID:
+		m.ResetMapID()
+		return nil
 	case expeditionlock.FieldX:
 		m.ResetX()
 		return nil
@@ -2044,6 +2085,8 @@ type ExpeditionMapMutation struct {
 	addstart_x    *int
 	start_y       *int
 	addstart_y    *int
+	portals       *[]stored.Portal
+	appendportals []stored.Portal
 	clearedFields map[string]struct{}
 	places        map[int]struct{}
 	removedplaces map[int]struct{}
@@ -2338,6 +2381,71 @@ func (m *ExpeditionMapMutation) ResetStartY() {
 	m.addstart_y = nil
 }
 
+// SetPortals sets the "portals" field.
+func (m *ExpeditionMapMutation) SetPortals(s []stored.Portal) {
+	m.portals = &s
+	m.appendportals = nil
+}
+
+// Portals returns the value of the "portals" field in the mutation.
+func (m *ExpeditionMapMutation) Portals() (r []stored.Portal, exists bool) {
+	v := m.portals
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPortals returns the old "portals" field's value of the ExpeditionMap entity.
+// If the ExpeditionMap object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ExpeditionMapMutation) OldPortals(ctx context.Context) (v []stored.Portal, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPortals is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPortals requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPortals: %w", err)
+	}
+	return oldValue.Portals, nil
+}
+
+// AppendPortals adds s to the "portals" field.
+func (m *ExpeditionMapMutation) AppendPortals(s []stored.Portal) {
+	m.appendportals = append(m.appendportals, s...)
+}
+
+// AppendedPortals returns the list of values that were appended to the "portals" field in this mutation.
+func (m *ExpeditionMapMutation) AppendedPortals() ([]stored.Portal, bool) {
+	if len(m.appendportals) == 0 {
+		return nil, false
+	}
+	return m.appendportals, true
+}
+
+// ClearPortals clears the value of the "portals" field.
+func (m *ExpeditionMapMutation) ClearPortals() {
+	m.portals = nil
+	m.appendportals = nil
+	m.clearedFields[expeditionmap.FieldPortals] = struct{}{}
+}
+
+// PortalsCleared returns if the "portals" field was cleared in this mutation.
+func (m *ExpeditionMapMutation) PortalsCleared() bool {
+	_, ok := m.clearedFields[expeditionmap.FieldPortals]
+	return ok
+}
+
+// ResetPortals resets all changes to the "portals" field.
+func (m *ExpeditionMapMutation) ResetPortals() {
+	m.portals = nil
+	m.appendportals = nil
+	delete(m.clearedFields, expeditionmap.FieldPortals)
+}
+
 // AddPlaceIDs adds the "places" edge to the ExpeditionPlace entity by ids.
 func (m *ExpeditionMapMutation) AddPlaceIDs(ids ...int) {
 	if m.places == nil {
@@ -2480,7 +2588,7 @@ func (m *ExpeditionMapMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ExpeditionMapMutation) Fields() []string {
-	fields := make([]string, 0, 4)
+	fields := make([]string, 0, 5)
 	if m.name != nil {
 		fields = append(fields, expeditionmap.FieldName)
 	}
@@ -2492,6 +2600,9 @@ func (m *ExpeditionMapMutation) Fields() []string {
 	}
 	if m.start_y != nil {
 		fields = append(fields, expeditionmap.FieldStartY)
+	}
+	if m.portals != nil {
+		fields = append(fields, expeditionmap.FieldPortals)
 	}
 	return fields
 }
@@ -2509,6 +2620,8 @@ func (m *ExpeditionMapMutation) Field(name string) (ent.Value, bool) {
 		return m.StartX()
 	case expeditionmap.FieldStartY:
 		return m.StartY()
+	case expeditionmap.FieldPortals:
+		return m.Portals()
 	}
 	return nil, false
 }
@@ -2526,6 +2639,8 @@ func (m *ExpeditionMapMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldStartX(ctx)
 	case expeditionmap.FieldStartY:
 		return m.OldStartY(ctx)
+	case expeditionmap.FieldPortals:
+		return m.OldPortals(ctx)
 	}
 	return nil, fmt.Errorf("unknown ExpeditionMap field %s", name)
 }
@@ -2562,6 +2677,13 @@ func (m *ExpeditionMapMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetStartY(v)
+		return nil
+	case expeditionmap.FieldPortals:
+		v, ok := value.([]stored.Portal)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPortals(v)
 		return nil
 	}
 	return fmt.Errorf("unknown ExpeditionMap field %s", name)
@@ -2619,7 +2741,11 @@ func (m *ExpeditionMapMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *ExpeditionMapMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(expeditionmap.FieldPortals) {
+		fields = append(fields, expeditionmap.FieldPortals)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -2632,6 +2758,11 @@ func (m *ExpeditionMapMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *ExpeditionMapMutation) ClearField(name string) error {
+	switch name {
+	case expeditionmap.FieldPortals:
+		m.ClearPortals()
+		return nil
+	}
 	return fmt.Errorf("unknown ExpeditionMap nullable field %s", name)
 }
 
@@ -2650,6 +2781,9 @@ func (m *ExpeditionMapMutation) ResetField(name string) error {
 		return nil
 	case expeditionmap.FieldStartY:
 		m.ResetStartY()
+		return nil
+	case expeditionmap.FieldPortals:
+		m.ResetPortals()
 		return nil
 	}
 	return fmt.Errorf("unknown ExpeditionMap field %s", name)
@@ -2887,6 +3021,42 @@ func (m *ExpeditionPlaceMutation) IDs(ctx context.Context) ([]int, error) {
 	}
 }
 
+// SetMapID sets the "map_id" field.
+func (m *ExpeditionPlaceMutation) SetMapID(i int) {
+	m._map = &i
+}
+
+// MapID returns the value of the "map_id" field in the mutation.
+func (m *ExpeditionPlaceMutation) MapID() (r int, exists bool) {
+	v := m._map
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMapID returns the old "map_id" field's value of the ExpeditionPlace entity.
+// If the ExpeditionPlace object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ExpeditionPlaceMutation) OldMapID(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMapID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMapID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMapID: %w", err)
+	}
+	return oldValue.MapID, nil
+}
+
+// ResetMapID resets all changes to the "map_id" field.
+func (m *ExpeditionPlaceMutation) ResetMapID() {
+	m._map = nil
+}
+
 // SetName sets the "name" field.
 func (m *ExpeditionPlaceMutation) SetName(s string) {
 	m.name = &s
@@ -3107,27 +3277,15 @@ func (m *ExpeditionPlaceMutation) ResetStat() {
 	m.stat = nil
 }
 
-// SetMapID sets the "map" edge to the ExpeditionMap entity by id.
-func (m *ExpeditionPlaceMutation) SetMapID(id int) {
-	m._map = &id
-}
-
 // ClearMap clears the "map" edge to the ExpeditionMap entity.
 func (m *ExpeditionPlaceMutation) ClearMap() {
 	m.cleared_map = true
+	m.clearedFields[expeditionplace.FieldMapID] = struct{}{}
 }
 
 // MapCleared reports if the "map" edge to the ExpeditionMap entity was cleared.
 func (m *ExpeditionPlaceMutation) MapCleared() bool {
 	return m.cleared_map
-}
-
-// MapID returns the "map" edge ID in the mutation.
-func (m *ExpeditionPlaceMutation) MapID() (id int, exists bool) {
-	if m._map != nil {
-		return *m._map, true
-	}
-	return
 }
 
 // MapIDs returns the "map" edge IDs in the mutation.
@@ -3234,7 +3392,10 @@ func (m *ExpeditionPlaceMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ExpeditionPlaceMutation) Fields() []string {
-	fields := make([]string, 0, 5)
+	fields := make([]string, 0, 6)
+	if m._map != nil {
+		fields = append(fields, expeditionplace.FieldMapID)
+	}
 	if m.name != nil {
 		fields = append(fields, expeditionplace.FieldName)
 	}
@@ -3258,6 +3419,8 @@ func (m *ExpeditionPlaceMutation) Fields() []string {
 // schema.
 func (m *ExpeditionPlaceMutation) Field(name string) (ent.Value, bool) {
 	switch name {
+	case expeditionplace.FieldMapID:
+		return m.MapID()
 	case expeditionplace.FieldName:
 		return m.Name()
 	case expeditionplace.FieldX:
@@ -3277,6 +3440,8 @@ func (m *ExpeditionPlaceMutation) Field(name string) (ent.Value, bool) {
 // database failed.
 func (m *ExpeditionPlaceMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
+	case expeditionplace.FieldMapID:
+		return m.OldMapID(ctx)
 	case expeditionplace.FieldName:
 		return m.OldName(ctx)
 	case expeditionplace.FieldX:
@@ -3296,6 +3461,13 @@ func (m *ExpeditionPlaceMutation) OldField(ctx context.Context, name string) (en
 // type.
 func (m *ExpeditionPlaceMutation) SetField(name string, value ent.Value) error {
 	switch name {
+	case expeditionplace.FieldMapID:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMapID(v)
+		return nil
 	case expeditionplace.FieldName:
 		v, ok := value.(string)
 		if !ok {
@@ -3407,6 +3579,9 @@ func (m *ExpeditionPlaceMutation) ClearField(name string) error {
 // It returns an error if the field is not defined in the schema.
 func (m *ExpeditionPlaceMutation) ResetField(name string) error {
 	switch name {
+	case expeditionplace.FieldMapID:
+		m.ResetMapID()
+		return nil
 	case expeditionplace.FieldName:
 		m.ResetName()
 		return nil
@@ -4900,6 +5075,42 @@ func (m *LootChanceMutation) IDs(ctx context.Context) ([]int, error) {
 	}
 }
 
+// SetPlaceID sets the "place_id" field.
+func (m *LootChanceMutation) SetPlaceID(i int) {
+	m.place = &i
+}
+
+// PlaceID returns the value of the "place_id" field in the mutation.
+func (m *LootChanceMutation) PlaceID() (r int, exists bool) {
+	v := m.place
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPlaceID returns the old "place_id" field's value of the LootChance entity.
+// If the LootChance object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *LootChanceMutation) OldPlaceID(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPlaceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPlaceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPlaceID: %w", err)
+	}
+	return oldValue.PlaceID, nil
+}
+
+// ResetPlaceID resets all changes to the "place_id" field.
+func (m *LootChanceMutation) ResetPlaceID() {
+	m.place = nil
+}
+
 // SetGood sets the "good" field.
 func (m *LootChanceMutation) SetGood(b bool) {
 	m.good = &b
@@ -5160,27 +5371,15 @@ func (m *LootChanceMutation) ResetPct() {
 	m.addpct = nil
 }
 
-// SetPlaceID sets the "place" edge to the ExpeditionPlace entity by id.
-func (m *LootChanceMutation) SetPlaceID(id int) {
-	m.place = &id
-}
-
 // ClearPlace clears the "place" edge to the ExpeditionPlace entity.
 func (m *LootChanceMutation) ClearPlace() {
 	m.clearedplace = true
+	m.clearedFields[lootchance.FieldPlaceID] = struct{}{}
 }
 
 // PlaceCleared reports if the "place" edge to the ExpeditionPlace entity was cleared.
 func (m *LootChanceMutation) PlaceCleared() bool {
 	return m.clearedplace
-}
-
-// PlaceID returns the "place" edge ID in the mutation.
-func (m *LootChanceMutation) PlaceID() (id int, exists bool) {
-	if m.place != nil {
-		return *m.place, true
-	}
-	return
 }
 
 // PlaceIDs returns the "place" edge IDs in the mutation.
@@ -5272,7 +5471,10 @@ func (m *LootChanceMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *LootChanceMutation) Fields() []string {
-	fields := make([]string, 0, 5)
+	fields := make([]string, 0, 6)
+	if m.place != nil {
+		fields = append(fields, lootchance.FieldPlaceID)
+	}
 	if m.good != nil {
 		fields = append(fields, lootchance.FieldGood)
 	}
@@ -5296,6 +5498,8 @@ func (m *LootChanceMutation) Fields() []string {
 // schema.
 func (m *LootChanceMutation) Field(name string) (ent.Value, bool) {
 	switch name {
+	case lootchance.FieldPlaceID:
+		return m.PlaceID()
 	case lootchance.FieldGood:
 		return m.Good()
 	case lootchance.FieldTier:
@@ -5315,6 +5519,8 @@ func (m *LootChanceMutation) Field(name string) (ent.Value, bool) {
 // database failed.
 func (m *LootChanceMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
+	case lootchance.FieldPlaceID:
+		return m.OldPlaceID(ctx)
 	case lootchance.FieldGood:
 		return m.OldGood(ctx)
 	case lootchance.FieldTier:
@@ -5334,6 +5540,13 @@ func (m *LootChanceMutation) OldField(ctx context.Context, name string) (ent.Val
 // type.
 func (m *LootChanceMutation) SetField(name string, value ent.Value) error {
 	switch name {
+	case lootchance.FieldPlaceID:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPlaceID(v)
+		return nil
 	case lootchance.FieldGood:
 		v, ok := value.(bool)
 		if !ok {
@@ -5469,6 +5682,9 @@ func (m *LootChanceMutation) ClearField(name string) error {
 // It returns an error if the field is not defined in the schema.
 func (m *LootChanceMutation) ResetField(name string) error {
 	switch name {
+	case lootchance.FieldPlaceID:
+		m.ResetPlaceID()
+		return nil
 	case lootchance.FieldGood:
 		m.ResetGood()
 		return nil
@@ -5609,6 +5825,8 @@ type MoveMutation struct {
 	unlock_never   *bool
 	unlock         *[]stored.Condition
 	appendunlock   []stored.Condition
+	acquire        *[]stored.Acquire
+	appendacquire  []stored.Acquire
 	icon           *string
 	clearedFields  map[string]struct{}
 	genus          *int
@@ -6444,6 +6662,71 @@ func (m *MoveMutation) ResetUnlock() {
 	m.appendunlock = nil
 }
 
+// SetAcquire sets the "acquire" field.
+func (m *MoveMutation) SetAcquire(s []stored.Acquire) {
+	m.acquire = &s
+	m.appendacquire = nil
+}
+
+// Acquire returns the value of the "acquire" field in the mutation.
+func (m *MoveMutation) Acquire() (r []stored.Acquire, exists bool) {
+	v := m.acquire
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAcquire returns the old "acquire" field's value of the Move entity.
+// If the Move object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *MoveMutation) OldAcquire(ctx context.Context) (v []stored.Acquire, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAcquire is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAcquire requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAcquire: %w", err)
+	}
+	return oldValue.Acquire, nil
+}
+
+// AppendAcquire adds s to the "acquire" field.
+func (m *MoveMutation) AppendAcquire(s []stored.Acquire) {
+	m.appendacquire = append(m.appendacquire, s...)
+}
+
+// AppendedAcquire returns the list of values that were appended to the "acquire" field in this mutation.
+func (m *MoveMutation) AppendedAcquire() ([]stored.Acquire, bool) {
+	if len(m.appendacquire) == 0 {
+		return nil, false
+	}
+	return m.appendacquire, true
+}
+
+// ClearAcquire clears the value of the "acquire" field.
+func (m *MoveMutation) ClearAcquire() {
+	m.acquire = nil
+	m.appendacquire = nil
+	m.clearedFields[move.FieldAcquire] = struct{}{}
+}
+
+// AcquireCleared returns if the "acquire" field was cleared in this mutation.
+func (m *MoveMutation) AcquireCleared() bool {
+	_, ok := m.clearedFields[move.FieldAcquire]
+	return ok
+}
+
+// ResetAcquire resets all changes to the "acquire" field.
+func (m *MoveMutation) ResetAcquire() {
+	m.acquire = nil
+	m.appendacquire = nil
+	delete(m.clearedFields, move.FieldAcquire)
+}
+
 // SetIcon sets the "icon" field.
 func (m *MoveMutation) SetIcon(s string) {
 	m.icon = &s
@@ -6541,7 +6824,7 @@ func (m *MoveMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *MoveMutation) Fields() []string {
-	fields := make([]string, 0, 16)
+	fields := make([]string, 0, 17)
 	if m.genus != nil {
 		fields = append(fields, move.FieldGenusID)
 	}
@@ -6587,6 +6870,9 @@ func (m *MoveMutation) Fields() []string {
 	if m.unlock != nil {
 		fields = append(fields, move.FieldUnlock)
 	}
+	if m.acquire != nil {
+		fields = append(fields, move.FieldAcquire)
+	}
 	if m.icon != nil {
 		fields = append(fields, move.FieldIcon)
 	}
@@ -6628,6 +6914,8 @@ func (m *MoveMutation) Field(name string) (ent.Value, bool) {
 		return m.UnlockNever()
 	case move.FieldUnlock:
 		return m.Unlock()
+	case move.FieldAcquire:
+		return m.Acquire()
 	case move.FieldIcon:
 		return m.Icon()
 	}
@@ -6669,6 +6957,8 @@ func (m *MoveMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldUnlockNever(ctx)
 	case move.FieldUnlock:
 		return m.OldUnlock(ctx)
+	case move.FieldAcquire:
+		return m.OldAcquire(ctx)
 	case move.FieldIcon:
 		return m.OldIcon(ctx)
 	}
@@ -6784,6 +7074,13 @@ func (m *MoveMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetUnlock(v)
+		return nil
+	case move.FieldAcquire:
+		v, ok := value.([]stored.Acquire)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAcquire(v)
 		return nil
 	case move.FieldIcon:
 		v, ok := value.(string)
@@ -6924,6 +7221,9 @@ func (m *MoveMutation) ClearedFields() []string {
 	if m.FieldCleared(move.FieldExtra) {
 		fields = append(fields, move.FieldExtra)
 	}
+	if m.FieldCleared(move.FieldAcquire) {
+		fields = append(fields, move.FieldAcquire)
+	}
 	return fields
 }
 
@@ -6940,6 +7240,9 @@ func (m *MoveMutation) ClearField(name string) error {
 	switch name {
 	case move.FieldExtra:
 		m.ClearExtra()
+		return nil
+	case move.FieldAcquire:
+		m.ClearAcquire()
 		return nil
 	}
 	return fmt.Errorf("unknown Move nullable field %s", name)
@@ -6993,6 +7296,9 @@ func (m *MoveMutation) ResetField(name string) error {
 		return nil
 	case move.FieldUnlock:
 		m.ResetUnlock()
+		return nil
+	case move.FieldAcquire:
+		m.ResetAcquire()
 		return nil
 	case move.FieldIcon:
 		m.ResetIcon()

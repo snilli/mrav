@@ -18,10 +18,11 @@ var _ = Describe("Requirements", func() {
 	It("says a stat sum in the names of the stats, with what the monster has", func() {
 		m := monster.Monster{Stats: [monster.StatCount]int{0, 300, 154, 0, 0, 0}}
 		c := domain.StatSumAtLeast{Stats: []monster.Stat{monster.Pow, monster.Int}, Min: 400}
-		Expect(require(c, m)).To(Equal(domain.Requirement{Text: "Pow + Int at least 400", Have: "454", Met: true}))
+		stats := []monster.Stat{monster.Pow, monster.Int} // which stats the words are about, to show them in their colours
+		Expect(require(c, m)).To(Equal(domain.Requirement{Text: "Pow + Int at least 400", Have: "454", Met: true, Stats: stats}))
 
 		m.Stats[monster.Int] = 99
-		Expect(require(c, m)).To(Equal(domain.Requirement{Text: "Pow + Int at least 400", Have: "399", Met: false}))
+		Expect(require(c, m)).To(Equal(domain.Requirement{Text: "Pow + Int at least 400", Have: "399", Met: false, Stats: stats}))
 	})
 
 	It("says how often a move has been used out of how often it must be", func() {

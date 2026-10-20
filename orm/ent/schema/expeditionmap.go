@@ -4,6 +4,8 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+
+	"orm/stored"
 )
 
 // ExpeditionMap is the map of one of the trips that come round every year, tile by tile.
@@ -18,12 +20,14 @@ func (ExpeditionMap) Fields() []ent.Field {
 		// start is the tile that the trip starts on, as a column and a row of rows.
 		field.Int("start_x").NonNegative(),
 		field.Int("start_y").NonNegative(),
+		// portals are the teleports of the map and the places where they land, with the labels of the guide.
+		field.JSON("portals", []stored.Portal{}).Optional(),
 	}
 }
 
 func (ExpeditionMap) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("places", ExpeditionPlace.Type).StorageKey(edge.Column("map_id")),
-		edge.To("locks", ExpeditionLock.Type).StorageKey(edge.Column("map_id")),
+		edge.To("places", ExpeditionPlace.Type),
+		edge.To("locks", ExpeditionLock.Type),
 	}
 }

@@ -10,8 +10,7 @@ import (
 //go:embed assets/*.png
 var assets embed.FS
 
-// Bytes is the PNG of an icon by key: a move icon ("Pixie_1") or an overlay ("No_Move", "hilight",
-// "skillchecked", "skillget").
+// Bytes is the PNG of an icon by key: a move icon ("Pixie_1") or an overlay ("No_Move", "hilight").
 func Bytes(key string) ([]byte, error) {
 	b, err := assets.ReadFile("assets/" + key + ".png")
 	if err != nil {

@@ -22,6 +22,12 @@ type ExpeditionLockCreate struct {
 	conflict []sql.ConflictOption
 }
 
+// SetMapID sets the "map_id" field.
+func (_c *ExpeditionLockCreate) SetMapID(v int) *ExpeditionLockCreate {
+	_c.mutation.SetMapID(v)
+	return _c
+}
+
 // SetX sets the "x" field.
 func (_c *ExpeditionLockCreate) SetX(v int) *ExpeditionLockCreate {
 	_c.mutation.SetX(v)
@@ -37,12 +43,6 @@ func (_c *ExpeditionLockCreate) SetY(v int) *ExpeditionLockCreate {
 // SetMinInt sets the "min_int" field.
 func (_c *ExpeditionLockCreate) SetMinInt(v int) *ExpeditionLockCreate {
 	_c.mutation.SetMinInt(v)
-	return _c
-}
-
-// SetMapID sets the "map" edge to the ExpeditionMap entity by ID.
-func (_c *ExpeditionLockCreate) SetMapID(id int) *ExpeditionLockCreate {
-	_c.mutation.SetMapID(id)
 	return _c
 }
 
@@ -85,6 +85,9 @@ func (_c *ExpeditionLockCreate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (_c *ExpeditionLockCreate) check() error {
+	if _, ok := _c.mutation.MapID(); !ok {
+		return &ValidationError{Name: "map_id", err: errors.New(`ent: missing required field "ExpeditionLock.map_id"`)}
+	}
 	if _, ok := _c.mutation.X(); !ok {
 		return &ValidationError{Name: "x", err: errors.New(`ent: missing required field "ExpeditionLock.x"`)}
 	}
@@ -165,7 +168,7 @@ func (_c *ExpeditionLockCreate) createSpec() (*ExpeditionLock, *sqlgraph.CreateS
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.map_id = &nodes[0]
+		_node.MapID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
@@ -175,7 +178,7 @@ func (_c *ExpeditionLockCreate) createSpec() (*ExpeditionLock, *sqlgraph.CreateS
 // of the `INSERT` statement. For example:
 //
 //	client.ExpeditionLock.Create().
-//		SetX(v).
+//		SetMapID(v).
 //		OnConflict(
 //			// Update the row with the new values
 //			// the was proposed for insertion.
@@ -184,7 +187,7 @@ func (_c *ExpeditionLockCreate) createSpec() (*ExpeditionLock, *sqlgraph.CreateS
 //		// Override some of the fields with custom
 //		// update values.
 //		Update(func(u *ent.ExpeditionLockUpsert) {
-//			SetX(v+v).
+//			SetMapID(v+v).
 //		}).
 //		Exec(ctx)
 func (_c *ExpeditionLockCreate) OnConflict(opts ...sql.ConflictOption) *ExpeditionLockUpsertOne {
@@ -219,6 +222,18 @@ type (
 		*sql.UpdateSet
 	}
 )
+
+// SetMapID sets the "map_id" field.
+func (u *ExpeditionLockUpsert) SetMapID(v int) *ExpeditionLockUpsert {
+	u.Set(expeditionlock.FieldMapID, v)
+	return u
+}
+
+// UpdateMapID sets the "map_id" field to the value that was provided on create.
+func (u *ExpeditionLockUpsert) UpdateMapID() *ExpeditionLockUpsert {
+	u.SetExcluded(expeditionlock.FieldMapID)
+	return u
+}
 
 // SetX sets the "x" field.
 func (u *ExpeditionLockUpsert) SetX(v int) *ExpeditionLockUpsert {
@@ -312,6 +327,20 @@ func (u *ExpeditionLockUpsertOne) Update(set func(*ExpeditionLockUpsert)) *Exped
 		set(&ExpeditionLockUpsert{UpdateSet: update})
 	}))
 	return u
+}
+
+// SetMapID sets the "map_id" field.
+func (u *ExpeditionLockUpsertOne) SetMapID(v int) *ExpeditionLockUpsertOne {
+	return u.Update(func(s *ExpeditionLockUpsert) {
+		s.SetMapID(v)
+	})
+}
+
+// UpdateMapID sets the "map_id" field to the value that was provided on create.
+func (u *ExpeditionLockUpsertOne) UpdateMapID() *ExpeditionLockUpsertOne {
+	return u.Update(func(s *ExpeditionLockUpsert) {
+		s.UpdateMapID()
+	})
 }
 
 // SetX sets the "x" field.
@@ -511,7 +540,7 @@ func (_c *ExpeditionLockCreateBulk) ExecX(ctx context.Context) {
 //		// Override some of the fields with custom
 //		// update values.
 //		Update(func(u *ent.ExpeditionLockUpsert) {
-//			SetX(v+v).
+//			SetMapID(v+v).
 //		}).
 //		Exec(ctx)
 func (_c *ExpeditionLockCreateBulk) OnConflict(opts ...sql.ConflictOption) *ExpeditionLockUpsertBulk {
@@ -578,6 +607,20 @@ func (u *ExpeditionLockUpsertBulk) Update(set func(*ExpeditionLockUpsert)) *Expe
 		set(&ExpeditionLockUpsert{UpdateSet: update})
 	}))
 	return u
+}
+
+// SetMapID sets the "map_id" field.
+func (u *ExpeditionLockUpsertBulk) SetMapID(v int) *ExpeditionLockUpsertBulk {
+	return u.Update(func(s *ExpeditionLockUpsert) {
+		s.SetMapID(v)
+	})
+}
+
+// UpdateMapID sets the "map_id" field to the value that was provided on create.
+func (u *ExpeditionLockUpsertBulk) UpdateMapID() *ExpeditionLockUpsertBulk {
+	return u.Update(func(s *ExpeditionLockUpsert) {
+		s.UpdateMapID()
+	})
 }
 
 // SetX sets the "x" field.

@@ -22,6 +22,7 @@ import (
 	"app/internal/core/move/domain"
 	"app/internal/core/move/repository/db/moverepo"
 	"app/internal/core/move/service/movesvc"
+	"app/internal/delivery/ui/profileui"
 	"app/internal/infrastructure/fakemonster"
 	"app/internal/infrastructure/icons"
 	mockmove "app/mock/core/move"
@@ -77,7 +78,7 @@ var _ = Describe("Screen", func() {
 	})
 
 	It("keeps the names of its overlays in step with the icon assets", func() {
-		for _, key := range []string{NoMove, Checked, CanGet, Highlight} {
+		for _, key := range []string{NoMove, Highlight} {
 			_, err := icons.Bytes(key)
 			Expect(err).NotTo(HaveOccurred(), key)
 		}
@@ -91,19 +92,81 @@ var _ = Describe("Screen", func() {
 		Expect(s.genus.Text).To(Equal("Pixie"))
 	})
 
-	It("marks a learned move with the check and a learnable one with the marker", func() {
+	It("draws no mark in the corner of a learned move or one ready to learn, because its frame says that", func() {
 		s.apply(grid(), nil)
-		Expect(s.cells[0][0].check.Visible()).To(BeTrue())
-		Expect(s.cells[0][0].canGet.Visible()).To(BeFalse())
-		Expect(s.cells[0][1].check.Visible()).To(BeFalse())
-		Expect(s.cells[0][1].canGet.Visible()).To(BeTrue())
-		Expect(s.cells[2][0].check.Visible()).To(BeFalse())
+		for _, c := range []*cell{s.cells[0][0], s.cells[0][1]} {
+			for _, o := range c.body.Objects {
+				if o.Visible() {
+					Expect(o.Position()).NotTo(Equal(fyne.NewPos(30*zoom, 2*zoom)))
+				}
+			}
+		}
 	})
 
 	It("shows the active move of each column under the grid", func() {
 		s.apply(grid(), nil)
 		Expect(s.active[0].key).To(Equal("Pixie_1"))
 		Expect(s.active[1].key).To(Equal(NoMove))
+	})
+
+	It("colours the icon of a move by its kind, yellow for power and green for intelligence, and the active move too", func() {
+		s.apply(grid(), nil)
+		power := func(c color.NRGBA) bool { return c == powerFill }
+		green := func(c color.NRGBA) bool { return c == intelligenceFill }
+		white := func(c color.NRGBA) bool { return c.R == 255 && c.G == 255 && c.B == 255 }
+
+		pat := s.cells[0][0].icon.Resource.Content() // power
+		Expect(colours(pat, power)).To(BeNumerically(">", 0))
+		Expect(colours(pat, white)).To(BeZero())
+		Expect(colours(pat, green)).To(BeZero())
+		bolt := s.cells[0][2].icon.Resource.Content() // intelligence
+		Expect(colours(bolt, green)).To(BeNumerically(">", 0))
+		Expect(colours(bolt, power)).To(BeZero())
+		active := s.active[0].img.Resource.Content() // the active move is Pat
+		Expect(colours(active, power)).To(BeNumerically(">", 0))
+		empty := s.cells[3][5].icon.Resource.Content()
+		Expect(colours(empty, power) + colours(empty, green)).To(BeZero())
+	})
+
+	It("keeps the colour of a cell when its move changes, and gives the new move its own", func() {
+		s.apply(grid(), nil)
+		g := grid()
+		g.Cells[0][0] = domain.Cell{Move: &bolt} // an intelligence move where a power one was
+		s.apply(g, nil)
+		Expect(colours(s.cells[0][0].icon.Resource.Content(), func(c color.NRGBA) bool { return c == intelligenceFill })).To(BeNumerically(">", 0))
+	})
+
+	It("marks a move that asks for a good nature or a bad one on its icon, and none that asks for none", func() {
+		hug := domain.Move{Col: 2, Row: 1, Name: "Hug", Kind: domain.KindPower, Icon: "Pixie_4",
+			Unlock: domain.UnlockRule{All: []domain.Condition{domain.NatureAtLeast{Min: 20}}}}
+		bite := domain.Move{Col: 2, Row: 2, Name: "Bite", Kind: domain.KindPower, Icon: "Pixie_5",
+			Unlock: domain.UnlockRule{All: []domain.Condition{domain.NatureAtMost{Max: -20}}}}
+		g := grid()
+		g.Cells[1][0] = domain.Cell{Move: &hug}
+		g.Cells[1][1] = domain.Cell{Move: &bite}
+		s.apply(g, nil)
+		Expect(s.cells[1][0].nature.Visible()).To(BeTrue())
+		Expect(s.cells[1][0].nature.Resource.Content()).To(Equal(natureIcon(domain.NatureGood)))
+		Expect(s.cells[1][1].nature.Visible()).To(BeTrue())
+		Expect(s.cells[1][1].nature.Resource.Content()).To(Equal(natureIcon(domain.NatureBad)))
+		Expect(s.cells[0][0].nature.Visible()).To(BeFalse())
+		Expect(s.cells[3][5].nature.Visible()).To(BeFalse())
+
+		s.apply(grid(), nil) // the move that asked for a nature is gone: so is its mark
+		Expect(s.cells[1][0].nature.Visible()).To(BeFalse())
+	})
+
+	It("shows the nature that the selected move asks for beside its name", func() {
+		hug := domain.Move{Col: 2, Row: 1, Name: "Hug", Kind: domain.KindPower, Icon: "Pixie_4",
+			Unlock: domain.UnlockRule{All: []domain.Condition{domain.NatureAtMost{Max: -50}}}}
+		g := grid()
+		g.Cells[1][0] = domain.Cell{Move: &hug}
+		s.apply(g, nil)
+		test.Tap(s.cells[1][0])
+		Expect(s.detail.nature.Visible()).To(BeTrue())
+		Expect(s.detail.nature.Resource.Content()).To(Equal(natureIcon(domain.NatureBad)))
+		test.Tap(s.cells[0][0])
+		Expect(s.detail.nature.Visible()).To(BeFalse())
 	})
 
 	It("shows the details of a tapped cell and highlights only that cell", func() {
@@ -177,10 +240,28 @@ var _ = Describe("Screen", func() {
 		Expect(s.detail.status.object.Visible()).To(BeFalse())
 	})
 
+	It("names the stats of a requirement in the colours of the stats, and says the rest in the colour of the text", func() {
+		g := grid()
+		g.Cells[0][1].Requirements = []domain.Requirement{
+			{Text: "Pow + Int at least 400", Have: "421", Stats: []monster.Stat{monster.Pow, monster.Int}},
+		}
+		s.apply(g, nil)
+		test.Tap(s.cells[0][1])
+
+		colours := map[string]color.Color{}
+		for _, seg := range s.detail.needs[0].colored.Segments() {
+			colours[seg.Text] = seg.Color
+		}
+		Expect(colours).To(HaveKeyWithValue("Pow", profileui.StatColors[monster.Pow]))
+		Expect(colours).To(HaveKeyWithValue("Int", profileui.StatColors[monster.Int]))
+		Expect(colours[" + "]).To(Equal(theme.Color(theme.ColorNameForeground)))
+		Expect(colours[" at least 400 (421)"]).To(Equal(theme.Color(theme.ColorNameForeground)))
+	})
+
 	It("lists what the selected move still needs, each as met or not, and no list when it needs nothing", func() {
 		g := grid()
 		g.Cells[0][1].Requirements = []domain.Requirement{
-			{Text: "Pow + Int at least 400", Have: "421", Met: true},
+			{Text: "Pow + Int at least 400", Have: "421", Met: true, Stats: []monster.Stat{monster.Pow, monster.Int}},
 			{Text: "Use Pat at least 50 times", Have: "31 / 50"},
 			{Text: "The game gives no way to learn it"},
 		}
@@ -189,10 +270,10 @@ var _ = Describe("Screen", func() {
 		Expect(s.detail.needsBox.Visible()).To(BeTrue())
 		Expect(s.detail.needs).To(HaveLen(3))
 		Expect(s.detail.needs[0].mark.Text).To(Equal("✓"))
-		Expect(s.detail.needs[0].label.Text).To(Equal("Pow + Int at least 400 (421)"))
+		Expect(s.detail.needs[0].words()).To(Equal("Pow + Int at least 400 (421)"))
 		Expect(s.detail.needs[1].mark.Text).To(Equal("✗"))
-		Expect(s.detail.needs[1].label.Text).To(Equal("Use Pat at least 50 times (31 / 50)"))
-		Expect(s.detail.needs[2].label.Text).To(Equal("The game gives no way to learn it"))
+		Expect(s.detail.needs[1].words()).To(Equal("Use Pat at least 50 times (31 / 50)"))
+		Expect(s.detail.needs[2].words()).To(Equal("The game gives no way to learn it"))
 
 		test.Tap(s.cells[0][0])
 		Expect(s.detail.needsBox.Visible()).To(BeFalse())
@@ -216,7 +297,6 @@ var _ = Describe("Screen", func() {
 		s.apply(domain.Grid{}, apperr.NotFound("monster", "No monster"))
 		Expect(s.genus.Text).To(Equal("No monster"))
 		Expect(s.cells[0][0].iconKey).To(Equal(NoMove))
-		Expect(s.cells[0][0].check.Visible()).To(BeFalse())
 	})
 
 	It("says what a not-found error says, such as that the game is not running, and No monster when it says nothing", func() {

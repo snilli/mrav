@@ -33,8 +33,8 @@ type Drill struct {
 	Heavy     bool
 	Primary   monster.Stat
 	Secondary monster.Stat // only for a heavy drill
-	// Slot is the drill's place among the monster's motivations and among the bits of its training boost. Both
-	// swims are the pool's, so they share one.
+	// Slot is the drill's place among the monster's motivations and among the bits of its training boost. The swim
+	// is the pool's.
 	Slot int
 }
 
@@ -52,9 +52,15 @@ var drills = [...]Drill{
 	{Name: "Pull", Heavy: true, Primary: monster.Pow, Secondary: monster.Life, Slot: 6},
 	{Name: "Meditate", Heavy: true, Primary: monster.Int, Secondary: monster.Skill, Slot: 7},
 	{Name: "Leap", Heavy: true, Primary: monster.Speed, Secondary: monster.Int, Slot: 8},
-	{Name: "Swim (Vanilla)", Heavy: true, Primary: monster.Life, Secondary: monster.Defense, Slot: 9},
-	{Name: "Swim (Patched/HM)", Heavy: true, Primary: monster.Defense, Secondary: monster.Life, Slot: 9},
+	{Name: "Swim", Heavy: true, Primary: monster.Life, Secondary: monster.Defense, Slot: swimSlot},
 }
+
+// swimSlot is the slot of the swim, the last of the drills.
+const swimSlot = 9
+
+// patchedSwim is the swim of a game that is patched, which trains the two stats the other way round from the vanilla
+// swim in the list of drills.
+var patchedSwim = Drill{Name: "Swim", Heavy: true, Primary: monster.Defense, Secondary: monster.Life, Slot: swimSlot}
 
 // Drills are the drills of the page, in its order.
 func Drills() []Drill { return slices.Clone(drills[:]) }
@@ -114,6 +120,9 @@ func Build(m monster.Monster, gains Gains) Training {
 		t.Specialties[bit] = m.TrainBoost&(1<<bit) != 0
 	}
 	for _, d := range drills {
+		if d.Slot == swimSlot && m.PatchedSwim {
+			d = patchedSwim
+		}
 		g := DrillGains{Drill: d, Secondary: noGain, Motivation: m.Motivation[d.Slot], Specialty: t.Specialties[d.Slot]}
 		g.Recommended = g.Specialty && g.Motivation >= recommendedMotivation
 		if d.Heavy {

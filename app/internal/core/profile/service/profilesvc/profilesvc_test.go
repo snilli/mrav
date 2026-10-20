@@ -39,7 +39,7 @@ var _ = Describe("ProfileService", func() {
 		repo.EXPECT().ListBreedRules(ctx, 5).Return([]domain.BreedRule{rule}, nil)
 		repo.EXPECT().ListCocoonRules(ctx).Return(nil, nil)
 		repo.EXPECT().ListDesireNames(ctx).Return(desires, nil)
-		repo.EXPECT().ListExpeditionMaps(ctx, domain.Searcher{}).Return(nil, nil)
+		repo.EXPECT().ListExpeditionMaps(ctx).Return(nil, nil)
 	}
 
 	BeforeEach(func() {
@@ -74,7 +74,7 @@ var _ = Describe("ProfileService", func() {
 		repo.EXPECT().ListBreedRules(ctx, 5).Return([]domain.BreedRule{rule}, nil)
 		repo.EXPECT().ListCocoonRules(ctx).Return(nil, nil)
 		repo.EXPECT().ListDesireNames(ctx).Return(desires, nil)
-		repo.EXPECT().ListExpeditionMaps(ctx, domain.Searcher{}).Return(nil, nil)
+		repo.EXPECT().ListExpeditionMaps(ctx).Return(nil, nil)
 
 		got, err := svc.Current(ctx)
 		Expect(err).NotTo(HaveOccurred())
@@ -84,36 +84,49 @@ var _ = Describe("ProfileService", func() {
 		Expect(got.Breeds[0]).To(Equal(domain.BreedUnlock{Name: "#0"}))
 	})
 
-	It("asks for the maps of the trips as the monster would search them, by its intelligence and skill and whether its nature is good", func() {
-		m := henger
-		m.Stats[monster.Int], m.Stats[monster.Skill], m.Nature = 463, 690, 1
-		maps := []domain.ExpeditionMap{{Name: "Cave", Width: 1, Height: 1}}
+	// cave has a place that goes by skill, with a table for each nature: 100 G in the bad one and 300 G in the good one.
+	cave := func() []domain.ExpeditionMap {
+		return []domain.ExpeditionMap{{Name: "Cave", Width: 1, Height: 1, Spots: []domain.Spot{{
+			Name: "A", BySkill: true, Chances: []domain.Chance{
+				{MinStat: 0, Item: "Nuts", Pct: 100, Price: 100},
+				{MinStat: 600, Item: "Gem", Pct: 100, Price: 200},
+				{Good: true, MinStat: 0, Item: "Nuts", Pct: 100, Price: 300},
+			},
+		}}}}
+	}
+	expectMaps := func(m monster.Monster, maps []domain.ExpeditionMap) {
 		monsters.EXPECT().Current(ctx).Return(m, nil)
 		players.EXPECT().Player(ctx).Return(player.Player{}, nil)
 		repo.EXPECT().ListGenusNames(ctx).Return(names, nil)
 		repo.EXPECT().ListBreedRules(ctx, 5).Return([]domain.BreedRule{rule}, nil)
 		repo.EXPECT().ListCocoonRules(ctx).Return(nil, nil)
 		repo.EXPECT().ListDesireNames(ctx).Return(desires, nil)
-		repo.EXPECT().ListExpeditionMaps(ctx, domain.Searcher{Intelligence: 463, Skill: 690, GoodNature: true}).Return(maps, nil)
+		repo.EXPECT().ListExpeditionMaps(ctx).Return(maps, nil)
+	}
+
+	It("gives the maps of the trips as the monster would search them, by its skill where the building goes by skill and whether its nature is good", func() {
+		m := henger
+		m.Stats[monster.Int], m.Stats[monster.Skill], m.Nature = 463, 690, 1
+		maps := cave()
+		expectMaps(m, maps)
 
 		got, err := svc.Current(ctx)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(got.Maps).To(Equal(maps))
+		Expect(got.Maps).To(HaveLen(1))
+		spot := got.Maps[0].Spots[0]
+		Expect(spot.Value).To(BeNumerically("~", 300, 1e-9)) // the good table, whose first tier is all that it has
+		Expect(spot.Loot).To(Equal([]domain.Drop{{Item: "Nuts", Pct: 100, Price: 300}}))
+		Expect(maps[0].Spots[0].Value).To(BeZero(), "what the repository gave is not written to")
 	})
 
-	It("takes a nature of 0 for a bad one, as the game does", func() {
+	It("takes a nature of 0 for a bad one, as the game does, and the tier that the skill reaches", func() {
 		m := henger
-		m.Nature = 0
-		monsters.EXPECT().Current(ctx).Return(m, nil)
-		players.EXPECT().Player(ctx).Return(player.Player{}, nil)
-		repo.EXPECT().ListGenusNames(ctx).Return(names, nil)
-		repo.EXPECT().ListBreedRules(ctx, 5).Return([]domain.BreedRule{rule}, nil)
-		repo.EXPECT().ListCocoonRules(ctx).Return(nil, nil)
-		repo.EXPECT().ListDesireNames(ctx).Return(desires, nil)
-		repo.EXPECT().ListExpeditionMaps(ctx, domain.Searcher{GoodNature: false}).Return(nil, nil)
+		m.Stats[monster.Skill], m.Nature = 690, 0
+		expectMaps(m, cave())
 
-		_, err := svc.Current(ctx)
+		got, err := svc.Current(ctx)
 		Expect(err).NotTo(HaveOccurred())
+		Expect(got.Maps[0].Spots[0].Value).To(BeNumerically("~", 200, 1e-9)) // the bad table, second tier: from 600
 	})
 
 	It("says the monster is on no drug when its drug id is not a drug's, and --- for an id the list lacks", func() {
@@ -125,7 +138,7 @@ var _ = Describe("ProfileService", func() {
 		repo.EXPECT().ListBreedRules(ctx, 5).Return([]domain.BreedRule{rule}, nil)
 		repo.EXPECT().ListCocoonRules(ctx).Return(nil, nil)
 		repo.EXPECT().ListDesireNames(ctx).Return(desires, nil)
-		repo.EXPECT().ListExpeditionMaps(ctx, domain.Searcher{}).Return(nil, nil)
+		repo.EXPECT().ListExpeditionMaps(ctx).Return(nil, nil)
 
 		got, err := svc.Current(ctx)
 		Expect(err).NotTo(HaveOccurred())
@@ -181,7 +194,7 @@ var _ = Describe("ProfileService", func() {
 			repo.EXPECT().ListBreedRules(ctx, 5).Return(nil, nil)
 			repo.EXPECT().ListCocoonRules(ctx).Return(nil, nil)
 			repo.EXPECT().ListDesireNames(ctx).Return(nil, nil)
-			repo.EXPECT().ListExpeditionMaps(ctx, domain.Searcher{}).Return(nil, errors.New("disk gone"))
+			repo.EXPECT().ListExpeditionMaps(ctx).Return(nil, errors.New("disk gone"))
 		}),
 	)
 })

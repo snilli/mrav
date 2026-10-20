@@ -629,6 +629,16 @@ func UnlockNeverNEQ(v bool) predicate.Move {
 	return predicate.Move(sql.FieldNEQ(FieldUnlockNever, v))
 }
 
+// AcquireIsNil applies the IsNil predicate on the "acquire" field.
+func AcquireIsNil() predicate.Move {
+	return predicate.Move(sql.FieldIsNull(FieldAcquire))
+}
+
+// AcquireNotNil applies the NotNil predicate on the "acquire" field.
+func AcquireNotNil() predicate.Move {
+	return predicate.Move(sql.FieldNotNull(FieldAcquire))
+}
+
 // IconEQ applies the EQ predicate on the "icon" field.
 func IconEQ(v string) predicate.Move {
 	return predicate.Move(sql.FieldEQ(FieldIcon, v))

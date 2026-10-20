@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/driver/software"
 	"fyne.io/fyne/v2/test"
@@ -53,9 +54,26 @@ var _ = Describe("Screen", func() {
 		Expect(s.effect.Text).To(Equal("No item selected."))
 	})
 
-	It("scrolls the strip of twenty sideways, so that long item names never make the window wider", func() {
-		Expect(s.strip.Direction).To(Equal(container.ScrollHorizontalOnly))
-		Expect(s.strip.MinSize().Width).To(BeNumerically("<", 200))
+	Describe("the twenty buttons", func() {
+		// rows is how many lines the buttons fall on when the page is as wide as asked.
+		rows := func(width float32) int {
+			win := test.NewWindow(s.Content())
+			win.Resize(fyne.NewSize(width, 900))
+			ys := map[float32]bool{}
+			for _, b := range s.buttons {
+				ys[fyne.CurrentApp().Driver().AbsolutePositionForObject(b).Y] = true
+			}
+			return len(ys)
+		}
+
+		It("are in two rows when the page is wide, as the game lays them out", func() {
+			Expect(rows(1500)).To(Equal(2))
+		})
+
+		It("wrap onto more rows when the page is narrow, and never make the page wider", func() {
+			Expect(rows(400)).To(BeNumerically(">", 4))
+			Expect(s.strip.MinSize().Width).To(BeNumerically("<", 200))
+		})
 	})
 
 	It("labels each button with the item in its place, and dashes for an empty place", func() {

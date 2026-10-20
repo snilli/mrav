@@ -5,14 +5,13 @@ package moveui
 import (
 	"strconv"
 
+	monster "app/internal/core/monster/domain"
 	"app/internal/core/move/domain"
 )
 
 // The names of the overlays in the icon assets.
 const (
 	NoMove    = "No_Move"
-	Checked   = "skillchecked"
-	CanGet    = "skillget"
 	Highlight = "hilight"
 )
 
@@ -34,6 +33,8 @@ type CellView struct {
 	CanLearn bool
 	Locked   bool // a move that is neither learned nor ready to learn yet
 	Active   bool
+	Kind     domain.Kind   // whether the move runs on power or on intelligence, which its icon is coloured by
+	Nature   domain.Nature // the nature that the move asks for, which its icon is marked with
 }
 
 // GridView is what the whole grid shows.
@@ -41,15 +42,18 @@ type GridView struct {
 	Genus  string
 	Cells  [domain.Columns][domain.Rows]CellView // Cells[col-1][row-1]
 	Active [domain.Columns]string                // the icon of each column's active move; NoMove when it has none
+	// ActiveKind is the kind of each column's active move.
+	ActiveKind [domain.Columns]domain.Kind
 	// How many moves are learned, ready to learn, and not yet; the empty cells are none of these.
 	Learned, Ready, Locked int
 }
 
 // RequirementView is one thing a move asks of a monster before it can learn it, and where the monster stands on it.
 type RequirementView struct {
-	Text string
-	Have string // what the monster has, when that is a number; empty otherwise
-	Met  bool
+	Text  string
+	Have  string // what the monster has, when that is a number; empty otherwise
+	Met   bool
+	Stats []monster.Stat // the stats that the text starts with, to be shown in their colours
 }
 
 // DetailView is what the details of one cell show, every value already in the game's words.
@@ -65,7 +69,8 @@ type DetailView struct {
 	Uses        string
 	Learned     bool
 	CanLearn    bool
-	Status      string // where the move stands, in words; empty for an empty cell
+	Status      string        // where the move stands, in words; empty for an empty cell
+	Nature      domain.Nature // the nature that the move asks for, to show beside its name
 	Description string
 	// Requirements are what the move still asks of the monster; none for a learned move or an empty cell.
 	Requirements []RequirementView
@@ -89,7 +94,7 @@ func NewGridView(g domain.Grid) GridView {
 		}
 		v.Active[c] = NoMove
 		if m := g.Active[c]; m != nil {
-			v.Active[c] = m.Icon
+			v.Active[c], v.ActiveKind[c] = m.Icon, m.Kind
 		}
 	}
 	return v
@@ -99,7 +104,10 @@ func newCellView(c domain.Cell) CellView {
 	if c.Move == nil {
 		return CellView{Empty: true, Icon: NoMove}
 	}
-	return CellView{Icon: c.Move.Icon, Learned: c.Learned, CanLearn: c.CanLearn, Locked: !c.Learned && !c.CanLearn, Active: c.Active}
+	return CellView{
+		Icon: c.Move.Icon, Learned: c.Learned, CanLearn: c.CanLearn, Locked: !c.Learned && !c.CanLearn, Active: c.Active,
+		Kind: c.Move.Kind, Nature: c.Move.Unlock.Nature(),
+	}
 }
 
 func NewDetailView(c domain.Cell) DetailView {
@@ -121,6 +129,7 @@ func NewDetailView(c domain.Cell) DetailView {
 		Uses:        strconv.Itoa(c.Used),
 		Learned:     c.Learned,
 		CanLearn:    c.CanLearn,
+		Nature:      m.Unlock.Nature(),
 		Description: m.Description,
 	}
 	switch {
@@ -132,7 +141,7 @@ func NewDetailView(c domain.Cell) DetailView {
 		v.Status = statusLocked
 	}
 	for _, r := range c.Requirements {
-		v.Requirements = append(v.Requirements, RequirementView{Text: r.Text, Have: r.Have, Met: r.Met})
+		v.Requirements = append(v.Requirements, RequirementView{Text: r.Text, Have: r.Have, Met: r.Met, Stats: r.Stats})
 	}
 	if e := m.Extra; e != nil {
 		value := e.Text

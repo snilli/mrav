@@ -58,8 +58,8 @@ var _ = Describe("trainingrepo", Label("integration"), func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(got).To(HaveLen(10 * 5 * 3))
 		gains := domain.NewGains(got)
-		Expect(gains.Text(0, 0, domain.KindLight)).To(Equal("1-3 (0/1/2/3)"))
-		Expect(gains.Text(9, 0, domain.KindHeavy)).To(Equal("2-4 (2/2/3/4)")) // stage 9 is stage 0's twin
+		Expect(gains.Text(0, 0, domain.KindLight)).To(Equal("1-3 (1/1/2/3)")) // legendcup's 1-1-2-3; MR2AV had 0/1/2/3
+		Expect(gains.Text(9, 0, domain.KindHeavy)).To(Equal("3-4 (3/3/3/4)")) // stage 9 is stage 0's twin; MR2AV had 2/2/3/4
 		Expect(gains.Text(4, 4, domain.KindHeavy)).To(Equal("20 (20/20/20/20)"))
 		Expect(gains.Text(6, 4, domain.KindHeavy)).To(Equal("19-20 (19/20/20/20)"))
 	})

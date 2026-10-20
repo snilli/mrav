@@ -63,15 +63,15 @@ func init() {
 	expeditionlockFields := schema.ExpeditionLock{}.Fields()
 	_ = expeditionlockFields
 	// expeditionlockDescX is the schema descriptor for x field.
-	expeditionlockDescX := expeditionlockFields[0].Descriptor()
+	expeditionlockDescX := expeditionlockFields[1].Descriptor()
 	// expeditionlock.XValidator is a validator for the "x" field. It is called by the builders before save.
 	expeditionlock.XValidator = expeditionlockDescX.Validators[0].(func(int) error)
 	// expeditionlockDescY is the schema descriptor for y field.
-	expeditionlockDescY := expeditionlockFields[1].Descriptor()
+	expeditionlockDescY := expeditionlockFields[2].Descriptor()
 	// expeditionlock.YValidator is a validator for the "y" field. It is called by the builders before save.
 	expeditionlock.YValidator = expeditionlockDescY.Validators[0].(func(int) error)
 	// expeditionlockDescMinInt is the schema descriptor for min_int field.
-	expeditionlockDescMinInt := expeditionlockFields[2].Descriptor()
+	expeditionlockDescMinInt := expeditionlockFields[3].Descriptor()
 	// expeditionlock.MinIntValidator is a validator for the "min_int" field. It is called by the builders before save.
 	expeditionlock.MinIntValidator = expeditionlockDescMinInt.Validators[0].(func(int) error)
 	expeditionmapFields := schema.ExpeditionMap{}.Fields()
@@ -95,19 +95,19 @@ func init() {
 	expeditionplaceFields := schema.ExpeditionPlace{}.Fields()
 	_ = expeditionplaceFields
 	// expeditionplaceDescName is the schema descriptor for name field.
-	expeditionplaceDescName := expeditionplaceFields[0].Descriptor()
+	expeditionplaceDescName := expeditionplaceFields[1].Descriptor()
 	// expeditionplace.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	expeditionplace.NameValidator = expeditionplaceDescName.Validators[0].(func(string) error)
 	// expeditionplaceDescX is the schema descriptor for x field.
-	expeditionplaceDescX := expeditionplaceFields[1].Descriptor()
+	expeditionplaceDescX := expeditionplaceFields[2].Descriptor()
 	// expeditionplace.XValidator is a validator for the "x" field. It is called by the builders before save.
 	expeditionplace.XValidator = expeditionplaceDescX.Validators[0].(func(int) error)
 	// expeditionplaceDescY is the schema descriptor for y field.
-	expeditionplaceDescY := expeditionplaceFields[2].Descriptor()
+	expeditionplaceDescY := expeditionplaceFields[3].Descriptor()
 	// expeditionplace.YValidator is a validator for the "y" field. It is called by the builders before save.
 	expeditionplace.YValidator = expeditionplaceDescY.Validators[0].(func(int) error)
 	// expeditionplaceDescBuilding is the schema descriptor for building field.
-	expeditionplaceDescBuilding := expeditionplaceFields[3].Descriptor()
+	expeditionplaceDescBuilding := expeditionplaceFields[4].Descriptor()
 	// expeditionplace.BuildingValidator is a validator for the "building" field. It is called by the builders before save.
 	expeditionplace.BuildingValidator = expeditionplaceDescBuilding.Validators[0].(func(string) error)
 	genusFields := schema.Genus{}.Fields()
@@ -149,19 +149,19 @@ func init() {
 	lootchanceFields := schema.LootChance{}.Fields()
 	_ = lootchanceFields
 	// lootchanceDescTier is the schema descriptor for tier field.
-	lootchanceDescTier := lootchanceFields[1].Descriptor()
+	lootchanceDescTier := lootchanceFields[2].Descriptor()
 	// lootchance.TierValidator is a validator for the "tier" field. It is called by the builders before save.
 	lootchance.TierValidator = lootchanceDescTier.Validators[0].(func(int) error)
 	// lootchanceDescSlot is the schema descriptor for slot field.
-	lootchanceDescSlot := lootchanceFields[2].Descriptor()
+	lootchanceDescSlot := lootchanceFields[3].Descriptor()
 	// lootchance.SlotValidator is a validator for the "slot" field. It is called by the builders before save.
 	lootchance.SlotValidator = lootchanceDescSlot.Validators[0].(func(int) error)
 	// lootchanceDescMinStat is the schema descriptor for min_stat field.
-	lootchanceDescMinStat := lootchanceFields[3].Descriptor()
+	lootchanceDescMinStat := lootchanceFields[4].Descriptor()
 	// lootchance.MinStatValidator is a validator for the "min_stat" field. It is called by the builders before save.
 	lootchance.MinStatValidator = lootchanceDescMinStat.Validators[0].(func(int) error)
 	// lootchanceDescPct is the schema descriptor for pct field.
-	lootchanceDescPct := lootchanceFields[4].Descriptor()
+	lootchanceDescPct := lootchanceFields[5].Descriptor()
 	// lootchance.PctValidator is a validator for the "pct" field. It is called by the builders before save.
 	lootchance.PctValidator = func() func(float64) error {
 		validators := lootchanceDescPct.Validators
@@ -239,7 +239,7 @@ func init() {
 	// move.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	move.NameValidator = moveDescName.Validators[0].(func(string) error)
 	// moveDescIcon is the schema descriptor for icon field.
-	moveDescIcon := moveFields[15].Descriptor()
+	moveDescIcon := moveFields[16].Descriptor()
 	// move.IconValidator is a validator for the "icon" field. It is called by the builders before save.
 	move.IconValidator = moveDescIcon.Validators[0].(func(string) error)
 	traininggainFields := schema.TrainingGain{}.Fields()

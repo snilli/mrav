@@ -17,6 +17,8 @@ type ExpeditionLock struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID int `json:"id,omitempty"`
+	// MapID holds the value of the "map_id" field.
+	MapID int `json:"map_id,omitempty"`
 	// X holds the value of the "x" field.
 	X int `json:"x,omitempty"`
 	// Y holds the value of the "y" field.
@@ -26,7 +28,6 @@ type ExpeditionLock struct {
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the ExpeditionLockQuery when eager-loading is set.
 	Edges        ExpeditionLockEdges `json:"edges"`
-	map_id       *int
 	selectValues sql.SelectValues
 }
 
@@ -55,9 +56,7 @@ func (*ExpeditionLock) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case expeditionlock.FieldID, expeditionlock.FieldX, expeditionlock.FieldY, expeditionlock.FieldMinInt:
-			values[i] = new(sql.NullInt64)
-		case expeditionlock.ForeignKeys[0]: // map_id
+		case expeditionlock.FieldID, expeditionlock.FieldMapID, expeditionlock.FieldX, expeditionlock.FieldY, expeditionlock.FieldMinInt:
 			values[i] = new(sql.NullInt64)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -80,6 +79,12 @@ func (_m *ExpeditionLock) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
 			_m.ID = int(value.Int64)
+		case expeditionlock.FieldMapID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field map_id", values[i])
+			} else if value.Valid {
+				_m.MapID = int(value.Int64)
+			}
 		case expeditionlock.FieldX:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field x", values[i])
@@ -97,13 +102,6 @@ func (_m *ExpeditionLock) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field min_int", values[i])
 			} else if value.Valid {
 				_m.MinInt = int(value.Int64)
-			}
-		case expeditionlock.ForeignKeys[0]:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for edge-field map_id", value)
-			} else if value.Valid {
-				_m.map_id = new(int)
-				*_m.map_id = int(value.Int64)
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -146,6 +144,9 @@ func (_m *ExpeditionLock) String() string {
 	var builder strings.Builder
 	builder.WriteString("ExpeditionLock(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
+	builder.WriteString("map_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.MapID))
+	builder.WriteString(", ")
 	builder.WriteString("x=")
 	builder.WriteString(fmt.Sprintf("%v", _m.X))
 	builder.WriteString(", ")

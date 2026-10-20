@@ -457,7 +457,9 @@ func (_q *ExpeditionMapQuery) loadPlaces(ctx context.Context, query *ExpeditionP
 			init(nodes[i])
 		}
 	}
-	query.withFKs = true
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(expeditionplace.FieldMapID)
+	}
 	query.Where(predicate.ExpeditionPlace(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(expeditionmap.PlacesColumn), fks...))
 	}))
@@ -466,13 +468,10 @@ func (_q *ExpeditionMapQuery) loadPlaces(ctx context.Context, query *ExpeditionP
 		return err
 	}
 	for _, n := range neighbors {
-		fk := n.map_id
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "map_id" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
+		fk := n.MapID
+		node, ok := nodeids[fk]
 		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "map_id" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "map_id" returned %v for node %v`, fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -488,7 +487,9 @@ func (_q *ExpeditionMapQuery) loadLocks(ctx context.Context, query *ExpeditionLo
 			init(nodes[i])
 		}
 	}
-	query.withFKs = true
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(expeditionlock.FieldMapID)
+	}
 	query.Where(predicate.ExpeditionLock(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(expeditionmap.LocksColumn), fks...))
 	}))
@@ -497,13 +498,10 @@ func (_q *ExpeditionMapQuery) loadLocks(ctx context.Context, query *ExpeditionLo
 		return err
 	}
 	for _, n := range neighbors {
-		fk := n.map_id
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "map_id" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
+		fk := n.MapID
+		node, ok := nodeids[fk]
 		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "map_id" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "map_id" returned %v for node %v`, fk, n.ID)
 		}
 		assign(node, n)
 	}

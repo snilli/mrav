@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"image/color"
 	"slices"
+	"strings"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
@@ -13,19 +14,19 @@ import (
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 
+	monster "app/internal/core/monster/domain"
 	"app/internal/core/move"
 	"app/internal/core/move/domain"
 	"app/internal/delivery/ui/profileui"
 	"app/internal/delivery/ui/status"
 )
 
-// The game's icons are 48x32 pixels and its marks 16x16; the grid draws them one and a half times that, which
-// leaves room under it for what a move needs, and the row of active moves draws them as they are.
+// The game's icons are 48x32 pixels; the grid draws them one and a half times that, which leaves room under it for what
+// a move needs, and the row of active moves draws them as they are.
 const (
 	zoom       = 1.5
 	iconW      = 48 * zoom
 	iconH      = 32 * zoom
-	markW      = 16 * zoom
 	activeW    = 48
 	activeH    = 32
 	frameWidth = 3
@@ -66,6 +67,44 @@ func (is *iconSet) resource(key string) fyne.Resource {
 	return r
 }
 
+// tinted is the icon in the colour of the kind of its move, made once for each. A kind with no colour, or an icon that
+// cannot be tinted, is the plain icon.
+func (is *iconSet) tinted(key string, kind domain.Kind) fyne.Resource {
+	if kind != domain.KindPower && kind != domain.KindIntelligence {
+		return is.resource(key)
+	}
+	id := key + "|" + string(kind)
+	if r, ok := is.cache[id]; ok {
+		return r
+	}
+	b, err := is.load(key)
+	if err != nil {
+		return is.resource(key)
+	}
+	b, err = tint(b, kind)
+	if err != nil {
+		return is.resource(key)
+	}
+	r := fyne.NewStaticResource(id+".png", b)
+	is.cache[id] = r
+	return r
+}
+
+// nature is the mark of a nature, made once; nil for a move that asks for none.
+func (is *iconSet) nature(n domain.Nature) fyne.Resource {
+	b := natureIcon(n)
+	if b == nil {
+		return nil
+	}
+	id := fmt.Sprintf("nature|%d", n)
+	if r, ok := is.cache[id]; ok {
+		return r
+	}
+	r := fyne.NewStaticResource(id+".png", b)
+	is.cache[id] = r
+	return r
+}
+
 // pixelImage draws a resource without smoothing: these are pixel icons.
 func pixelImage(r fyne.Resource, w, h float32) *canvas.Image {
 	img := canvas.NewImageFromResource(r)
@@ -88,35 +127,35 @@ func setVisible(o fyne.CanvasObject, on bool) {
 
 // picture is an image that remembers which icon it shows.
 type picture struct {
-	img *canvas.Image
-	key string
+	img  *canvas.Image
+	key  string
+	kind domain.Kind
 }
 
 func newPicture(is *iconSet, w, h float32) *picture {
 	return &picture{img: pixelImage(is.resource(NoMove), w, h), key: NoMove}
 }
 
-func (p *picture) show(key string, is *iconSet) {
-	if key == p.key {
+func (p *picture) show(key string, kind domain.Kind, is *iconSet) {
+	if key == p.key && kind == p.kind {
 		return
 	}
-	p.img.Resource, p.key = is.resource(key), key
+	p.img.Resource, p.key, p.kind = is.tinted(key, kind), key, kind
 	p.img.Refresh()
 }
 
 // cell is one place of the grid: the icon, and what says where the move stands: a green frame when it is learned,
-// an orange frame and a ribbon when it is ready to learn, a dimming when it is not yet; with the selection, and
-// the game's own marks for learned and can-learn.
+// an orange frame and a ribbon when it is ready to learn, a dimming when it is not yet; with the selection.
 type cell struct {
 	widget.BaseWidget
 	iconKey   string
+	iconKind  domain.Kind
 	icon      *canvas.Image
+	nature    *canvas.Image // the mark of the nature that the move asks for, in the corner; hidden when it asks for none
 	dim       *canvas.Rectangle
 	frame     *canvas.Rectangle
 	ribbon    *fyne.Container
 	highlight *canvas.Image
-	check     *canvas.Image
-	canGet    *canvas.Image
 	body      *fyne.Container
 	onTap     func()
 }
@@ -128,8 +167,7 @@ func newCell(is *iconSet, onTap func()) *cell {
 		dim:       canvas.NewRectangle(dimColor),
 		frame:     canvas.NewRectangle(color.Transparent),
 		highlight: pixelImage(is.resource(Highlight), iconW, iconH),
-		check:     pixelImage(is.resource(Checked), markW, markW),
-		canGet:    pixelImage(is.resource(CanGet), markW, markW),
+		nature:    pixelImage(is.nature(domain.NatureGood), natureW, natureH),
 		onTap:     onTap,
 	}
 	c.dim.Resize(fyne.NewSize(iconW, iconH))
@@ -146,12 +184,11 @@ func newCell(is *iconSet, onTap func()) *cell {
 	c.ribbon = container.NewWithoutLayout(ribbonBg, ribbonTxt)
 	c.ribbon.Resize(fyne.NewSize(iconW, iconH))
 
-	c.check.Move(fyne.NewPos(30*zoom, 2*zoom)) // where MR2AV puts the mark
-	c.canGet.Move(fyne.NewPos(30*zoom, 2*zoom))
-	for _, o := range []fyne.CanvasObject{c.dim, c.frame, c.ribbon, c.highlight, c.check, c.canGet} {
+	c.nature.Move(fyne.NewPos(2*zoom, 2*zoom))
+	for _, o := range []fyne.CanvasObject{c.dim, c.frame, c.ribbon, c.highlight, c.nature} {
 		o.Hide()
 	}
-	c.body = container.NewWithoutLayout(c.icon, c.dim, c.frame, c.ribbon, c.highlight, c.check, c.canGet)
+	c.body = container.NewWithoutLayout(c.icon, c.dim, c.frame, c.ribbon, c.highlight, c.nature)
 	c.ExtendBaseWidget(c)
 	return c
 }
@@ -161,12 +198,15 @@ func (c *cell) MinSize() fyne.Size                  { return fyne.NewSize(iconW,
 func (c *cell) Tapped(*fyne.PointEvent)             { c.onTap() }
 
 func (c *cell) show(v CellView, is *iconSet) {
-	if v.Icon != c.iconKey {
-		c.icon.Resource, c.iconKey = is.resource(v.Icon), v.Icon
+	if v.Icon != c.iconKey || v.Kind != c.iconKind {
+		c.icon.Resource, c.iconKey, c.iconKind = is.tinted(v.Icon, v.Kind), v.Icon, v.Kind
 		c.icon.Refresh()
 	}
-	setVisible(c.check, v.Learned)
-	setVisible(c.canGet, v.CanLearn)
+	if r := is.nature(v.Nature); r != nil && r != c.nature.Resource {
+		c.nature.Resource = r
+		c.nature.Refresh()
+	}
+	setVisible(c.nature, v.Nature != domain.NatureNone)
 	setVisible(c.dim, v.Locked)
 	setVisible(c.ribbon, v.CanLearn)
 	setVisible(c.frame, v.Learned || v.CanLearn)
@@ -226,15 +266,54 @@ func (b *badge) set(text string, fill color.Color) {
 
 // need is one line of the list of what a move asks of the monster: a mark for met or not, and the words.
 type need struct {
-	mark   *canvas.Text
-	label  *widget.Label
-	object fyne.CanvasObject
+	mark    *canvas.Text
+	label   *widget.Label        // the words, when they are all of one colour
+	colored *profileui.ColorText // the words, when stats are named in them, each in its colour
+	object  fyne.CanvasObject
+}
+
+// words are what the line says.
+func (n need) words() string {
+	if n.colored != nil {
+		return n.colored.String()
+	}
+	return n.label.Text
+}
+
+// statSegments are the words of a requirement of stats, each stat in its colour, or none when the text does not start
+// with the stats that it says it does.
+func statSegments(r RequirementView) []profileui.Segment {
+	lead, rest, found := strings.Cut(r.Text, " at least ")
+	words := strings.Split(lead, " + ")
+	if len(r.Stats) == 0 || !found || len(words) != len(r.Stats) {
+		return nil
+	}
+	var segments []profileui.Segment
+	for i, word := range words {
+		if r.Stats[i] < 0 || r.Stats[i] >= monster.StatCount {
+			return nil
+		}
+		if i > 0 {
+			segments = append(segments, profileui.Segment{Text: " + "})
+		}
+		segments = append(segments, profileui.Segment{Text: word, Color: profileui.StatColors[r.Stats[i]]})
+	}
+	tail := " at least " + rest
+	if r.Have != "" {
+		tail += " (" + r.Have + ")"
+	}
+	return append(segments, profileui.Segment{Text: tail})
 }
 
 func newNeed(r RequirementView) need {
 	n := need{mark: canvas.NewText("✗", unmetColor)}
 	if r.Met {
 		n.mark.Text, n.mark.Color = "✓", metColor
+	}
+	if segments := statSegments(r); segments != nil {
+		n.colored = profileui.NewColorText(segments...)
+		n.object = container.NewBorder(nil, nil, n.mark, nil, n.colored)
+		return n
 	}
 	text := r.Text
 	if r.Have != "" {
@@ -249,6 +328,8 @@ func newNeed(r RequirementView) need {
 // detail is the panel of numbers and words about the selected move.
 type detail struct {
 	name                                                 *canvas.Text
+	nature                                               *canvas.Image // the nature that the move asks for, before its name
+	icons                                                *iconSet
 	status                                               *badge
 	guts, damage, hit, withering, sharpness, extra, uses *widget.Label
 	description                                          *widget.Label
@@ -258,8 +339,10 @@ type detail struct {
 	content                                              fyne.CanvasObject
 }
 
-func newDetail() *detail {
+func newDetail(is *iconSet) *detail {
 	d := &detail{
+		icons:       is,
+		nature:      pixelImage(is.nature(domain.NatureGood), natureW*zoom, natureH*zoom),
 		name:        canvas.NewText("", theme.Color(theme.ColorNameForeground)),
 		status:      newBadge(),
 		guts:        widget.NewLabel(""),
@@ -287,8 +370,9 @@ func newDetail() *detail {
 		d.requirements,
 	)
 	d.needsBox.Hide()
+	d.nature.Hide()
 	d.content = container.NewVBox(
-		container.NewBorder(nil, nil, nil, container.NewCenter(d.status.object), d.name),
+		container.NewBorder(nil, nil, container.NewCenter(d.nature), container.NewCenter(d.status.object), d.name),
 		numbers,
 		d.extra,
 		d.needsBox,
@@ -310,6 +394,11 @@ func nameColor(k domain.Kind) color.Color {
 func (d *detail) show(v DetailView) {
 	d.name.Text, d.name.Color = v.Name, nameColor(v.Kind)
 	d.name.Refresh()
+	if r := d.icons.nature(v.Nature); r != nil && r != d.nature.Resource {
+		d.nature.Resource = r
+		d.nature.Refresh()
+	}
+	setVisible(d.nature, v.Nature != domain.NatureNone)
 	switch {
 	case v.Learned:
 		d.status.set(v.Status, metColor)
@@ -366,12 +455,13 @@ type Screen struct {
 }
 
 func NewScreen(svc move.MoveService, icons IconFunc) *Screen {
+	is := &iconSet{load: icons, cache: map[string]fyne.Resource{}}
 	s := &Screen{
 		svc:    svc,
-		icons:  &iconSet{load: icons, cache: map[string]fyne.Resource{}},
+		icons:  is,
 		genus:  widget.NewLabelWithStyle("", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
 		legend: newLegend(),
-		detail: newDetail(),
+		detail: newDetail(is),
 	}
 
 	columns := make([]fyne.CanvasObject, domain.Columns)
@@ -432,7 +522,7 @@ func (s *Screen) apply(g domain.Grid, err error) {
 		for r := range s.cells[c] {
 			s.cells[c][r].show(v.Cells[c][r], s.icons)
 		}
-		s.active[c].show(v.Active[c], s.icons)
+		s.active[c].show(v.Active[c], v.ActiveKind[c], s.icons)
 	}
 	s.legend.show(v)
 	s.showSelection()

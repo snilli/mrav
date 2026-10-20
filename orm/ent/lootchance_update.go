@@ -29,6 +29,20 @@ func (_u *LootChanceUpdate) Where(ps ...predicate.LootChance) *LootChanceUpdate 
 	return _u
 }
 
+// SetPlaceID sets the "place_id" field.
+func (_u *LootChanceUpdate) SetPlaceID(v int) *LootChanceUpdate {
+	_u.mutation.SetPlaceID(v)
+	return _u
+}
+
+// SetNillablePlaceID sets the "place_id" field if the given value is not nil.
+func (_u *LootChanceUpdate) SetNillablePlaceID(v *int) *LootChanceUpdate {
+	if v != nil {
+		_u.SetPlaceID(*v)
+	}
+	return _u
+}
+
 // SetGood sets the "good" field.
 func (_u *LootChanceUpdate) SetGood(v bool) *LootChanceUpdate {
 	_u.mutation.SetGood(v)
@@ -124,12 +138,6 @@ func (_u *LootChanceUpdate) SetNillablePct(v *float64) *LootChanceUpdate {
 // AddPct adds value to the "pct" field.
 func (_u *LootChanceUpdate) AddPct(v float64) *LootChanceUpdate {
 	_u.mutation.AddPct(v)
-	return _u
-}
-
-// SetPlaceID sets the "place" edge to the ExpeditionPlace entity by ID.
-func (_u *LootChanceUpdate) SetPlaceID(id int) *LootChanceUpdate {
-	_u.mutation.SetPlaceID(id)
 	return _u
 }
 
@@ -341,6 +349,20 @@ type LootChanceUpdateOne struct {
 	mutation *LootChanceMutation
 }
 
+// SetPlaceID sets the "place_id" field.
+func (_u *LootChanceUpdateOne) SetPlaceID(v int) *LootChanceUpdateOne {
+	_u.mutation.SetPlaceID(v)
+	return _u
+}
+
+// SetNillablePlaceID sets the "place_id" field if the given value is not nil.
+func (_u *LootChanceUpdateOne) SetNillablePlaceID(v *int) *LootChanceUpdateOne {
+	if v != nil {
+		_u.SetPlaceID(*v)
+	}
+	return _u
+}
+
 // SetGood sets the "good" field.
 func (_u *LootChanceUpdateOne) SetGood(v bool) *LootChanceUpdateOne {
 	_u.mutation.SetGood(v)
@@ -436,12 +458,6 @@ func (_u *LootChanceUpdateOne) SetNillablePct(v *float64) *LootChanceUpdateOne {
 // AddPct adds value to the "pct" field.
 func (_u *LootChanceUpdateOne) AddPct(v float64) *LootChanceUpdateOne {
 	_u.mutation.AddPct(v)
-	return _u
-}
-
-// SetPlaceID sets the "place" edge to the ExpeditionPlace entity by ID.
-func (_u *LootChanceUpdateOne) SetPlaceID(id int) *LootChanceUpdateOne {
-	_u.mutation.SetPlaceID(id)
 	return _u
 }
 

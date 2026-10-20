@@ -8,6 +8,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"app/internal/core/apperr"
+	monster "app/internal/core/monster/domain"
 	player "app/internal/core/player/domain"
 	"app/internal/core/profile/domain"
 )
@@ -245,6 +246,42 @@ var _ = Describe("PlanRoute", func() {
 			Expect(ok).To(BeTrue())
 			Expect(at1).To(Equal(domain.Point{X: 0, Y: 1}))
 		})
+	})
+
+	Describe("Open", func() {
+		// The trip of Parepare comes round in October, week 1, the date 24, and asks for life 140, fame 40 and the grade C.
+		parepare := func() domain.ExpeditionMap {
+			m := chart(value, "S.A")
+			m.Name = "Parepare Jungle"
+			return m
+		}
+		fit := func(life, fame, rank int) monster.Monster {
+			m := monster.Monster{Fame: fame, Rank: rank}
+			m.Stats[monster.Life] = life
+			return m
+		}
+		week := func(date int) player.Ranch { return player.Ranch{Known: true, Date: date} }
+
+		It("is whether the week of the trip has come and the monster is fit for it, however little it has more than it asks", func() {
+			Expect(parepare().Open(week(24), fit(140, 40, 2))).To(BeTrue())
+		})
+
+		It("does not ask the monster to stand on the map, which it does not before the trip starts", func() {
+			Expect(parepare().Open(player.Ranch{Known: true, Date: 24, WalkKnown: false}, fit(300, 60, 4))).To(BeTrue())
+		})
+
+		DescribeTable("is not, otherwise",
+			func(m domain.ExpeditionMap, r player.Ranch, mon monster.Monster) {
+				Expect(m.Open(r, mon)).To(BeFalse())
+			},
+			Entry("in the week before", parepare(), week(23), fit(300, 60, 4)),
+			Entry("in the week after", parepare(), week(25), fit(300, 60, 4)),
+			Entry("for a monster short of life", parepare(), week(24), fit(139, 40, 2)),
+			Entry("for a monster short of fame", parepare(), week(24), fit(140, 39, 2)),
+			Entry("for a monster short of grade", parepare(), week(24), fit(140, 40, 1)),
+			Entry("where the date is not known", parepare(), player.Ranch{}, fit(300, 60, 4)),
+			Entry("for a map that no trip is of", func() domain.ExpeditionMap { m := parepare(); m.Name = "Nowhere"; return m }(), week(24), fit(300, 60, 4)),
+		)
 	})
 
 	It("does not walk through a teleport, which leads somewhere at random", func() {

@@ -5,6 +5,7 @@ import (
 	"slices"
 
 	"app/internal/core/apperr"
+	monster "app/internal/core/monster/domain"
 	player "app/internal/core/player/domain"
 )
 
@@ -34,7 +35,18 @@ type Spot struct {
 	Name     string
 	At       Point
 	Building string
+	BySkill  bool     // the building is searched by the skill of the monster, not its intelligence
+	Chances  []Chance // every table of the place, for any monster: Searched picks the one that a monster has
 	Value    float64
+	Loot     []Drop // what a search may turn up, the likeliest first
+}
+
+// Drop is what a search of a place may turn up, and the chance in percent that it does, for the monster that is to go.
+// Price is what the item sells for, 0 where it is not sold.
+type Drop struct {
+	Item  string
+	Pct   float64
+	Price int
 }
 
 // Searcher is what decides what a search turns up for a monster: the intelligence and the skill that a building is
@@ -53,6 +65,15 @@ type ExpeditionMap struct {
 	Start         Point
 	Spots         []Spot
 	Locks         []Lock
+	Portals       []Portal
+}
+
+// Portal is a teleport of a map (T1, T2, ...) or a place where a teleport lands (E1, E2, ...), as the guide labels them. A
+// teleport leads, at random, to one of the labels in To: a place to land, or another teleport. A place to land has no To.
+type Portal struct {
+	Label string
+	At    Point
+	To    []string
 }
 
 // Walker is a monster on an expedition, as far as a route goes: the energy it has, the chance that an attempt on a
@@ -197,13 +218,31 @@ func (m ExpeditionMap) Here(r player.Ranch) bool {
 	if _, ok := m.Stand(r); !ok {
 		return false
 	}
+	e, ok := m.Trip()
 	now := r.Calendar()
+	return ok && e.Month == now.Month && e.Week == now.Week
+}
+
+// Trip is the expedition that the map is of, found by its name.
+func (m ExpeditionMap) Trip() (Expedition, bool) {
 	for _, e := range Expeditions {
 		if e.Name == m.Name {
-			return e.Month == now.Month && e.Week == now.Week
+			return e, true
 		}
 	}
-	return false
+	return Expedition{}, false
+}
+
+// Open says whether the trip of this map is on offer to the monster now: the week that the trip comes round has come,
+// and the monster is fit for it. It does not ask where the monster stands: before the trip starts it stands nowhere on the
+// map. It is false where the date is not known.
+func (m ExpeditionMap) Open(r player.Ranch, mon monster.Monster) bool {
+	e, ok := m.Trip()
+	if !ok || !r.Known {
+		return false
+	}
+	now := r.Calendar()
+	return e.Month == now.Month && e.Week == now.Week && e.Fit(mon)
 }
 
 // Stand is the tile of the map that the monster last stood on, as far from the start of the map as it is from the

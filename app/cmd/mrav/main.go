@@ -26,6 +26,7 @@ import (
 	"app/internal/core/training/repository/db/trainingrepo"
 	"app/internal/core/training/service/trainingsvc"
 	"app/internal/delivery/ui/demoui"
+	"app/internal/delivery/ui/errantryui"
 	"app/internal/delivery/ui/itemui"
 	"app/internal/delivery/ui/moveui"
 	"app/internal/delivery/ui/profileui"
@@ -125,13 +126,14 @@ func newParts(
 		Training:  trainingui.NewScreen(trainings),
 		Moves:     moveui.NewScreen(moves, icons.Bytes),
 		Items:     itemui.NewScreen(items),
-		Route:     routeui.NewScreen(profiles, monsters != nil),
+		Route:     routeui.NewScreen(profiles),
+		Errantry:  errantryui.NewScreen(profiles, moves, moveui.NewIcons(icons.Bytes)),
 	}
 }
 
 // loaders are the pages, which are all asked at the rate in the config.
 func loaders(p shellui.Parts) []loader {
-	return []loader{p.Dashboard, p.Moves, p.Training, p.Items, p.Route}
+	return []loader{p.Dashboard, p.Moves, p.Training, p.Items, p.Route, p.Errantry}
 }
 
 // newDemo is nil when a game is read, because nobody sets that monster by hand.
@@ -148,11 +150,15 @@ func newDemo(_ fyne.App, svc move.MoveService, monsters *fakemonster.Source, pla
 	return panel, nil
 }
 
+// startSize is what the window opens at: one column wide, and a height that the pages scroll to fit, so that it sits
+// beside the game and not over it. A button adds a column, and the window grows by its width.
+var startSize = fyne.NewSize(480, 640)
+
 func newWindow(a fyne.App, p shellui.Parts, demo *demoui.Panel) fyne.Window {
 	w := a.NewWindow("mrav - Monster Rancher 2 Viewer")
-	w.Resize(fyne.NewSize(1500, 900))
 	p.Demo = demo
-	w.SetContent(shellui.New(p).Content())
+	w.SetContent(shellui.New(w, p).Content())
+	w.Resize(startSize)
 	return w
 }
 

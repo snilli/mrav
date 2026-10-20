@@ -28,9 +28,13 @@ var _ = Describe("Theme", func() {
 		Expect(Theme().Color(theme.ColorNameDisabled, theme.VariantLight)).To(Equal(def.Color(theme.ColorNameDisabled, theme.VariantLight)))
 	})
 
+	It("draws the text smaller than the default theme, so that the window can be small enough to sit beside the game", func() {
+		Expect(Theme().Size(theme.SizeNameText)).To(BeNumerically("<", theme.DefaultTheme().Size(theme.SizeNameText)))
+	})
+
 	It("is the default theme in everything else", func() {
 		def, dense := theme.DefaultTheme(), Theme()
-		Expect(dense.Size(theme.SizeNameText)).To(Equal(def.Size(theme.SizeNameText)))
+		Expect(dense.Size(theme.SizeNameScrollBar)).To(Equal(def.Size(theme.SizeNameScrollBar)))
 		for _, variant := range []fyne.ThemeVariant{theme.VariantDark, theme.VariantLight} {
 			Expect(dense.Color(theme.ColorNameForeground, variant)).To(Equal(def.Color(theme.ColorNameForeground, variant)))
 		}

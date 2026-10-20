@@ -14,6 +14,9 @@ type Requirement struct {
 	Text string // "Use Bolt at least 50 times"
 	Have string // "49 / 50": what the monster has
 	Met  bool
+	// Stats are the stats that a text starts with, "Pow + Int at least 400", in the order of its words, so that they can be
+	// shown in their colours.
+	Stats []monster.Stat
 }
 
 // Names turn the numbers in a rule into words. A missing function leaves the number: "move 9", "#24".
@@ -52,15 +55,18 @@ var statNames = [monster.StatCount]string{"Life", "Pow", "Int", "Skill", "Speed"
 
 func (c StatSumAtLeast) Require(m monster.Monster, _ Names) Requirement {
 	var names []string
+	var stats []monster.Stat
 	for _, s := range c.Stats {
 		if s >= 0 && s < monster.StatCount { // a stat outside the six adds nothing, as in StatSum
 			names = append(names, statNames[s])
+			stats = append(stats, s)
 		}
 	}
 	return Requirement{
-		Text: fmt.Sprintf("%s at least %d", strings.Join(names, " + "), c.Min),
-		Have: strconv.Itoa(m.StatSum(c.Stats...)),
-		Met:  c.Holds(m),
+		Text:  fmt.Sprintf("%s at least %d", strings.Join(names, " + "), c.Min),
+		Have:  strconv.Itoa(m.StatSum(c.Stats...)),
+		Met:   c.Holds(m),
+		Stats: stats,
 	}
 }
 

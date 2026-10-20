@@ -11,6 +11,7 @@ import (
 
 	monster "app/internal/core/monster/domain"
 	"app/internal/core/move/domain"
+	player "app/internal/core/player/domain"
 	"app/internal/infrastructure/fakemonster"
 	"app/internal/infrastructure/fakeplayer"
 )
@@ -56,6 +57,62 @@ var _ = Describe("Panel", func() {
 		test.Type(p.subGenus, "13")
 		Expect(current().Nature).To(Equal(-20))
 		Expect(current().SubGenus).To(Equal(monster.Genus(13)))
+	})
+
+	It("sets the rank of the monster from the letter selected, E to S", func() {
+		Expect(p.rank.Options).To(Equal([]string{"E", "D", "C", "B", "A", "S"}))
+		p.rank.SetSelected("B")
+		Expect(current().Rank).To(Equal(3))
+		p.rank.SetSelected("S")
+		Expect(current().Rank).To(Equal(5))
+	})
+
+	It("moves the date of the ranch to the month and the week selected, in the year that it is in, and makes the ranch known", func() {
+		players.Update(func(pl *player.Player) { pl.Ranch = player.Ranch{Known: true, Date: 191} }) // Y1004 Mar wk 4
+		p.month.SetSelected("Feb")
+		pl, _ := players.Player(context.Background())
+		Expect(pl.Ranch.Calendar()).To(Equal(player.Date{Year: 1004, Month: 2, Week: 4}), "the week is left as it was")
+		p.week.SetSelected("1")
+		pl, _ = players.Player(context.Background())
+		Expect(pl.Ranch.Calendar()).To(Equal(player.Date{Year: 1004, Month: 2, Week: 1}), "and the month")
+
+		players.Update(func(pl *player.Player) { pl.Ranch = player.Ranch{} })
+		p.week.SetSelected("2")
+		pl, _ = players.Player(context.Background())
+		Expect(pl.Ranch.Known).To(BeTrue())
+	})
+
+	It("puts the monster on the map of a trip as far right and up of the start as typed, and sets its steps and its energy left", func() {
+		test.Type(p.tripX, "-3")
+		test.Type(p.tripY, "12")
+		test.Type(p.steps, "7")
+		test.Type(p.energy, "-5")
+		pl, _ := players.Player(context.Background())
+		x, y := pl.Ranch.Walked()
+		Expect([]int{x, y}).To(Equal([]int{-3, 12}))
+		Expect(pl.Ranch.WalkKnown).To(BeTrue())
+		Expect(pl.Ranch.Steps).To(Equal(7))
+		Expect(pl.Ranch.Energy).To(Equal(-5), "which the game can take below nothing")
+		Expect(pl.Ranch.EnergyKnown).To(BeTrue())
+	})
+
+	It("shows where a random monster is on the map, with its steps and its energy, in the boxes", func() {
+		p.Randomize()
+		pl, _ := players.Player(context.Background())
+		Expect(p.tripX.Text).To(Equal("0"))
+		Expect(p.tripY.Text).To(Equal("0"))
+		Expect(p.steps.Text).To(Equal(strconv.Itoa(pl.Ranch.Steps)))
+		Expect(p.energy.Text).To(Equal(strconv.Itoa(pl.Ranch.Energy)))
+	})
+
+	It("shows the rank and the date of a random monster in the boxes", func() {
+		p.Randomize()
+		pl, _ := players.Player(context.Background())
+		cal := pl.Ranch.Calendar()
+		Expect(p.rank.Selected).To(Equal("EDCBAS"[current().Rank : current().Rank+1]))
+		Expect(p.month.Selected).To(Equal(player.MonthNames[cal.Month-1]))
+		Expect(p.week.Selected).To(Equal(strconv.Itoa(cal.Week)))
+		Expect(pl.Ranch.Calendar()).To(Equal(cal), "showing them did not move the date")
 	})
 
 	It("ignores text that is not a number instead of changing the monster", func() {

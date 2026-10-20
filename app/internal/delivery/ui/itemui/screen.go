@@ -14,6 +14,9 @@ import (
 	"app/internal/delivery/ui/status"
 )
 
+// buttonSize is the size of the button of a place, which has room for the longest of the names.
+var buttonSize = fyne.NewSize(124, 34)
+
 // Screen is the Items page: a button for each place the player carries an item in, and the details of the
 // item in the place that was tapped.
 type Screen struct {
@@ -24,7 +27,7 @@ type Screen struct {
 	status      *widget.Label
 	body        fyne.CanvasObject
 	content     fyne.CanvasObject
-	strip       *container.Scroll
+	strip       *fyne.Container
 	buttons     [player.ItemSlots]*widget.Button
 	name        *widget.Label
 	kind        *widget.Label
@@ -54,15 +57,15 @@ func NewScreen(svc item.ItemService) *Screen {
 		s.buttons[i] = widget.NewButton(blank, func() { s.selected = i; s.showDetail() })
 		buttons[i] = s.buttons[i]
 	}
-	// Two rows, as the game lays them out, in a scroll, so that long names never make the window wider.
-	s.strip = container.NewHScroll(container.NewGridWithColumns(player.ItemSlots/2, buttons...))
+	// As many to a row as the page is wide: two rows of ten, as the game lays them out, when it is wide; and a name that
+	// is too long for its button is cut short, never the window made wider.
+	s.strip = container.NewGridWrap(buttonSize, buttons...)
 	s.body = container.NewVBox(
 		s.strip,
 		container.NewHBox(s.name, s.kind, layout.NewSpacer(), widget.NewLabel("Buy"), s.purchase, widget.NewLabel("Sell"), s.sale),
 		s.description,
 		s.effect,
 	)
-	// No vertical scroll: the page is a strip along the bottom of the window, which would shrink it to nothing.
 	s.content = container.NewPadded(container.NewVBox(s.status, s.body))
 	s.showDetail()
 	return s

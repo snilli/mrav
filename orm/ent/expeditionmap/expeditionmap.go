@@ -20,6 +20,8 @@ const (
 	FieldStartX = "start_x"
 	// FieldStartY holds the string denoting the start_y field in the database.
 	FieldStartY = "start_y"
+	// FieldPortals holds the string denoting the portals field in the database.
+	FieldPortals = "portals"
 	// EdgePlaces holds the string denoting the places edge name in mutations.
 	EdgePlaces = "places"
 	// EdgeLocks holds the string denoting the locks edge name in mutations.
@@ -49,6 +51,7 @@ var Columns = []string{
 	FieldRows,
 	FieldStartX,
 	FieldStartY,
+	FieldPortals,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
