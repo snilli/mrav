@@ -8,8 +8,12 @@ import (
 	"fmt"
 	"orm/ent/breed"
 	"orm/ent/cocoon"
+	"orm/ent/expeditionlock"
+	"orm/ent/expeditionmap"
+	"orm/ent/expeditionplace"
 	"orm/ent/genus"
 	"orm/ent/item"
+	"orm/ent/lootchance"
 	"orm/ent/move"
 	"orm/ent/traininggain"
 	"reflect"
@@ -78,12 +82,16 @@ var (
 func checkColumn(t, c string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
-			breed.Table:        breed.ValidColumn,
-			cocoon.Table:       cocoon.ValidColumn,
-			genus.Table:        genus.ValidColumn,
-			item.Table:         item.ValidColumn,
-			move.Table:         move.ValidColumn,
-			traininggain.Table: traininggain.ValidColumn,
+			breed.Table:           breed.ValidColumn,
+			cocoon.Table:          cocoon.ValidColumn,
+			expeditionlock.Table:  expeditionlock.ValidColumn,
+			expeditionmap.Table:   expeditionmap.ValidColumn,
+			expeditionplace.Table: expeditionplace.ValidColumn,
+			genus.Table:           genus.ValidColumn,
+			item.Table:            item.ValidColumn,
+			lootchance.Table:      lootchance.ValidColumn,
+			move.Table:            move.ValidColumn,
+			traininggain.Table:    traininggain.ValidColumn,
 		})
 	})
 	return columnCheck(t, c)

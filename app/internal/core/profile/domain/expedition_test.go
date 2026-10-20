@@ -96,30 +96,4 @@ var _ = Describe("Expeditions", func() {
 		Entry("900", 900, 0.95),
 		Entry("more does not help", 1500, 0.95),
 	)
-
-	Describe("Loot", func() {
-		loot := domain.Loot{
-			Building: "Cave", Stat: monster.Int, Mins: []int{0, 100, 200, 300},
-			Bad: []domain.Chance{
-				{Item: "Gem", Price: 1000, Pct: []float64{10, 20, 30, 40}},
-				{Item: "Nuts", Price: 100, Pct: []float64{90, 80, 70, 60}},
-			},
-			Good: []domain.Chance{{Item: "Gem", Price: 1000, Pct: []float64{50, 50, 50, 50}}},
-		}
-
-		DescribeTable("is worth what each item is worth by its chance, at the tier of the stat that the search is by",
-			func(stat int, good bool, want float64) {
-				Expect(loot.Worth(stat, good)).To(BeNumerically("~", want, 1e-9))
-			},
-			Entry("the first tier", 99, false, 190.0),
-			Entry("the second, where it starts", 100, false, 280.0),
-			Entry("the second, to its end", 199, false, 280.0),
-			Entry("the last tier, as high as the stat goes", 999, false, 460.0),
-			Entry("a good nature has its own table", 500, true, 500.0),
-		)
-
-		It("has a stat that it is searched by", func() {
-			Expect(loot.Stat).To(Equal(monster.Int))
-		})
-	})
 })

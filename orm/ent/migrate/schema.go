@@ -46,6 +46,80 @@ var (
 		Columns:    CocoonsColumns,
 		PrimaryKey: []*schema.Column{CocoonsColumns[0]},
 	}
+	// ExpeditionLocksColumns holds the columns for the "expedition_locks" table.
+	ExpeditionLocksColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "x", Type: field.TypeInt},
+		{Name: "y", Type: field.TypeInt},
+		{Name: "min_int", Type: field.TypeInt},
+		{Name: "map_id", Type: field.TypeInt},
+	}
+	// ExpeditionLocksTable holds the schema information for the "expedition_locks" table.
+	ExpeditionLocksTable = &schema.Table{
+		Name:       "expedition_locks",
+		Columns:    ExpeditionLocksColumns,
+		PrimaryKey: []*schema.Column{ExpeditionLocksColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "expedition_locks_expedition_maps_locks",
+				Columns:    []*schema.Column{ExpeditionLocksColumns[4]},
+				RefColumns: []*schema.Column{ExpeditionMapsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "expeditionlock_x_y_map_id",
+				Unique:  true,
+				Columns: []*schema.Column{ExpeditionLocksColumns[1], ExpeditionLocksColumns[2], ExpeditionLocksColumns[4]},
+			},
+		},
+	}
+	// ExpeditionMapsColumns holds the columns for the "expedition_maps" table.
+	ExpeditionMapsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "name", Type: field.TypeString, Unique: true},
+		{Name: "rows", Type: field.TypeString, Size: 2147483647},
+		{Name: "start_x", Type: field.TypeInt},
+		{Name: "start_y", Type: field.TypeInt},
+	}
+	// ExpeditionMapsTable holds the schema information for the "expedition_maps" table.
+	ExpeditionMapsTable = &schema.Table{
+		Name:       "expedition_maps",
+		Columns:    ExpeditionMapsColumns,
+		PrimaryKey: []*schema.Column{ExpeditionMapsColumns[0]},
+	}
+	// ExpeditionPlacesColumns holds the columns for the "expedition_places" table.
+	ExpeditionPlacesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "name", Type: field.TypeString},
+		{Name: "x", Type: field.TypeInt},
+		{Name: "y", Type: field.TypeInt},
+		{Name: "building", Type: field.TypeString},
+		{Name: "stat", Type: field.TypeEnum, Enums: []string{"int", "skill"}},
+		{Name: "map_id", Type: field.TypeInt},
+	}
+	// ExpeditionPlacesTable holds the schema information for the "expedition_places" table.
+	ExpeditionPlacesTable = &schema.Table{
+		Name:       "expedition_places",
+		Columns:    ExpeditionPlacesColumns,
+		PrimaryKey: []*schema.Column{ExpeditionPlacesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "expedition_places_expedition_maps_places",
+				Columns:    []*schema.Column{ExpeditionPlacesColumns[6]},
+				RefColumns: []*schema.Column{ExpeditionMapsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "expeditionplace_name_map_id",
+				Unique:  true,
+				Columns: []*schema.Column{ExpeditionPlacesColumns[1], ExpeditionPlacesColumns[6]},
+			},
+		},
+	}
 	// GenusColumns holds the columns for the "genus" table.
 	GenusColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -75,6 +149,44 @@ var (
 		Name:       "items",
 		Columns:    ItemsColumns,
 		PrimaryKey: []*schema.Column{ItemsColumns[0]},
+	}
+	// LootChancesColumns holds the columns for the "loot_chances" table.
+	LootChancesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "good", Type: field.TypeBool},
+		{Name: "tier", Type: field.TypeInt},
+		{Name: "slot", Type: field.TypeInt},
+		{Name: "min_stat", Type: field.TypeInt},
+		{Name: "pct", Type: field.TypeFloat64},
+		{Name: "place_id", Type: field.TypeInt},
+		{Name: "item_id", Type: field.TypeInt},
+	}
+	// LootChancesTable holds the schema information for the "loot_chances" table.
+	LootChancesTable = &schema.Table{
+		Name:       "loot_chances",
+		Columns:    LootChancesColumns,
+		PrimaryKey: []*schema.Column{LootChancesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "loot_chances_expedition_places_chances",
+				Columns:    []*schema.Column{LootChancesColumns[6]},
+				RefColumns: []*schema.Column{ExpeditionPlacesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "loot_chances_items_item",
+				Columns:    []*schema.Column{LootChancesColumns[7]},
+				RefColumns: []*schema.Column{ItemsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "lootchance_good_tier_slot_place_id",
+				Unique:  true,
+				Columns: []*schema.Column{LootChancesColumns[1], LootChancesColumns[2], LootChancesColumns[3], LootChancesColumns[6]},
+			},
+		},
 	}
 	// MovesColumns holds the columns for the "moves" table.
 	MovesColumns = []*schema.Column{
@@ -147,13 +259,21 @@ var (
 	Tables = []*schema.Table{
 		BreedsTable,
 		CocoonsTable,
+		ExpeditionLocksTable,
+		ExpeditionMapsTable,
+		ExpeditionPlacesTable,
 		GenusTable,
 		ItemsTable,
+		LootChancesTable,
 		MovesTable,
 		TrainingGainsTable,
 	}
 )
 
 func init() {
+	ExpeditionLocksTable.ForeignKeys[0].RefTable = ExpeditionMapsTable
+	ExpeditionPlacesTable.ForeignKeys[0].RefTable = ExpeditionMapsTable
+	LootChancesTable.ForeignKeys[0].RefTable = ExpeditionPlacesTable
+	LootChancesTable.ForeignKeys[1].RefTable = ItemsTable
 	MovesTable.ForeignKeys[0].RefTable = GenusTable
 }

@@ -5,7 +5,6 @@ package routeui
 import (
 	"fmt"
 	"math"
-	"slices"
 
 	monster "app/internal/core/monster/domain"
 	player "app/internal/core/player/domain"
@@ -27,8 +26,7 @@ type View struct {
 
 // NewView plans the best route on a map for a monster: with the energy that its life gives it to begin with, the
 // chance that its power gives it of breaking a rock, and the intelligence that finds a way through a gate. What a
-// place is worth is what a search of it turns up on average for the stat that the building is searched by, and for
-// the nature of the monster, which the game takes as good above 0.
+// place is worth is in the map already: the database worked it out for this monster.
 func NewView(p domain.Profile, m domain.ExpeditionMap) (View, error) {
 	mon := p.Monster
 	walker := domain.Walker{
@@ -36,13 +34,7 @@ func NewView(p domain.Profile, m domain.ExpeditionMap) (View, error) {
 		BreakChance:  domain.BreakChance(mon.Stats[monster.Pow]),
 		Intelligence: mon.Stats[monster.Int],
 	}
-	good := mon.Nature > 0
-	m.Spots = slices.Clone(m.Spots) // the map is the catalog's: its places are not to be given what they are worth for this monster
-	for i, s := range m.Spots {
-		if s.Loot != nil {
-			m.Spots[i].Value = s.Loot.Worth(mon.Stats[s.Loot.Stat], good)
-		}
-	}
+	good := mon.Nature > 0 // what a place is worth is already in the maps of the profile, worked out for this monster
 
 	// On its trip, where the monster stands and what it has left are what a route is from, once it has made steps; the
 	// energy that the game keeps from another trip, or from a longer-lived monster, is no more than a mark, so
@@ -84,8 +76,8 @@ func NewView(p domain.Profile, m domain.ExpeditionMap) (View, error) {
 		places(len(route.Spots)), round(route.Cost), profileui.Gold(round(route.Value)))
 	for i, s := range route.Spots {
 		name := s.Name
-		if s.Loot != nil && s.Loot.Building != "" {
-			name += " · " + s.Loot.Building
+		if s.Building != "" {
+			name += " · " + s.Building
 		}
 		v.Stops = append(v.Stops, fmt.Sprintf("%d. %s · %s", i+1, name, profileui.Gold(round(s.Value))))
 	}

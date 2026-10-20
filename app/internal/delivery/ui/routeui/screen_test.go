@@ -17,7 +17,6 @@ import (
 	"app/internal/core/apperr"
 	player "app/internal/core/player/domain"
 	"app/internal/core/profile/domain"
-	"app/internal/infrastructure/expeditionmaps"
 	mockprofile "app/mock/core/profile"
 )
 
@@ -33,12 +32,21 @@ var _ = Describe("Screen", func() {
 		test.NewTempApp(GinkgoTB())
 		ctx = context.Background()
 		svc = mockprofile.NewMockProfileService(GinkgoT())
-		s = NewScreen(svc, maps, true)
+		s = NewScreen(svc, true)
 	})
 
-	It("is not there where there are no maps, and does not ask for the monster", func() {
-		s = NewScreen(svc, func() []domain.ExpeditionMap { return nil }, true)
-		s.Load(ctx) // the service would fail the test if it were asked
+	It("loads the monster, and shows the maps that its profile has", func() {
+		p := monsterOf(140, 350)
+		p.Maps = maps()
+		svc.EXPECT().Current(ctx).Return(p, nil)
+		s.Load(ctx)
+		Expect(s.Content().Visible()).To(BeTrue())
+		Expect(s.boxes).To(HaveLen(1))
+	})
+
+	It("is not there where the profile has no maps", func() {
+		svc.EXPECT().Current(ctx).Return(monsterOf(140, 350), nil)
+		s.Load(ctx)
 		Expect(s.Content().Visible()).To(BeFalse())
 	})
 
@@ -150,13 +158,10 @@ var _ = Describe("Screen", func() {
 			p.Player.Ranch = player.Ranch{Known: true, Date: date, Tile: tile, Steps: 2, WalkKnown: true}
 			return p
 		}
-		var real []domain.ExpeditionMap
+		real := []domain.ExpeditionMap{trip("Parepare Jungle"), trip("Torles Mountains"), trip("Kawrea Volcano")}
 
 		BeforeEach(func() {
-			var err error
-			real, err = expeditionmaps.Load()
-			Expect(err).NotTo(HaveOccurred())
-			s = NewScreen(svc, maps, false)
+			s = NewScreen(svc, false)
 		})
 
 		It("shows only the map of the trip that this week brings, with the monster on it", func() {
@@ -164,7 +169,7 @@ var _ = Describe("Screen", func() {
 			Expect(s.Content().Visible()).To(BeTrue())
 			Expect(s.boxes).To(HaveLen(1))
 			Expect(s.boxes[0].item.Title).To(HavePrefix("Route · Parepare Jungle: "))
-			Expect(s.boxes[0].cells[19*18+8].text.Text).To(Equal("★"))
+			Expect(s.boxes[0].cells[5].text.Text).To(Equal("★")) // on the start, at the bottom of the corridor
 		})
 
 		It("finds the trip of a monster that is three steps up from the start in June, as the game showed it at X 0, Y 3", func() {
@@ -174,7 +179,7 @@ var _ = Describe("Screen", func() {
 			Expect(s.boxes).To(HaveLen(1))
 			Expect(s.boxes[0].item.Title).To(HavePrefix("Route · Kawrea Volcano: "))
 			Expect(s.boxes[0].summary.Text).To(HavePrefix("487 energy left, at X 0, Y 3, rocks break 100%, INT 463, good nature: "))
-			here := s.boxes[0].cells[24*26+12] // three tiles up from the start of Kawrea, at 12, 27
+			here := s.boxes[0].cells[2] // three tiles up from the start of the corridor, which is its tile 5
 			Expect(here.text.Text).To(Equal("★"))
 			Expect(here.bg.FillColor).To(Equal(markerFill))
 			Expect(s.boxes[0].standing).To(HaveLen(3)) // the energy, the place and the steps, in boxes above the map
@@ -200,7 +205,7 @@ var _ = Describe("Screen", func() {
 		})
 
 		It("has no boxes above a map that the monster is not on, and the panel is closed", func() {
-			s = NewScreen(svc, maps, true)
+			s = NewScreen(svc, true)
 			s.apply(real, monsterOf(420, 400), nil)
 			for _, b := range s.boxes {
 				Expect(b.standing).To(BeEmpty())
@@ -223,7 +228,7 @@ var _ = Describe("Screen", func() {
 		})
 
 		It("shows every map in the demo, and marks the monster only on the one that it is on", func() {
-			s = NewScreen(svc, maps, true)
+			s = NewScreen(svc, true)
 			s.apply(real, onTrip(24, 975), nil)
 			Expect(s.boxes).To(HaveLen(3))
 			marked := 0
@@ -236,26 +241,5 @@ var _ = Describe("Screen", func() {
 			}
 			Expect(marked).To(Equal(1))
 		})
-	})
-
-	It("draws the maps of the game", func() {
-		real, err := expeditionmaps.Load()
-		Expect(err).NotTo(HaveOccurred())
-		s.apply(real, monsterWith(420, 400, 600, 300, 0), nil)
-		Expect(s.boxes).To(HaveLen(3))
-		Expect(s.boxes[0].cells).To(HaveLen(18 * 20))
-		Expect(s.boxes[0].item.Title).To(HavePrefix("Route · Parepare Jungle: "))
-
-		dir := os.Getenv("SCREENSHOT_DIR")
-		if dir == "" {
-			return
-		}
-		for i, name := range []string{"parepare", "torles", "kawrea"} {
-			s.boxes[i].panel.Open(0)
-			f, err := os.Create(filepath.Join(dir, "route-"+name+".png"))
-			Expect(err).NotTo(HaveOccurred())
-			Expect(png.Encode(f, software.Render(s.boxes[i].panel, theme.DefaultTheme()))).To(Succeed())
-			f.Close()
-		}
 	})
 })

@@ -13,8 +13,12 @@ import (
 
 	"orm/ent/breed"
 	"orm/ent/cocoon"
+	"orm/ent/expeditionlock"
+	"orm/ent/expeditionmap"
+	"orm/ent/expeditionplace"
 	"orm/ent/genus"
 	"orm/ent/item"
+	"orm/ent/lootchance"
 	"orm/ent/move"
 	"orm/ent/traininggain"
 
@@ -33,10 +37,18 @@ type Client struct {
 	Breed *BreedClient
 	// Cocoon is the client for interacting with the Cocoon builders.
 	Cocoon *CocoonClient
+	// ExpeditionLock is the client for interacting with the ExpeditionLock builders.
+	ExpeditionLock *ExpeditionLockClient
+	// ExpeditionMap is the client for interacting with the ExpeditionMap builders.
+	ExpeditionMap *ExpeditionMapClient
+	// ExpeditionPlace is the client for interacting with the ExpeditionPlace builders.
+	ExpeditionPlace *ExpeditionPlaceClient
 	// Genus is the client for interacting with the Genus builders.
 	Genus *GenusClient
 	// Item is the client for interacting with the Item builders.
 	Item *ItemClient
+	// LootChance is the client for interacting with the LootChance builders.
+	LootChance *LootChanceClient
 	// Move is the client for interacting with the Move builders.
 	Move *MoveClient
 	// TrainingGain is the client for interacting with the TrainingGain builders.
@@ -54,8 +66,12 @@ func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.Breed = NewBreedClient(c.config)
 	c.Cocoon = NewCocoonClient(c.config)
+	c.ExpeditionLock = NewExpeditionLockClient(c.config)
+	c.ExpeditionMap = NewExpeditionMapClient(c.config)
+	c.ExpeditionPlace = NewExpeditionPlaceClient(c.config)
 	c.Genus = NewGenusClient(c.config)
 	c.Item = NewItemClient(c.config)
+	c.LootChance = NewLootChanceClient(c.config)
 	c.Move = NewMoveClient(c.config)
 	c.TrainingGain = NewTrainingGainClient(c.config)
 }
@@ -148,14 +164,18 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:          ctx,
-		config:       cfg,
-		Breed:        NewBreedClient(cfg),
-		Cocoon:       NewCocoonClient(cfg),
-		Genus:        NewGenusClient(cfg),
-		Item:         NewItemClient(cfg),
-		Move:         NewMoveClient(cfg),
-		TrainingGain: NewTrainingGainClient(cfg),
+		ctx:             ctx,
+		config:          cfg,
+		Breed:           NewBreedClient(cfg),
+		Cocoon:          NewCocoonClient(cfg),
+		ExpeditionLock:  NewExpeditionLockClient(cfg),
+		ExpeditionMap:   NewExpeditionMapClient(cfg),
+		ExpeditionPlace: NewExpeditionPlaceClient(cfg),
+		Genus:           NewGenusClient(cfg),
+		Item:            NewItemClient(cfg),
+		LootChance:      NewLootChanceClient(cfg),
+		Move:            NewMoveClient(cfg),
+		TrainingGain:    NewTrainingGainClient(cfg),
 	}, nil
 }
 
@@ -173,14 +193,18 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:          ctx,
-		config:       cfg,
-		Breed:        NewBreedClient(cfg),
-		Cocoon:       NewCocoonClient(cfg),
-		Genus:        NewGenusClient(cfg),
-		Item:         NewItemClient(cfg),
-		Move:         NewMoveClient(cfg),
-		TrainingGain: NewTrainingGainClient(cfg),
+		ctx:             ctx,
+		config:          cfg,
+		Breed:           NewBreedClient(cfg),
+		Cocoon:          NewCocoonClient(cfg),
+		ExpeditionLock:  NewExpeditionLockClient(cfg),
+		ExpeditionMap:   NewExpeditionMapClient(cfg),
+		ExpeditionPlace: NewExpeditionPlaceClient(cfg),
+		Genus:           NewGenusClient(cfg),
+		Item:            NewItemClient(cfg),
+		LootChance:      NewLootChanceClient(cfg),
+		Move:            NewMoveClient(cfg),
+		TrainingGain:    NewTrainingGainClient(cfg),
 	}, nil
 }
 
@@ -210,7 +234,8 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.Breed, c.Cocoon, c.Genus, c.Item, c.Move, c.TrainingGain,
+		c.Breed, c.Cocoon, c.ExpeditionLock, c.ExpeditionMap, c.ExpeditionPlace,
+		c.Genus, c.Item, c.LootChance, c.Move, c.TrainingGain,
 	} {
 		n.Use(hooks...)
 	}
@@ -220,7 +245,8 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.Breed, c.Cocoon, c.Genus, c.Item, c.Move, c.TrainingGain,
+		c.Breed, c.Cocoon, c.ExpeditionLock, c.ExpeditionMap, c.ExpeditionPlace,
+		c.Genus, c.Item, c.LootChance, c.Move, c.TrainingGain,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -233,10 +259,18 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Breed.mutate(ctx, m)
 	case *CocoonMutation:
 		return c.Cocoon.mutate(ctx, m)
+	case *ExpeditionLockMutation:
+		return c.ExpeditionLock.mutate(ctx, m)
+	case *ExpeditionMapMutation:
+		return c.ExpeditionMap.mutate(ctx, m)
+	case *ExpeditionPlaceMutation:
+		return c.ExpeditionPlace.mutate(ctx, m)
 	case *GenusMutation:
 		return c.Genus.mutate(ctx, m)
 	case *ItemMutation:
 		return c.Item.mutate(ctx, m)
+	case *LootChanceMutation:
+		return c.LootChance.mutate(ctx, m)
 	case *MoveMutation:
 		return c.Move.mutate(ctx, m)
 	case *TrainingGainMutation:
@@ -509,6 +543,485 @@ func (c *CocoonClient) mutate(ctx context.Context, m *CocoonMutation) (Value, er
 		return (&CocoonDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Cocoon mutation op: %q", m.Op())
+	}
+}
+
+// ExpeditionLockClient is a client for the ExpeditionLock schema.
+type ExpeditionLockClient struct {
+	config
+}
+
+// NewExpeditionLockClient returns a client for the ExpeditionLock from the given config.
+func NewExpeditionLockClient(c config) *ExpeditionLockClient {
+	return &ExpeditionLockClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `expeditionlock.Hooks(f(g(h())))`.
+func (c *ExpeditionLockClient) Use(hooks ...Hook) {
+	c.hooks.ExpeditionLock = append(c.hooks.ExpeditionLock, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `expeditionlock.Intercept(f(g(h())))`.
+func (c *ExpeditionLockClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ExpeditionLock = append(c.inters.ExpeditionLock, interceptors...)
+}
+
+// Create returns a builder for creating a ExpeditionLock entity.
+func (c *ExpeditionLockClient) Create() *ExpeditionLockCreate {
+	mutation := newExpeditionLockMutation(c.config, OpCreate)
+	return &ExpeditionLockCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ExpeditionLock entities.
+func (c *ExpeditionLockClient) CreateBulk(builders ...*ExpeditionLockCreate) *ExpeditionLockCreateBulk {
+	return &ExpeditionLockCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ExpeditionLockClient) MapCreateBulk(slice any, setFunc func(*ExpeditionLockCreate, int)) *ExpeditionLockCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ExpeditionLockCreateBulk{err: fmt.Errorf("calling to ExpeditionLockClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ExpeditionLockCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ExpeditionLockCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ExpeditionLock.
+func (c *ExpeditionLockClient) Update() *ExpeditionLockUpdate {
+	mutation := newExpeditionLockMutation(c.config, OpUpdate)
+	return &ExpeditionLockUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ExpeditionLockClient) UpdateOne(_m *ExpeditionLock) *ExpeditionLockUpdateOne {
+	mutation := newExpeditionLockMutation(c.config, OpUpdateOne, withExpeditionLock(_m))
+	return &ExpeditionLockUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ExpeditionLockClient) UpdateOneID(id int) *ExpeditionLockUpdateOne {
+	mutation := newExpeditionLockMutation(c.config, OpUpdateOne, withExpeditionLockID(id))
+	return &ExpeditionLockUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ExpeditionLock.
+func (c *ExpeditionLockClient) Delete() *ExpeditionLockDelete {
+	mutation := newExpeditionLockMutation(c.config, OpDelete)
+	return &ExpeditionLockDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ExpeditionLockClient) DeleteOne(_m *ExpeditionLock) *ExpeditionLockDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ExpeditionLockClient) DeleteOneID(id int) *ExpeditionLockDeleteOne {
+	builder := c.Delete().Where(expeditionlock.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ExpeditionLockDeleteOne{builder}
+}
+
+// Query returns a query builder for ExpeditionLock.
+func (c *ExpeditionLockClient) Query() *ExpeditionLockQuery {
+	return &ExpeditionLockQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeExpeditionLock},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ExpeditionLock entity by its id.
+func (c *ExpeditionLockClient) Get(ctx context.Context, id int) (*ExpeditionLock, error) {
+	return c.Query().Where(expeditionlock.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ExpeditionLockClient) GetX(ctx context.Context, id int) *ExpeditionLock {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryMap queries the map edge of a ExpeditionLock.
+func (c *ExpeditionLockClient) QueryMap(_m *ExpeditionLock) *ExpeditionMapQuery {
+	query := (&ExpeditionMapClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(expeditionlock.Table, expeditionlock.FieldID, id),
+			sqlgraph.To(expeditionmap.Table, expeditionmap.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, expeditionlock.MapTable, expeditionlock.MapColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ExpeditionLockClient) Hooks() []Hook {
+	return c.hooks.ExpeditionLock
+}
+
+// Interceptors returns the client interceptors.
+func (c *ExpeditionLockClient) Interceptors() []Interceptor {
+	return c.inters.ExpeditionLock
+}
+
+func (c *ExpeditionLockClient) mutate(ctx context.Context, m *ExpeditionLockMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ExpeditionLockCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ExpeditionLockUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ExpeditionLockUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ExpeditionLockDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ExpeditionLock mutation op: %q", m.Op())
+	}
+}
+
+// ExpeditionMapClient is a client for the ExpeditionMap schema.
+type ExpeditionMapClient struct {
+	config
+}
+
+// NewExpeditionMapClient returns a client for the ExpeditionMap from the given config.
+func NewExpeditionMapClient(c config) *ExpeditionMapClient {
+	return &ExpeditionMapClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `expeditionmap.Hooks(f(g(h())))`.
+func (c *ExpeditionMapClient) Use(hooks ...Hook) {
+	c.hooks.ExpeditionMap = append(c.hooks.ExpeditionMap, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `expeditionmap.Intercept(f(g(h())))`.
+func (c *ExpeditionMapClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ExpeditionMap = append(c.inters.ExpeditionMap, interceptors...)
+}
+
+// Create returns a builder for creating a ExpeditionMap entity.
+func (c *ExpeditionMapClient) Create() *ExpeditionMapCreate {
+	mutation := newExpeditionMapMutation(c.config, OpCreate)
+	return &ExpeditionMapCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ExpeditionMap entities.
+func (c *ExpeditionMapClient) CreateBulk(builders ...*ExpeditionMapCreate) *ExpeditionMapCreateBulk {
+	return &ExpeditionMapCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ExpeditionMapClient) MapCreateBulk(slice any, setFunc func(*ExpeditionMapCreate, int)) *ExpeditionMapCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ExpeditionMapCreateBulk{err: fmt.Errorf("calling to ExpeditionMapClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ExpeditionMapCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ExpeditionMapCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ExpeditionMap.
+func (c *ExpeditionMapClient) Update() *ExpeditionMapUpdate {
+	mutation := newExpeditionMapMutation(c.config, OpUpdate)
+	return &ExpeditionMapUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ExpeditionMapClient) UpdateOne(_m *ExpeditionMap) *ExpeditionMapUpdateOne {
+	mutation := newExpeditionMapMutation(c.config, OpUpdateOne, withExpeditionMap(_m))
+	return &ExpeditionMapUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ExpeditionMapClient) UpdateOneID(id int) *ExpeditionMapUpdateOne {
+	mutation := newExpeditionMapMutation(c.config, OpUpdateOne, withExpeditionMapID(id))
+	return &ExpeditionMapUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ExpeditionMap.
+func (c *ExpeditionMapClient) Delete() *ExpeditionMapDelete {
+	mutation := newExpeditionMapMutation(c.config, OpDelete)
+	return &ExpeditionMapDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ExpeditionMapClient) DeleteOne(_m *ExpeditionMap) *ExpeditionMapDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ExpeditionMapClient) DeleteOneID(id int) *ExpeditionMapDeleteOne {
+	builder := c.Delete().Where(expeditionmap.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ExpeditionMapDeleteOne{builder}
+}
+
+// Query returns a query builder for ExpeditionMap.
+func (c *ExpeditionMapClient) Query() *ExpeditionMapQuery {
+	return &ExpeditionMapQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeExpeditionMap},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ExpeditionMap entity by its id.
+func (c *ExpeditionMapClient) Get(ctx context.Context, id int) (*ExpeditionMap, error) {
+	return c.Query().Where(expeditionmap.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ExpeditionMapClient) GetX(ctx context.Context, id int) *ExpeditionMap {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryPlaces queries the places edge of a ExpeditionMap.
+func (c *ExpeditionMapClient) QueryPlaces(_m *ExpeditionMap) *ExpeditionPlaceQuery {
+	query := (&ExpeditionPlaceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(expeditionmap.Table, expeditionmap.FieldID, id),
+			sqlgraph.To(expeditionplace.Table, expeditionplace.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, expeditionmap.PlacesTable, expeditionmap.PlacesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryLocks queries the locks edge of a ExpeditionMap.
+func (c *ExpeditionMapClient) QueryLocks(_m *ExpeditionMap) *ExpeditionLockQuery {
+	query := (&ExpeditionLockClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(expeditionmap.Table, expeditionmap.FieldID, id),
+			sqlgraph.To(expeditionlock.Table, expeditionlock.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, expeditionmap.LocksTable, expeditionmap.LocksColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ExpeditionMapClient) Hooks() []Hook {
+	return c.hooks.ExpeditionMap
+}
+
+// Interceptors returns the client interceptors.
+func (c *ExpeditionMapClient) Interceptors() []Interceptor {
+	return c.inters.ExpeditionMap
+}
+
+func (c *ExpeditionMapClient) mutate(ctx context.Context, m *ExpeditionMapMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ExpeditionMapCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ExpeditionMapUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ExpeditionMapUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ExpeditionMapDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ExpeditionMap mutation op: %q", m.Op())
+	}
+}
+
+// ExpeditionPlaceClient is a client for the ExpeditionPlace schema.
+type ExpeditionPlaceClient struct {
+	config
+}
+
+// NewExpeditionPlaceClient returns a client for the ExpeditionPlace from the given config.
+func NewExpeditionPlaceClient(c config) *ExpeditionPlaceClient {
+	return &ExpeditionPlaceClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `expeditionplace.Hooks(f(g(h())))`.
+func (c *ExpeditionPlaceClient) Use(hooks ...Hook) {
+	c.hooks.ExpeditionPlace = append(c.hooks.ExpeditionPlace, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `expeditionplace.Intercept(f(g(h())))`.
+func (c *ExpeditionPlaceClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ExpeditionPlace = append(c.inters.ExpeditionPlace, interceptors...)
+}
+
+// Create returns a builder for creating a ExpeditionPlace entity.
+func (c *ExpeditionPlaceClient) Create() *ExpeditionPlaceCreate {
+	mutation := newExpeditionPlaceMutation(c.config, OpCreate)
+	return &ExpeditionPlaceCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ExpeditionPlace entities.
+func (c *ExpeditionPlaceClient) CreateBulk(builders ...*ExpeditionPlaceCreate) *ExpeditionPlaceCreateBulk {
+	return &ExpeditionPlaceCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ExpeditionPlaceClient) MapCreateBulk(slice any, setFunc func(*ExpeditionPlaceCreate, int)) *ExpeditionPlaceCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ExpeditionPlaceCreateBulk{err: fmt.Errorf("calling to ExpeditionPlaceClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ExpeditionPlaceCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ExpeditionPlaceCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ExpeditionPlace.
+func (c *ExpeditionPlaceClient) Update() *ExpeditionPlaceUpdate {
+	mutation := newExpeditionPlaceMutation(c.config, OpUpdate)
+	return &ExpeditionPlaceUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ExpeditionPlaceClient) UpdateOne(_m *ExpeditionPlace) *ExpeditionPlaceUpdateOne {
+	mutation := newExpeditionPlaceMutation(c.config, OpUpdateOne, withExpeditionPlace(_m))
+	return &ExpeditionPlaceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ExpeditionPlaceClient) UpdateOneID(id int) *ExpeditionPlaceUpdateOne {
+	mutation := newExpeditionPlaceMutation(c.config, OpUpdateOne, withExpeditionPlaceID(id))
+	return &ExpeditionPlaceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ExpeditionPlace.
+func (c *ExpeditionPlaceClient) Delete() *ExpeditionPlaceDelete {
+	mutation := newExpeditionPlaceMutation(c.config, OpDelete)
+	return &ExpeditionPlaceDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ExpeditionPlaceClient) DeleteOne(_m *ExpeditionPlace) *ExpeditionPlaceDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ExpeditionPlaceClient) DeleteOneID(id int) *ExpeditionPlaceDeleteOne {
+	builder := c.Delete().Where(expeditionplace.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ExpeditionPlaceDeleteOne{builder}
+}
+
+// Query returns a query builder for ExpeditionPlace.
+func (c *ExpeditionPlaceClient) Query() *ExpeditionPlaceQuery {
+	return &ExpeditionPlaceQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeExpeditionPlace},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ExpeditionPlace entity by its id.
+func (c *ExpeditionPlaceClient) Get(ctx context.Context, id int) (*ExpeditionPlace, error) {
+	return c.Query().Where(expeditionplace.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ExpeditionPlaceClient) GetX(ctx context.Context, id int) *ExpeditionPlace {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryMap queries the map edge of a ExpeditionPlace.
+func (c *ExpeditionPlaceClient) QueryMap(_m *ExpeditionPlace) *ExpeditionMapQuery {
+	query := (&ExpeditionMapClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(expeditionplace.Table, expeditionplace.FieldID, id),
+			sqlgraph.To(expeditionmap.Table, expeditionmap.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, expeditionplace.MapTable, expeditionplace.MapColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryChances queries the chances edge of a ExpeditionPlace.
+func (c *ExpeditionPlaceClient) QueryChances(_m *ExpeditionPlace) *LootChanceQuery {
+	query := (&LootChanceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(expeditionplace.Table, expeditionplace.FieldID, id),
+			sqlgraph.To(lootchance.Table, lootchance.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, expeditionplace.ChancesTable, expeditionplace.ChancesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ExpeditionPlaceClient) Hooks() []Hook {
+	return c.hooks.ExpeditionPlace
+}
+
+// Interceptors returns the client interceptors.
+func (c *ExpeditionPlaceClient) Interceptors() []Interceptor {
+	return c.inters.ExpeditionPlace
+}
+
+func (c *ExpeditionPlaceClient) mutate(ctx context.Context, m *ExpeditionPlaceMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ExpeditionPlaceCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ExpeditionPlaceUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ExpeditionPlaceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ExpeditionPlaceDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ExpeditionPlace mutation op: %q", m.Op())
 	}
 }
 
@@ -791,6 +1304,171 @@ func (c *ItemClient) mutate(ctx context.Context, m *ItemMutation) (Value, error)
 		return (&ItemDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Item mutation op: %q", m.Op())
+	}
+}
+
+// LootChanceClient is a client for the LootChance schema.
+type LootChanceClient struct {
+	config
+}
+
+// NewLootChanceClient returns a client for the LootChance from the given config.
+func NewLootChanceClient(c config) *LootChanceClient {
+	return &LootChanceClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `lootchance.Hooks(f(g(h())))`.
+func (c *LootChanceClient) Use(hooks ...Hook) {
+	c.hooks.LootChance = append(c.hooks.LootChance, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `lootchance.Intercept(f(g(h())))`.
+func (c *LootChanceClient) Intercept(interceptors ...Interceptor) {
+	c.inters.LootChance = append(c.inters.LootChance, interceptors...)
+}
+
+// Create returns a builder for creating a LootChance entity.
+func (c *LootChanceClient) Create() *LootChanceCreate {
+	mutation := newLootChanceMutation(c.config, OpCreate)
+	return &LootChanceCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of LootChance entities.
+func (c *LootChanceClient) CreateBulk(builders ...*LootChanceCreate) *LootChanceCreateBulk {
+	return &LootChanceCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *LootChanceClient) MapCreateBulk(slice any, setFunc func(*LootChanceCreate, int)) *LootChanceCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &LootChanceCreateBulk{err: fmt.Errorf("calling to LootChanceClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*LootChanceCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &LootChanceCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for LootChance.
+func (c *LootChanceClient) Update() *LootChanceUpdate {
+	mutation := newLootChanceMutation(c.config, OpUpdate)
+	return &LootChanceUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *LootChanceClient) UpdateOne(_m *LootChance) *LootChanceUpdateOne {
+	mutation := newLootChanceMutation(c.config, OpUpdateOne, withLootChance(_m))
+	return &LootChanceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *LootChanceClient) UpdateOneID(id int) *LootChanceUpdateOne {
+	mutation := newLootChanceMutation(c.config, OpUpdateOne, withLootChanceID(id))
+	return &LootChanceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for LootChance.
+func (c *LootChanceClient) Delete() *LootChanceDelete {
+	mutation := newLootChanceMutation(c.config, OpDelete)
+	return &LootChanceDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *LootChanceClient) DeleteOne(_m *LootChance) *LootChanceDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *LootChanceClient) DeleteOneID(id int) *LootChanceDeleteOne {
+	builder := c.Delete().Where(lootchance.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &LootChanceDeleteOne{builder}
+}
+
+// Query returns a query builder for LootChance.
+func (c *LootChanceClient) Query() *LootChanceQuery {
+	return &LootChanceQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeLootChance},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a LootChance entity by its id.
+func (c *LootChanceClient) Get(ctx context.Context, id int) (*LootChance, error) {
+	return c.Query().Where(lootchance.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *LootChanceClient) GetX(ctx context.Context, id int) *LootChance {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryPlace queries the place edge of a LootChance.
+func (c *LootChanceClient) QueryPlace(_m *LootChance) *ExpeditionPlaceQuery {
+	query := (&ExpeditionPlaceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(lootchance.Table, lootchance.FieldID, id),
+			sqlgraph.To(expeditionplace.Table, expeditionplace.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, lootchance.PlaceTable, lootchance.PlaceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryItem queries the item edge of a LootChance.
+func (c *LootChanceClient) QueryItem(_m *LootChance) *ItemQuery {
+	query := (&ItemClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(lootchance.Table, lootchance.FieldID, id),
+			sqlgraph.To(item.Table, item.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, lootchance.ItemTable, lootchance.ItemColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *LootChanceClient) Hooks() []Hook {
+	return c.hooks.LootChance
+}
+
+// Interceptors returns the client interceptors.
+func (c *LootChanceClient) Interceptors() []Interceptor {
+	return c.inters.LootChance
+}
+
+func (c *LootChanceClient) mutate(ctx context.Context, m *LootChanceMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&LootChanceCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&LootChanceUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&LootChanceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&LootChanceDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown LootChance mutation op: %q", m.Op())
 	}
 }
 
@@ -1079,9 +1757,11 @@ func (c *TrainingGainClient) mutate(ctx context.Context, m *TrainingGainMutation
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Breed, Cocoon, Genus, Item, Move, TrainingGain []ent.Hook
+		Breed, Cocoon, ExpeditionLock, ExpeditionMap, ExpeditionPlace, Genus, Item,
+		LootChance, Move, TrainingGain []ent.Hook
 	}
 	inters struct {
-		Breed, Cocoon, Genus, Item, Move, TrainingGain []ent.Interceptor
+		Breed, Cocoon, ExpeditionLock, ExpeditionMap, ExpeditionPlace, Genus, Item,
+		LootChance, Move, TrainingGain []ent.Interceptor
 	}
 )

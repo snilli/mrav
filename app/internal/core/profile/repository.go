@@ -19,4 +19,8 @@ type ProfileRepository interface {
 	ListCocoonRules(ctx context.Context) ([]domain.CocoonRule, error)
 	// ListDesireNames returns what each item id is called when a monster wants it, dislikes it or is on it.
 	ListDesireNames(ctx context.Context) (map[int]string, error)
+	// ListExpeditionMaps returns the maps of the trips, in the order they are kept, each with its places by letter;
+	// what a search of a place is worth, in gold, is worked out by the database for a monster that searches as the
+	// searcher does.
+	ListExpeditionMaps(ctx context.Context, by domain.Searcher) ([]domain.ExpeditionMap, error)
 }

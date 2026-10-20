@@ -3,6 +3,7 @@ package profilesvc
 import (
 	"context"
 
+	monster "app/internal/core/monster/domain"
 	"app/internal/core/profile"
 	"app/internal/core/profile/domain"
 	"app/internal/port"
@@ -43,6 +44,13 @@ func (s *Service) Current(ctx context.Context) (domain.Profile, error) {
 	if err != nil {
 		return domain.Profile{}, err
 	}
+	// The worth of a search of each place of the maps is the database's to work out, for how this monster searches.
+	maps, err := s.repo.ListExpeditionMaps(ctx, domain.Searcher{
+		Intelligence: m.Stats[monster.Int], Skill: m.Stats[monster.Skill], GoodNature: m.Nature > 0,
+	})
+	if err != nil {
+		return domain.Profile{}, err
+	}
 
 	drug := "---"
 	if domain.IsDrug(m.Drug) {
@@ -54,6 +62,7 @@ func (s *Service) Current(ctx context.Context) (domain.Profile, error) {
 	}
 	return domain.Profile{
 		Breeds:    breeds,
+		Maps:      maps,
 		Monster:   m,
 		Player:    p,
 		Breed:     domain.ResolveBreed(rules, cocoons, m),

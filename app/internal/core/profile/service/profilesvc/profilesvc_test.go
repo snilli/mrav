@@ -39,6 +39,7 @@ var _ = Describe("ProfileService", func() {
 		repo.EXPECT().ListBreedRules(ctx, 5).Return([]domain.BreedRule{rule}, nil)
 		repo.EXPECT().ListCocoonRules(ctx).Return(nil, nil)
 		repo.EXPECT().ListDesireNames(ctx).Return(desires, nil)
+		repo.EXPECT().ListExpeditionMaps(ctx, domain.Searcher{}).Return(nil, nil)
 	}
 
 	BeforeEach(func() {
@@ -73,6 +74,7 @@ var _ = Describe("ProfileService", func() {
 		repo.EXPECT().ListBreedRules(ctx, 5).Return([]domain.BreedRule{rule}, nil)
 		repo.EXPECT().ListCocoonRules(ctx).Return(nil, nil)
 		repo.EXPECT().ListDesireNames(ctx).Return(desires, nil)
+		repo.EXPECT().ListExpeditionMaps(ctx, domain.Searcher{}).Return(nil, nil)
 
 		got, err := svc.Current(ctx)
 		Expect(err).NotTo(HaveOccurred())
@@ -80,6 +82,38 @@ var _ = Describe("ProfileService", func() {
 		Expect(got.Breeds[5]).To(Equal(domain.BreedUnlock{Name: "Henger", Unlocked: true}))
 		Expect(got.Breeds[3]).To(Equal(domain.BreedUnlock{Name: "C. Pandora"}))
 		Expect(got.Breeds[0]).To(Equal(domain.BreedUnlock{Name: "#0"}))
+	})
+
+	It("asks for the maps of the trips as the monster would search them, by its intelligence and skill and whether its nature is good", func() {
+		m := henger
+		m.Stats[monster.Int], m.Stats[monster.Skill], m.Nature = 463, 690, 1
+		maps := []domain.ExpeditionMap{{Name: "Cave", Width: 1, Height: 1}}
+		monsters.EXPECT().Current(ctx).Return(m, nil)
+		players.EXPECT().Player(ctx).Return(player.Player{}, nil)
+		repo.EXPECT().ListGenusNames(ctx).Return(names, nil)
+		repo.EXPECT().ListBreedRules(ctx, 5).Return([]domain.BreedRule{rule}, nil)
+		repo.EXPECT().ListCocoonRules(ctx).Return(nil, nil)
+		repo.EXPECT().ListDesireNames(ctx).Return(desires, nil)
+		repo.EXPECT().ListExpeditionMaps(ctx, domain.Searcher{Intelligence: 463, Skill: 690, GoodNature: true}).Return(maps, nil)
+
+		got, err := svc.Current(ctx)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(got.Maps).To(Equal(maps))
+	})
+
+	It("takes a nature of 0 for a bad one, as the game does", func() {
+		m := henger
+		m.Nature = 0
+		monsters.EXPECT().Current(ctx).Return(m, nil)
+		players.EXPECT().Player(ctx).Return(player.Player{}, nil)
+		repo.EXPECT().ListGenusNames(ctx).Return(names, nil)
+		repo.EXPECT().ListBreedRules(ctx, 5).Return([]domain.BreedRule{rule}, nil)
+		repo.EXPECT().ListCocoonRules(ctx).Return(nil, nil)
+		repo.EXPECT().ListDesireNames(ctx).Return(desires, nil)
+		repo.EXPECT().ListExpeditionMaps(ctx, domain.Searcher{GoodNature: false}).Return(nil, nil)
+
+		_, err := svc.Current(ctx)
+		Expect(err).NotTo(HaveOccurred())
 	})
 
 	It("says the monster is on no drug when its drug id is not a drug's, and --- for an id the list lacks", func() {
@@ -91,6 +125,7 @@ var _ = Describe("ProfileService", func() {
 		repo.EXPECT().ListBreedRules(ctx, 5).Return([]domain.BreedRule{rule}, nil)
 		repo.EXPECT().ListCocoonRules(ctx).Return(nil, nil)
 		repo.EXPECT().ListDesireNames(ctx).Return(desires, nil)
+		repo.EXPECT().ListExpeditionMaps(ctx, domain.Searcher{}).Return(nil, nil)
 
 		got, err := svc.Current(ctx)
 		Expect(err).NotTo(HaveOccurred())
@@ -140,6 +175,13 @@ var _ = Describe("ProfileService", func() {
 			repo.EXPECT().ListBreedRules(ctx, 5).Return(nil, nil)
 			repo.EXPECT().ListCocoonRules(ctx).Return(nil, nil)
 			repo.EXPECT().ListDesireNames(ctx).Return(nil, errors.New("disk gone"))
+		}),
+		Entry("the maps of the trips", func() {
+			repo.EXPECT().ListGenusNames(ctx).Return(names, nil)
+			repo.EXPECT().ListBreedRules(ctx, 5).Return(nil, nil)
+			repo.EXPECT().ListCocoonRules(ctx).Return(nil, nil)
+			repo.EXPECT().ListDesireNames(ctx).Return(nil, nil)
+			repo.EXPECT().ListExpeditionMaps(ctx, domain.Searcher{}).Return(nil, errors.New("disk gone"))
 		}),
 	)
 })

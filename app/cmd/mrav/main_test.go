@@ -15,7 +15,6 @@ import (
 	"app/config"
 	monster "app/internal/core/monster/domain"
 	movedomain "app/internal/core/move/domain"
-	profiledomain "app/internal/core/profile/domain"
 	"app/internal/infrastructure/fakemonster"
 	"app/internal/infrastructure/fakeplayer"
 	"app/internal/infrastructure/gamememory"
@@ -24,9 +23,6 @@ import (
 	mockprofile "app/mock/core/profile"
 	mocktraining "app/mock/core/training"
 )
-
-// noMaps is no map of an expedition, for the tests that have no use for one.
-func noMaps() []profiledomain.ExpeditionMap { return nil }
 
 var _ = Describe("newSource", func() {
 	It("gives the demo panel its fakes only in the demo, and reads a game otherwise", func() {
@@ -92,7 +88,7 @@ var _ = Describe("newWindow", func() {
 		a := test.NewTempApp(GinkgoTB())
 		p := newParts(a,
 			mockprofile.NewMockProfileService(GinkgoT()), mockmove.NewMockMoveService(GinkgoT()),
-			mocktraining.NewMockTrainingService(GinkgoT()), mockitem.NewMockItemService(GinkgoT()), noMaps, nil)
+			mocktraining.NewMockTrainingService(GinkgoT()), mockitem.NewMockItemService(GinkgoT()), nil)
 
 		w := newWindow(a, p, nil)
 		Expect(w.Content()).NotTo(BeNil())
@@ -105,17 +101,9 @@ var _ = Describe("loaders", func() {
 		test.NewTempApp(GinkgoTB())
 		p := newParts(nil,
 			mockprofile.NewMockProfileService(GinkgoT()), mockmove.NewMockMoveService(GinkgoT()),
-			mocktraining.NewMockTrainingService(GinkgoT()), mockitem.NewMockItemService(GinkgoT()), noMaps, nil)
+			mocktraining.NewMockTrainingService(GinkgoT()), mockitem.NewMockItemService(GinkgoT()), nil)
 
 		Expect(loaders(p)).To(ConsistOf(p.Dashboard, p.Moves, p.Training, p.Items, p.Route))
-	})
-})
-
-var _ = Describe("newMaps", func() {
-	It("gives the maps of the three expeditions that come round every year", func() {
-		maps, err := newMaps()
-		Expect(err).NotTo(HaveOccurred())
-		Expect(maps()).To(HaveLen(3))
 	})
 })
 

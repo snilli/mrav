@@ -12,11 +12,23 @@ type Breed func(*sql.Selector)
 // Cocoon is the predicate function for cocoon builders.
 type Cocoon func(*sql.Selector)
 
+// ExpeditionLock is the predicate function for expeditionlock builders.
+type ExpeditionLock func(*sql.Selector)
+
+// ExpeditionMap is the predicate function for expeditionmap builders.
+type ExpeditionMap func(*sql.Selector)
+
+// ExpeditionPlace is the predicate function for expeditionplace builders.
+type ExpeditionPlace func(*sql.Selector)
+
 // Genus is the predicate function for genus builders.
 type Genus func(*sql.Selector)
 
 // Item is the predicate function for item builders.
 type Item func(*sql.Selector)
+
+// LootChance is the predicate function for lootchance builders.
+type LootChance func(*sql.Selector)
 
 // Move is the predicate function for move builders.
 type Move func(*sql.Selector)

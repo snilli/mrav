@@ -20,7 +20,6 @@ import (
 	"app/internal/core/move/repository/db/moverepo"
 	"app/internal/core/move/service/movesvc"
 	"app/internal/core/profile"
-	profiledomain "app/internal/core/profile/domain"
 	"app/internal/core/profile/repository/db/profilerepo"
 	"app/internal/core/profile/service/profilesvc"
 	"app/internal/core/training"
@@ -34,7 +33,6 @@ import (
 	"app/internal/delivery/ui/shellui"
 	"app/internal/delivery/ui/trainingui"
 	"app/internal/infrastructure/database"
-	"app/internal/infrastructure/expeditionmaps"
 	"app/internal/infrastructure/fakemonster"
 	"app/internal/infrastructure/fakeplayer"
 	"app/internal/infrastructure/gamememory"
@@ -52,7 +50,7 @@ func options() fx.Option {
 		fx.Provide(profilerepo.New, profilesvc.New),
 		fx.Provide(trainingrepo.New, trainingsvc.New),
 		fx.Provide(itemrepo.New, itemsvc.New),
-		fx.Provide(newSource, newMaps),
+		fx.Provide(newSource),
 		fx.Provide(newFyneApp, newParts, newDemo, newWindow),
 		fx.Invoke(refreshLoops),
 	)
@@ -120,25 +118,15 @@ type loader interface{ Load(ctx context.Context) }
 // in the demo, which is when there are fakes to set a monster by.
 func newParts(
 	_ fyne.App, profiles profile.ProfileService, moves move.MoveService, trainings training.TrainingService,
-	items item.ItemService, maps routeui.Maps, monsters *fakemonster.Source,
+	items item.ItemService, monsters *fakemonster.Source,
 ) shellui.Parts {
 	return shellui.Parts{
 		Dashboard: profileui.NewDashboard(profiles),
 		Training:  trainingui.NewScreen(trainings),
 		Moves:     moveui.NewScreen(moves, icons.Bytes),
 		Items:     itemui.NewScreen(items),
-		Route:     routeui.NewScreen(profiles, maps, monsters != nil),
+		Route:     routeui.NewScreen(profiles, monsters != nil),
 	}
-}
-
-// newMaps is where the maps of the expeditions come from: the ones that are embedded, for the demo and for a game
-// that is read alike.
-func newMaps() (routeui.Maps, error) {
-	maps, err := expeditionmaps.Load()
-	if err != nil {
-		return nil, fmt.Errorf("failed to load the expedition maps: %w", err)
-	}
-	return func() []profiledomain.ExpeditionMap { return maps }, nil
 }
 
 // loaders are the pages, which are all asked at the rate in the config.

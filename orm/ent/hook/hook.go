@@ -32,6 +32,42 @@ func (f CocoonFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, erro
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.CocoonMutation", m)
 }
 
+// The ExpeditionLockFunc type is an adapter to allow the use of ordinary
+// function as ExpeditionLock mutator.
+type ExpeditionLockFunc func(context.Context, *ent.ExpeditionLockMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ExpeditionLockFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ExpeditionLockMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ExpeditionLockMutation", m)
+}
+
+// The ExpeditionMapFunc type is an adapter to allow the use of ordinary
+// function as ExpeditionMap mutator.
+type ExpeditionMapFunc func(context.Context, *ent.ExpeditionMapMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ExpeditionMapFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ExpeditionMapMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ExpeditionMapMutation", m)
+}
+
+// The ExpeditionPlaceFunc type is an adapter to allow the use of ordinary
+// function as ExpeditionPlace mutator.
+type ExpeditionPlaceFunc func(context.Context, *ent.ExpeditionPlaceMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ExpeditionPlaceFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ExpeditionPlaceMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ExpeditionPlaceMutation", m)
+}
+
 // The GenusFunc type is an adapter to allow the use of ordinary
 // function as Genus mutator.
 type GenusFunc func(context.Context, *ent.GenusMutation) (ent.Value, error)
@@ -54,6 +90,18 @@ func (f ItemFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error)
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ItemMutation", m)
+}
+
+// The LootChanceFunc type is an adapter to allow the use of ordinary
+// function as LootChance mutator.
+type LootChanceFunc func(context.Context, *ent.LootChanceMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f LootChanceFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.LootChanceMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.LootChanceMutation", m)
 }
 
 // The MoveFunc type is an adapter to allow the use of ordinary

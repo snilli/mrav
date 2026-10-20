@@ -32,6 +32,15 @@ func aisle() domain.ExpeditionMap {
 	}
 }
 
+// trip is a made-up map with the name of a trip, so that the week of that trip finds it: a corridor of 6 tiles that
+// goes up from the start, with a place worth 1,000 G at the top.
+func trip(name string) domain.ExpeditionMap {
+	return domain.ExpeditionMap{
+		Name: name, Width: 1, Height: 6, Tiles: make([]domain.Terrain, 6), Start: domain.Point{Y: 5},
+		Spots: []domain.Spot{{Name: "A", At: domain.Point{}, Value: 1000}},
+	}
+}
+
 var _ = Describe("NewView", func() {
 	It("plans the route with the energy the monster starts with and the chance that its power breaks a rock", func() {
 		v, err := NewView(monsterOf(140, 350), aisle())
@@ -67,34 +76,22 @@ var _ = Describe("NewView", func() {
 		Expect(strings.Join(v.Stops, "|")).To(Equal("1. A · 1,500 G|2. B · 2,500 G"))
 	})
 
-	Describe("a place with loot", func() {
-		cave := func(stat monster.Stat) domain.ExpeditionMap {
-			m := aisle()
-			m.Spots = []domain.Spot{{Name: "A", At: domain.Point{X: 2}, Loot: &domain.Loot{
-				Building: "Cave", Stat: stat, Mins: []int{0, 100},
-				Bad:  []domain.Chance{{Item: "Gem", Price: 1000, Pct: []float64{10, 20}}},
-				Good: []domain.Chance{{Item: "Gem", Price: 1000, Pct: []float64{50, 60}}},
-			}}}
-			return m
-		}
+	It("names the building of a place beside its letter in the stops, where it has one", func() {
+		m := aisle()
+		m.Spots = []domain.Spot{{Name: "A", At: domain.Point{X: 2}, Building: "Cave", Value: 200}}
+		v, err := NewView(monsterOf(140, 350), m)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(v.Stops).To(Equal([]string{"1. A · Cave · 200 G"}))
+		Expect(v.Summary).To(ContainSubstring("worth about 200 G"))
+	})
 
-		It("is worth what it turns up on average for the intelligence and the nature of the monster", func() {
-			v, err := NewView(monsterWith(140, 350, 150, 0, -5), cave(monster.Int))
-			Expect(err).NotTo(HaveOccurred())
-			Expect(v.Stops).To(Equal([]string{"1. A · Cave · 200 G"}))
-			Expect(v.Summary).To(ContainSubstring("INT 150, bad nature: 1 place, about 14 energy, worth about 200 G"))
-
-			v, err = NewView(monsterWith(140, 350, 150, 0, 1), cave(monster.Int))
-			Expect(err).NotTo(HaveOccurred())
-			Expect(v.Stops).To(Equal([]string{"1. A · Cave · 600 G"}))
-			Expect(v.Summary).To(ContainSubstring("good nature"))
-		})
-
-		It("is searched by skill where the building says so", func() {
-			v, err := NewView(monsterWith(140, 350, 0, 150, 0), cave(monster.Skill))
-			Expect(err).NotTo(HaveOccurred())
-			Expect(v.Stops).To(Equal([]string{"1. A · Cave · 200 G"}))
-		})
+	It("says that the nature is good above 0, which the game takes it to be", func() {
+		v, err := NewView(monsterWith(140, 350, 0, 0, 1), aisle())
+		Expect(err).NotTo(HaveOccurred())
+		Expect(v.Summary).To(ContainSubstring("good nature"))
+		v, err = NewView(monsterWith(140, 350, 0, 0, 0), aisle())
+		Expect(err).NotTo(HaveOccurred())
+		Expect(v.Summary).To(ContainSubstring("bad nature"))
 	})
 
 	It("takes the way through a gate when the intelligence of the monster finds it", func() {

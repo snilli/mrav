@@ -8,8 +8,12 @@ import (
 	"fmt"
 	"orm/ent/breed"
 	"orm/ent/cocoon"
+	"orm/ent/expeditionlock"
+	"orm/ent/expeditionmap"
+	"orm/ent/expeditionplace"
 	"orm/ent/genus"
 	"orm/ent/item"
+	"orm/ent/lootchance"
 	"orm/ent/move"
 	"orm/ent/predicate"
 	"orm/ent/traininggain"
@@ -29,12 +33,16 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
-	TypeBreed        = "Breed"
-	TypeCocoon       = "Cocoon"
-	TypeGenus        = "Genus"
-	TypeItem         = "Item"
-	TypeMove         = "Move"
-	TypeTrainingGain = "TrainingGain"
+	TypeBreed           = "Breed"
+	TypeCocoon          = "Cocoon"
+	TypeExpeditionLock  = "ExpeditionLock"
+	TypeExpeditionMap   = "ExpeditionMap"
+	TypeExpeditionPlace = "ExpeditionPlace"
+	TypeGenus           = "Genus"
+	TypeItem            = "Item"
+	TypeLootChance      = "LootChance"
+	TypeMove            = "Move"
+	TypeTrainingGain    = "TrainingGain"
 )
 
 // BreedMutation represents an operation that mutates the Breed nodes in the graph.
@@ -1421,6 +1429,2105 @@ func (m *CocoonMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown Cocoon edge %s", name)
 }
 
+// ExpeditionLockMutation represents an operation that mutates the ExpeditionLock nodes in the graph.
+type ExpeditionLockMutation struct {
+	config
+	op            Op
+	typ           string
+	id            *int
+	x             *int
+	addx          *int
+	y             *int
+	addy          *int
+	min_int       *int
+	addmin_int    *int
+	clearedFields map[string]struct{}
+	_map          *int
+	cleared_map   bool
+	done          bool
+	oldValue      func(context.Context) (*ExpeditionLock, error)
+	predicates    []predicate.ExpeditionLock
+}
+
+var _ ent.Mutation = (*ExpeditionLockMutation)(nil)
+
+// expeditionlockOption allows management of the mutation configuration using functional options.
+type expeditionlockOption func(*ExpeditionLockMutation)
+
+// newExpeditionLockMutation creates new mutation for the ExpeditionLock entity.
+func newExpeditionLockMutation(c config, op Op, opts ...expeditionlockOption) *ExpeditionLockMutation {
+	m := &ExpeditionLockMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeExpeditionLock,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withExpeditionLockID sets the ID field of the mutation.
+func withExpeditionLockID(id int) expeditionlockOption {
+	return func(m *ExpeditionLockMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *ExpeditionLock
+		)
+		m.oldValue = func(ctx context.Context) (*ExpeditionLock, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().ExpeditionLock.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withExpeditionLock sets the old ExpeditionLock of the mutation.
+func withExpeditionLock(node *ExpeditionLock) expeditionlockOption {
+	return func(m *ExpeditionLockMutation) {
+		m.oldValue = func(context.Context) (*ExpeditionLock, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m ExpeditionLockMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m ExpeditionLockMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *ExpeditionLockMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *ExpeditionLockMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().ExpeditionLock.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetX sets the "x" field.
+func (m *ExpeditionLockMutation) SetX(i int) {
+	m.x = &i
+	m.addx = nil
+}
+
+// X returns the value of the "x" field in the mutation.
+func (m *ExpeditionLockMutation) X() (r int, exists bool) {
+	v := m.x
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldX returns the old "x" field's value of the ExpeditionLock entity.
+// If the ExpeditionLock object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ExpeditionLockMutation) OldX(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldX is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldX requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldX: %w", err)
+	}
+	return oldValue.X, nil
+}
+
+// AddX adds i to the "x" field.
+func (m *ExpeditionLockMutation) AddX(i int) {
+	if m.addx != nil {
+		*m.addx += i
+	} else {
+		m.addx = &i
+	}
+}
+
+// AddedX returns the value that was added to the "x" field in this mutation.
+func (m *ExpeditionLockMutation) AddedX() (r int, exists bool) {
+	v := m.addx
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetX resets all changes to the "x" field.
+func (m *ExpeditionLockMutation) ResetX() {
+	m.x = nil
+	m.addx = nil
+}
+
+// SetY sets the "y" field.
+func (m *ExpeditionLockMutation) SetY(i int) {
+	m.y = &i
+	m.addy = nil
+}
+
+// Y returns the value of the "y" field in the mutation.
+func (m *ExpeditionLockMutation) Y() (r int, exists bool) {
+	v := m.y
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldY returns the old "y" field's value of the ExpeditionLock entity.
+// If the ExpeditionLock object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ExpeditionLockMutation) OldY(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldY is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldY requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldY: %w", err)
+	}
+	return oldValue.Y, nil
+}
+
+// AddY adds i to the "y" field.
+func (m *ExpeditionLockMutation) AddY(i int) {
+	if m.addy != nil {
+		*m.addy += i
+	} else {
+		m.addy = &i
+	}
+}
+
+// AddedY returns the value that was added to the "y" field in this mutation.
+func (m *ExpeditionLockMutation) AddedY() (r int, exists bool) {
+	v := m.addy
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetY resets all changes to the "y" field.
+func (m *ExpeditionLockMutation) ResetY() {
+	m.y = nil
+	m.addy = nil
+}
+
+// SetMinInt sets the "min_int" field.
+func (m *ExpeditionLockMutation) SetMinInt(i int) {
+	m.min_int = &i
+	m.addmin_int = nil
+}
+
+// MinInt returns the value of the "min_int" field in the mutation.
+func (m *ExpeditionLockMutation) MinInt() (r int, exists bool) {
+	v := m.min_int
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMinInt returns the old "min_int" field's value of the ExpeditionLock entity.
+// If the ExpeditionLock object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ExpeditionLockMutation) OldMinInt(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMinInt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMinInt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMinInt: %w", err)
+	}
+	return oldValue.MinInt, nil
+}
+
+// AddMinInt adds i to the "min_int" field.
+func (m *ExpeditionLockMutation) AddMinInt(i int) {
+	if m.addmin_int != nil {
+		*m.addmin_int += i
+	} else {
+		m.addmin_int = &i
+	}
+}
+
+// AddedMinInt returns the value that was added to the "min_int" field in this mutation.
+func (m *ExpeditionLockMutation) AddedMinInt() (r int, exists bool) {
+	v := m.addmin_int
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetMinInt resets all changes to the "min_int" field.
+func (m *ExpeditionLockMutation) ResetMinInt() {
+	m.min_int = nil
+	m.addmin_int = nil
+}
+
+// SetMapID sets the "map" edge to the ExpeditionMap entity by id.
+func (m *ExpeditionLockMutation) SetMapID(id int) {
+	m._map = &id
+}
+
+// ClearMap clears the "map" edge to the ExpeditionMap entity.
+func (m *ExpeditionLockMutation) ClearMap() {
+	m.cleared_map = true
+}
+
+// MapCleared reports if the "map" edge to the ExpeditionMap entity was cleared.
+func (m *ExpeditionLockMutation) MapCleared() bool {
+	return m.cleared_map
+}
+
+// MapID returns the "map" edge ID in the mutation.
+func (m *ExpeditionLockMutation) MapID() (id int, exists bool) {
+	if m._map != nil {
+		return *m._map, true
+	}
+	return
+}
+
+// MapIDs returns the "map" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// MapID instead. It exists only for internal usage by the builders.
+func (m *ExpeditionLockMutation) MapIDs() (ids []int) {
+	if id := m._map; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetMap resets all changes to the "map" edge.
+func (m *ExpeditionLockMutation) ResetMap() {
+	m._map = nil
+	m.cleared_map = false
+}
+
+// Where appends a list predicates to the ExpeditionLockMutation builder.
+func (m *ExpeditionLockMutation) Where(ps ...predicate.ExpeditionLock) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the ExpeditionLockMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *ExpeditionLockMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.ExpeditionLock, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *ExpeditionLockMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *ExpeditionLockMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (ExpeditionLock).
+func (m *ExpeditionLockMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *ExpeditionLockMutation) Fields() []string {
+	fields := make([]string, 0, 3)
+	if m.x != nil {
+		fields = append(fields, expeditionlock.FieldX)
+	}
+	if m.y != nil {
+		fields = append(fields, expeditionlock.FieldY)
+	}
+	if m.min_int != nil {
+		fields = append(fields, expeditionlock.FieldMinInt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *ExpeditionLockMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case expeditionlock.FieldX:
+		return m.X()
+	case expeditionlock.FieldY:
+		return m.Y()
+	case expeditionlock.FieldMinInt:
+		return m.MinInt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *ExpeditionLockMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case expeditionlock.FieldX:
+		return m.OldX(ctx)
+	case expeditionlock.FieldY:
+		return m.OldY(ctx)
+	case expeditionlock.FieldMinInt:
+		return m.OldMinInt(ctx)
+	}
+	return nil, fmt.Errorf("unknown ExpeditionLock field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ExpeditionLockMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case expeditionlock.FieldX:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetX(v)
+		return nil
+	case expeditionlock.FieldY:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetY(v)
+		return nil
+	case expeditionlock.FieldMinInt:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMinInt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ExpeditionLock field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *ExpeditionLockMutation) AddedFields() []string {
+	var fields []string
+	if m.addx != nil {
+		fields = append(fields, expeditionlock.FieldX)
+	}
+	if m.addy != nil {
+		fields = append(fields, expeditionlock.FieldY)
+	}
+	if m.addmin_int != nil {
+		fields = append(fields, expeditionlock.FieldMinInt)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *ExpeditionLockMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case expeditionlock.FieldX:
+		return m.AddedX()
+	case expeditionlock.FieldY:
+		return m.AddedY()
+	case expeditionlock.FieldMinInt:
+		return m.AddedMinInt()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ExpeditionLockMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case expeditionlock.FieldX:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddX(v)
+		return nil
+	case expeditionlock.FieldY:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddY(v)
+		return nil
+	case expeditionlock.FieldMinInt:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddMinInt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ExpeditionLock numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *ExpeditionLockMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *ExpeditionLockMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *ExpeditionLockMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown ExpeditionLock nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *ExpeditionLockMutation) ResetField(name string) error {
+	switch name {
+	case expeditionlock.FieldX:
+		m.ResetX()
+		return nil
+	case expeditionlock.FieldY:
+		m.ResetY()
+		return nil
+	case expeditionlock.FieldMinInt:
+		m.ResetMinInt()
+		return nil
+	}
+	return fmt.Errorf("unknown ExpeditionLock field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *ExpeditionLockMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m._map != nil {
+		edges = append(edges, expeditionlock.EdgeMap)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *ExpeditionLockMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case expeditionlock.EdgeMap:
+		if id := m._map; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *ExpeditionLockMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *ExpeditionLockMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *ExpeditionLockMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.cleared_map {
+		edges = append(edges, expeditionlock.EdgeMap)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *ExpeditionLockMutation) EdgeCleared(name string) bool {
+	switch name {
+	case expeditionlock.EdgeMap:
+		return m.cleared_map
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *ExpeditionLockMutation) ClearEdge(name string) error {
+	switch name {
+	case expeditionlock.EdgeMap:
+		m.ClearMap()
+		return nil
+	}
+	return fmt.Errorf("unknown ExpeditionLock unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *ExpeditionLockMutation) ResetEdge(name string) error {
+	switch name {
+	case expeditionlock.EdgeMap:
+		m.ResetMap()
+		return nil
+	}
+	return fmt.Errorf("unknown ExpeditionLock edge %s", name)
+}
+
+// ExpeditionMapMutation represents an operation that mutates the ExpeditionMap nodes in the graph.
+type ExpeditionMapMutation struct {
+	config
+	op            Op
+	typ           string
+	id            *int
+	name          *string
+	rows          *string
+	start_x       *int
+	addstart_x    *int
+	start_y       *int
+	addstart_y    *int
+	clearedFields map[string]struct{}
+	places        map[int]struct{}
+	removedplaces map[int]struct{}
+	clearedplaces bool
+	locks         map[int]struct{}
+	removedlocks  map[int]struct{}
+	clearedlocks  bool
+	done          bool
+	oldValue      func(context.Context) (*ExpeditionMap, error)
+	predicates    []predicate.ExpeditionMap
+}
+
+var _ ent.Mutation = (*ExpeditionMapMutation)(nil)
+
+// expeditionmapOption allows management of the mutation configuration using functional options.
+type expeditionmapOption func(*ExpeditionMapMutation)
+
+// newExpeditionMapMutation creates new mutation for the ExpeditionMap entity.
+func newExpeditionMapMutation(c config, op Op, opts ...expeditionmapOption) *ExpeditionMapMutation {
+	m := &ExpeditionMapMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeExpeditionMap,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withExpeditionMapID sets the ID field of the mutation.
+func withExpeditionMapID(id int) expeditionmapOption {
+	return func(m *ExpeditionMapMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *ExpeditionMap
+		)
+		m.oldValue = func(ctx context.Context) (*ExpeditionMap, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().ExpeditionMap.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withExpeditionMap sets the old ExpeditionMap of the mutation.
+func withExpeditionMap(node *ExpeditionMap) expeditionmapOption {
+	return func(m *ExpeditionMapMutation) {
+		m.oldValue = func(context.Context) (*ExpeditionMap, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m ExpeditionMapMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m ExpeditionMapMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *ExpeditionMapMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *ExpeditionMapMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().ExpeditionMap.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetName sets the "name" field.
+func (m *ExpeditionMapMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *ExpeditionMapMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the ExpeditionMap entity.
+// If the ExpeditionMap object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ExpeditionMapMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *ExpeditionMapMutation) ResetName() {
+	m.name = nil
+}
+
+// SetRows sets the "rows" field.
+func (m *ExpeditionMapMutation) SetRows(s string) {
+	m.rows = &s
+}
+
+// Rows returns the value of the "rows" field in the mutation.
+func (m *ExpeditionMapMutation) Rows() (r string, exists bool) {
+	v := m.rows
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRows returns the old "rows" field's value of the ExpeditionMap entity.
+// If the ExpeditionMap object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ExpeditionMapMutation) OldRows(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRows is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRows requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRows: %w", err)
+	}
+	return oldValue.Rows, nil
+}
+
+// ResetRows resets all changes to the "rows" field.
+func (m *ExpeditionMapMutation) ResetRows() {
+	m.rows = nil
+}
+
+// SetStartX sets the "start_x" field.
+func (m *ExpeditionMapMutation) SetStartX(i int) {
+	m.start_x = &i
+	m.addstart_x = nil
+}
+
+// StartX returns the value of the "start_x" field in the mutation.
+func (m *ExpeditionMapMutation) StartX() (r int, exists bool) {
+	v := m.start_x
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStartX returns the old "start_x" field's value of the ExpeditionMap entity.
+// If the ExpeditionMap object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ExpeditionMapMutation) OldStartX(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStartX is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStartX requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStartX: %w", err)
+	}
+	return oldValue.StartX, nil
+}
+
+// AddStartX adds i to the "start_x" field.
+func (m *ExpeditionMapMutation) AddStartX(i int) {
+	if m.addstart_x != nil {
+		*m.addstart_x += i
+	} else {
+		m.addstart_x = &i
+	}
+}
+
+// AddedStartX returns the value that was added to the "start_x" field in this mutation.
+func (m *ExpeditionMapMutation) AddedStartX() (r int, exists bool) {
+	v := m.addstart_x
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetStartX resets all changes to the "start_x" field.
+func (m *ExpeditionMapMutation) ResetStartX() {
+	m.start_x = nil
+	m.addstart_x = nil
+}
+
+// SetStartY sets the "start_y" field.
+func (m *ExpeditionMapMutation) SetStartY(i int) {
+	m.start_y = &i
+	m.addstart_y = nil
+}
+
+// StartY returns the value of the "start_y" field in the mutation.
+func (m *ExpeditionMapMutation) StartY() (r int, exists bool) {
+	v := m.start_y
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStartY returns the old "start_y" field's value of the ExpeditionMap entity.
+// If the ExpeditionMap object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ExpeditionMapMutation) OldStartY(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStartY is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStartY requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStartY: %w", err)
+	}
+	return oldValue.StartY, nil
+}
+
+// AddStartY adds i to the "start_y" field.
+func (m *ExpeditionMapMutation) AddStartY(i int) {
+	if m.addstart_y != nil {
+		*m.addstart_y += i
+	} else {
+		m.addstart_y = &i
+	}
+}
+
+// AddedStartY returns the value that was added to the "start_y" field in this mutation.
+func (m *ExpeditionMapMutation) AddedStartY() (r int, exists bool) {
+	v := m.addstart_y
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetStartY resets all changes to the "start_y" field.
+func (m *ExpeditionMapMutation) ResetStartY() {
+	m.start_y = nil
+	m.addstart_y = nil
+}
+
+// AddPlaceIDs adds the "places" edge to the ExpeditionPlace entity by ids.
+func (m *ExpeditionMapMutation) AddPlaceIDs(ids ...int) {
+	if m.places == nil {
+		m.places = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.places[ids[i]] = struct{}{}
+	}
+}
+
+// ClearPlaces clears the "places" edge to the ExpeditionPlace entity.
+func (m *ExpeditionMapMutation) ClearPlaces() {
+	m.clearedplaces = true
+}
+
+// PlacesCleared reports if the "places" edge to the ExpeditionPlace entity was cleared.
+func (m *ExpeditionMapMutation) PlacesCleared() bool {
+	return m.clearedplaces
+}
+
+// RemovePlaceIDs removes the "places" edge to the ExpeditionPlace entity by IDs.
+func (m *ExpeditionMapMutation) RemovePlaceIDs(ids ...int) {
+	if m.removedplaces == nil {
+		m.removedplaces = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.places, ids[i])
+		m.removedplaces[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedPlaces returns the removed IDs of the "places" edge to the ExpeditionPlace entity.
+func (m *ExpeditionMapMutation) RemovedPlacesIDs() (ids []int) {
+	for id := range m.removedplaces {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// PlacesIDs returns the "places" edge IDs in the mutation.
+func (m *ExpeditionMapMutation) PlacesIDs() (ids []int) {
+	for id := range m.places {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetPlaces resets all changes to the "places" edge.
+func (m *ExpeditionMapMutation) ResetPlaces() {
+	m.places = nil
+	m.clearedplaces = false
+	m.removedplaces = nil
+}
+
+// AddLockIDs adds the "locks" edge to the ExpeditionLock entity by ids.
+func (m *ExpeditionMapMutation) AddLockIDs(ids ...int) {
+	if m.locks == nil {
+		m.locks = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.locks[ids[i]] = struct{}{}
+	}
+}
+
+// ClearLocks clears the "locks" edge to the ExpeditionLock entity.
+func (m *ExpeditionMapMutation) ClearLocks() {
+	m.clearedlocks = true
+}
+
+// LocksCleared reports if the "locks" edge to the ExpeditionLock entity was cleared.
+func (m *ExpeditionMapMutation) LocksCleared() bool {
+	return m.clearedlocks
+}
+
+// RemoveLockIDs removes the "locks" edge to the ExpeditionLock entity by IDs.
+func (m *ExpeditionMapMutation) RemoveLockIDs(ids ...int) {
+	if m.removedlocks == nil {
+		m.removedlocks = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.locks, ids[i])
+		m.removedlocks[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedLocks returns the removed IDs of the "locks" edge to the ExpeditionLock entity.
+func (m *ExpeditionMapMutation) RemovedLocksIDs() (ids []int) {
+	for id := range m.removedlocks {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// LocksIDs returns the "locks" edge IDs in the mutation.
+func (m *ExpeditionMapMutation) LocksIDs() (ids []int) {
+	for id := range m.locks {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetLocks resets all changes to the "locks" edge.
+func (m *ExpeditionMapMutation) ResetLocks() {
+	m.locks = nil
+	m.clearedlocks = false
+	m.removedlocks = nil
+}
+
+// Where appends a list predicates to the ExpeditionMapMutation builder.
+func (m *ExpeditionMapMutation) Where(ps ...predicate.ExpeditionMap) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the ExpeditionMapMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *ExpeditionMapMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.ExpeditionMap, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *ExpeditionMapMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *ExpeditionMapMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (ExpeditionMap).
+func (m *ExpeditionMapMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *ExpeditionMapMutation) Fields() []string {
+	fields := make([]string, 0, 4)
+	if m.name != nil {
+		fields = append(fields, expeditionmap.FieldName)
+	}
+	if m.rows != nil {
+		fields = append(fields, expeditionmap.FieldRows)
+	}
+	if m.start_x != nil {
+		fields = append(fields, expeditionmap.FieldStartX)
+	}
+	if m.start_y != nil {
+		fields = append(fields, expeditionmap.FieldStartY)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *ExpeditionMapMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case expeditionmap.FieldName:
+		return m.Name()
+	case expeditionmap.FieldRows:
+		return m.Rows()
+	case expeditionmap.FieldStartX:
+		return m.StartX()
+	case expeditionmap.FieldStartY:
+		return m.StartY()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *ExpeditionMapMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case expeditionmap.FieldName:
+		return m.OldName(ctx)
+	case expeditionmap.FieldRows:
+		return m.OldRows(ctx)
+	case expeditionmap.FieldStartX:
+		return m.OldStartX(ctx)
+	case expeditionmap.FieldStartY:
+		return m.OldStartY(ctx)
+	}
+	return nil, fmt.Errorf("unknown ExpeditionMap field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ExpeditionMapMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case expeditionmap.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	case expeditionmap.FieldRows:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRows(v)
+		return nil
+	case expeditionmap.FieldStartX:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStartX(v)
+		return nil
+	case expeditionmap.FieldStartY:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStartY(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ExpeditionMap field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *ExpeditionMapMutation) AddedFields() []string {
+	var fields []string
+	if m.addstart_x != nil {
+		fields = append(fields, expeditionmap.FieldStartX)
+	}
+	if m.addstart_y != nil {
+		fields = append(fields, expeditionmap.FieldStartY)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *ExpeditionMapMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case expeditionmap.FieldStartX:
+		return m.AddedStartX()
+	case expeditionmap.FieldStartY:
+		return m.AddedStartY()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ExpeditionMapMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case expeditionmap.FieldStartX:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddStartX(v)
+		return nil
+	case expeditionmap.FieldStartY:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddStartY(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ExpeditionMap numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *ExpeditionMapMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *ExpeditionMapMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *ExpeditionMapMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown ExpeditionMap nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *ExpeditionMapMutation) ResetField(name string) error {
+	switch name {
+	case expeditionmap.FieldName:
+		m.ResetName()
+		return nil
+	case expeditionmap.FieldRows:
+		m.ResetRows()
+		return nil
+	case expeditionmap.FieldStartX:
+		m.ResetStartX()
+		return nil
+	case expeditionmap.FieldStartY:
+		m.ResetStartY()
+		return nil
+	}
+	return fmt.Errorf("unknown ExpeditionMap field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *ExpeditionMapMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.places != nil {
+		edges = append(edges, expeditionmap.EdgePlaces)
+	}
+	if m.locks != nil {
+		edges = append(edges, expeditionmap.EdgeLocks)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *ExpeditionMapMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case expeditionmap.EdgePlaces:
+		ids := make([]ent.Value, 0, len(m.places))
+		for id := range m.places {
+			ids = append(ids, id)
+		}
+		return ids
+	case expeditionmap.EdgeLocks:
+		ids := make([]ent.Value, 0, len(m.locks))
+		for id := range m.locks {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *ExpeditionMapMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.removedplaces != nil {
+		edges = append(edges, expeditionmap.EdgePlaces)
+	}
+	if m.removedlocks != nil {
+		edges = append(edges, expeditionmap.EdgeLocks)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *ExpeditionMapMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case expeditionmap.EdgePlaces:
+		ids := make([]ent.Value, 0, len(m.removedplaces))
+		for id := range m.removedplaces {
+			ids = append(ids, id)
+		}
+		return ids
+	case expeditionmap.EdgeLocks:
+		ids := make([]ent.Value, 0, len(m.removedlocks))
+		for id := range m.removedlocks {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *ExpeditionMapMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedplaces {
+		edges = append(edges, expeditionmap.EdgePlaces)
+	}
+	if m.clearedlocks {
+		edges = append(edges, expeditionmap.EdgeLocks)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *ExpeditionMapMutation) EdgeCleared(name string) bool {
+	switch name {
+	case expeditionmap.EdgePlaces:
+		return m.clearedplaces
+	case expeditionmap.EdgeLocks:
+		return m.clearedlocks
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *ExpeditionMapMutation) ClearEdge(name string) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown ExpeditionMap unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *ExpeditionMapMutation) ResetEdge(name string) error {
+	switch name {
+	case expeditionmap.EdgePlaces:
+		m.ResetPlaces()
+		return nil
+	case expeditionmap.EdgeLocks:
+		m.ResetLocks()
+		return nil
+	}
+	return fmt.Errorf("unknown ExpeditionMap edge %s", name)
+}
+
+// ExpeditionPlaceMutation represents an operation that mutates the ExpeditionPlace nodes in the graph.
+type ExpeditionPlaceMutation struct {
+	config
+	op             Op
+	typ            string
+	id             *int
+	name           *string
+	x              *int
+	addx           *int
+	y              *int
+	addy           *int
+	building       *string
+	stat           *expeditionplace.Stat
+	clearedFields  map[string]struct{}
+	_map           *int
+	cleared_map    bool
+	chances        map[int]struct{}
+	removedchances map[int]struct{}
+	clearedchances bool
+	done           bool
+	oldValue       func(context.Context) (*ExpeditionPlace, error)
+	predicates     []predicate.ExpeditionPlace
+}
+
+var _ ent.Mutation = (*ExpeditionPlaceMutation)(nil)
+
+// expeditionplaceOption allows management of the mutation configuration using functional options.
+type expeditionplaceOption func(*ExpeditionPlaceMutation)
+
+// newExpeditionPlaceMutation creates new mutation for the ExpeditionPlace entity.
+func newExpeditionPlaceMutation(c config, op Op, opts ...expeditionplaceOption) *ExpeditionPlaceMutation {
+	m := &ExpeditionPlaceMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeExpeditionPlace,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withExpeditionPlaceID sets the ID field of the mutation.
+func withExpeditionPlaceID(id int) expeditionplaceOption {
+	return func(m *ExpeditionPlaceMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *ExpeditionPlace
+		)
+		m.oldValue = func(ctx context.Context) (*ExpeditionPlace, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().ExpeditionPlace.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withExpeditionPlace sets the old ExpeditionPlace of the mutation.
+func withExpeditionPlace(node *ExpeditionPlace) expeditionplaceOption {
+	return func(m *ExpeditionPlaceMutation) {
+		m.oldValue = func(context.Context) (*ExpeditionPlace, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m ExpeditionPlaceMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m ExpeditionPlaceMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *ExpeditionPlaceMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *ExpeditionPlaceMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().ExpeditionPlace.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetName sets the "name" field.
+func (m *ExpeditionPlaceMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *ExpeditionPlaceMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the ExpeditionPlace entity.
+// If the ExpeditionPlace object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ExpeditionPlaceMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *ExpeditionPlaceMutation) ResetName() {
+	m.name = nil
+}
+
+// SetX sets the "x" field.
+func (m *ExpeditionPlaceMutation) SetX(i int) {
+	m.x = &i
+	m.addx = nil
+}
+
+// X returns the value of the "x" field in the mutation.
+func (m *ExpeditionPlaceMutation) X() (r int, exists bool) {
+	v := m.x
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldX returns the old "x" field's value of the ExpeditionPlace entity.
+// If the ExpeditionPlace object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ExpeditionPlaceMutation) OldX(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldX is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldX requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldX: %w", err)
+	}
+	return oldValue.X, nil
+}
+
+// AddX adds i to the "x" field.
+func (m *ExpeditionPlaceMutation) AddX(i int) {
+	if m.addx != nil {
+		*m.addx += i
+	} else {
+		m.addx = &i
+	}
+}
+
+// AddedX returns the value that was added to the "x" field in this mutation.
+func (m *ExpeditionPlaceMutation) AddedX() (r int, exists bool) {
+	v := m.addx
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetX resets all changes to the "x" field.
+func (m *ExpeditionPlaceMutation) ResetX() {
+	m.x = nil
+	m.addx = nil
+}
+
+// SetY sets the "y" field.
+func (m *ExpeditionPlaceMutation) SetY(i int) {
+	m.y = &i
+	m.addy = nil
+}
+
+// Y returns the value of the "y" field in the mutation.
+func (m *ExpeditionPlaceMutation) Y() (r int, exists bool) {
+	v := m.y
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldY returns the old "y" field's value of the ExpeditionPlace entity.
+// If the ExpeditionPlace object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ExpeditionPlaceMutation) OldY(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldY is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldY requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldY: %w", err)
+	}
+	return oldValue.Y, nil
+}
+
+// AddY adds i to the "y" field.
+func (m *ExpeditionPlaceMutation) AddY(i int) {
+	if m.addy != nil {
+		*m.addy += i
+	} else {
+		m.addy = &i
+	}
+}
+
+// AddedY returns the value that was added to the "y" field in this mutation.
+func (m *ExpeditionPlaceMutation) AddedY() (r int, exists bool) {
+	v := m.addy
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetY resets all changes to the "y" field.
+func (m *ExpeditionPlaceMutation) ResetY() {
+	m.y = nil
+	m.addy = nil
+}
+
+// SetBuilding sets the "building" field.
+func (m *ExpeditionPlaceMutation) SetBuilding(s string) {
+	m.building = &s
+}
+
+// Building returns the value of the "building" field in the mutation.
+func (m *ExpeditionPlaceMutation) Building() (r string, exists bool) {
+	v := m.building
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldBuilding returns the old "building" field's value of the ExpeditionPlace entity.
+// If the ExpeditionPlace object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ExpeditionPlaceMutation) OldBuilding(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldBuilding is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldBuilding requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldBuilding: %w", err)
+	}
+	return oldValue.Building, nil
+}
+
+// ResetBuilding resets all changes to the "building" field.
+func (m *ExpeditionPlaceMutation) ResetBuilding() {
+	m.building = nil
+}
+
+// SetStat sets the "stat" field.
+func (m *ExpeditionPlaceMutation) SetStat(e expeditionplace.Stat) {
+	m.stat = &e
+}
+
+// Stat returns the value of the "stat" field in the mutation.
+func (m *ExpeditionPlaceMutation) Stat() (r expeditionplace.Stat, exists bool) {
+	v := m.stat
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStat returns the old "stat" field's value of the ExpeditionPlace entity.
+// If the ExpeditionPlace object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ExpeditionPlaceMutation) OldStat(ctx context.Context) (v expeditionplace.Stat, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStat is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStat requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStat: %w", err)
+	}
+	return oldValue.Stat, nil
+}
+
+// ResetStat resets all changes to the "stat" field.
+func (m *ExpeditionPlaceMutation) ResetStat() {
+	m.stat = nil
+}
+
+// SetMapID sets the "map" edge to the ExpeditionMap entity by id.
+func (m *ExpeditionPlaceMutation) SetMapID(id int) {
+	m._map = &id
+}
+
+// ClearMap clears the "map" edge to the ExpeditionMap entity.
+func (m *ExpeditionPlaceMutation) ClearMap() {
+	m.cleared_map = true
+}
+
+// MapCleared reports if the "map" edge to the ExpeditionMap entity was cleared.
+func (m *ExpeditionPlaceMutation) MapCleared() bool {
+	return m.cleared_map
+}
+
+// MapID returns the "map" edge ID in the mutation.
+func (m *ExpeditionPlaceMutation) MapID() (id int, exists bool) {
+	if m._map != nil {
+		return *m._map, true
+	}
+	return
+}
+
+// MapIDs returns the "map" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// MapID instead. It exists only for internal usage by the builders.
+func (m *ExpeditionPlaceMutation) MapIDs() (ids []int) {
+	if id := m._map; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetMap resets all changes to the "map" edge.
+func (m *ExpeditionPlaceMutation) ResetMap() {
+	m._map = nil
+	m.cleared_map = false
+}
+
+// AddChanceIDs adds the "chances" edge to the LootChance entity by ids.
+func (m *ExpeditionPlaceMutation) AddChanceIDs(ids ...int) {
+	if m.chances == nil {
+		m.chances = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.chances[ids[i]] = struct{}{}
+	}
+}
+
+// ClearChances clears the "chances" edge to the LootChance entity.
+func (m *ExpeditionPlaceMutation) ClearChances() {
+	m.clearedchances = true
+}
+
+// ChancesCleared reports if the "chances" edge to the LootChance entity was cleared.
+func (m *ExpeditionPlaceMutation) ChancesCleared() bool {
+	return m.clearedchances
+}
+
+// RemoveChanceIDs removes the "chances" edge to the LootChance entity by IDs.
+func (m *ExpeditionPlaceMutation) RemoveChanceIDs(ids ...int) {
+	if m.removedchances == nil {
+		m.removedchances = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.chances, ids[i])
+		m.removedchances[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedChances returns the removed IDs of the "chances" edge to the LootChance entity.
+func (m *ExpeditionPlaceMutation) RemovedChancesIDs() (ids []int) {
+	for id := range m.removedchances {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ChancesIDs returns the "chances" edge IDs in the mutation.
+func (m *ExpeditionPlaceMutation) ChancesIDs() (ids []int) {
+	for id := range m.chances {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetChances resets all changes to the "chances" edge.
+func (m *ExpeditionPlaceMutation) ResetChances() {
+	m.chances = nil
+	m.clearedchances = false
+	m.removedchances = nil
+}
+
+// Where appends a list predicates to the ExpeditionPlaceMutation builder.
+func (m *ExpeditionPlaceMutation) Where(ps ...predicate.ExpeditionPlace) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the ExpeditionPlaceMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *ExpeditionPlaceMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.ExpeditionPlace, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *ExpeditionPlaceMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *ExpeditionPlaceMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (ExpeditionPlace).
+func (m *ExpeditionPlaceMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *ExpeditionPlaceMutation) Fields() []string {
+	fields := make([]string, 0, 5)
+	if m.name != nil {
+		fields = append(fields, expeditionplace.FieldName)
+	}
+	if m.x != nil {
+		fields = append(fields, expeditionplace.FieldX)
+	}
+	if m.y != nil {
+		fields = append(fields, expeditionplace.FieldY)
+	}
+	if m.building != nil {
+		fields = append(fields, expeditionplace.FieldBuilding)
+	}
+	if m.stat != nil {
+		fields = append(fields, expeditionplace.FieldStat)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *ExpeditionPlaceMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case expeditionplace.FieldName:
+		return m.Name()
+	case expeditionplace.FieldX:
+		return m.X()
+	case expeditionplace.FieldY:
+		return m.Y()
+	case expeditionplace.FieldBuilding:
+		return m.Building()
+	case expeditionplace.FieldStat:
+		return m.Stat()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *ExpeditionPlaceMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case expeditionplace.FieldName:
+		return m.OldName(ctx)
+	case expeditionplace.FieldX:
+		return m.OldX(ctx)
+	case expeditionplace.FieldY:
+		return m.OldY(ctx)
+	case expeditionplace.FieldBuilding:
+		return m.OldBuilding(ctx)
+	case expeditionplace.FieldStat:
+		return m.OldStat(ctx)
+	}
+	return nil, fmt.Errorf("unknown ExpeditionPlace field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ExpeditionPlaceMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case expeditionplace.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	case expeditionplace.FieldX:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetX(v)
+		return nil
+	case expeditionplace.FieldY:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetY(v)
+		return nil
+	case expeditionplace.FieldBuilding:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetBuilding(v)
+		return nil
+	case expeditionplace.FieldStat:
+		v, ok := value.(expeditionplace.Stat)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStat(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ExpeditionPlace field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *ExpeditionPlaceMutation) AddedFields() []string {
+	var fields []string
+	if m.addx != nil {
+		fields = append(fields, expeditionplace.FieldX)
+	}
+	if m.addy != nil {
+		fields = append(fields, expeditionplace.FieldY)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *ExpeditionPlaceMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case expeditionplace.FieldX:
+		return m.AddedX()
+	case expeditionplace.FieldY:
+		return m.AddedY()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ExpeditionPlaceMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case expeditionplace.FieldX:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddX(v)
+		return nil
+	case expeditionplace.FieldY:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddY(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ExpeditionPlace numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *ExpeditionPlaceMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *ExpeditionPlaceMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *ExpeditionPlaceMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown ExpeditionPlace nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *ExpeditionPlaceMutation) ResetField(name string) error {
+	switch name {
+	case expeditionplace.FieldName:
+		m.ResetName()
+		return nil
+	case expeditionplace.FieldX:
+		m.ResetX()
+		return nil
+	case expeditionplace.FieldY:
+		m.ResetY()
+		return nil
+	case expeditionplace.FieldBuilding:
+		m.ResetBuilding()
+		return nil
+	case expeditionplace.FieldStat:
+		m.ResetStat()
+		return nil
+	}
+	return fmt.Errorf("unknown ExpeditionPlace field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *ExpeditionPlaceMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m._map != nil {
+		edges = append(edges, expeditionplace.EdgeMap)
+	}
+	if m.chances != nil {
+		edges = append(edges, expeditionplace.EdgeChances)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *ExpeditionPlaceMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case expeditionplace.EdgeMap:
+		if id := m._map; id != nil {
+			return []ent.Value{*id}
+		}
+	case expeditionplace.EdgeChances:
+		ids := make([]ent.Value, 0, len(m.chances))
+		for id := range m.chances {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *ExpeditionPlaceMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.removedchances != nil {
+		edges = append(edges, expeditionplace.EdgeChances)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *ExpeditionPlaceMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case expeditionplace.EdgeChances:
+		ids := make([]ent.Value, 0, len(m.removedchances))
+		for id := range m.removedchances {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *ExpeditionPlaceMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.cleared_map {
+		edges = append(edges, expeditionplace.EdgeMap)
+	}
+	if m.clearedchances {
+		edges = append(edges, expeditionplace.EdgeChances)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *ExpeditionPlaceMutation) EdgeCleared(name string) bool {
+	switch name {
+	case expeditionplace.EdgeMap:
+		return m.cleared_map
+	case expeditionplace.EdgeChances:
+		return m.clearedchances
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *ExpeditionPlaceMutation) ClearEdge(name string) error {
+	switch name {
+	case expeditionplace.EdgeMap:
+		m.ClearMap()
+		return nil
+	}
+	return fmt.Errorf("unknown ExpeditionPlace unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *ExpeditionPlaceMutation) ResetEdge(name string) error {
+	switch name {
+	case expeditionplace.EdgeMap:
+		m.ResetMap()
+		return nil
+	case expeditionplace.EdgeChances:
+		m.ResetChances()
+		return nil
+	}
+	return fmt.Errorf("unknown ExpeditionPlace edge %s", name)
+}
+
 // GenusMutation represents an operation that mutates the Genus nodes in the graph.
 type GenusMutation struct {
 	config
@@ -2668,6 +4775,809 @@ func (m *ItemMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *ItemMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown Item edge %s", name)
+}
+
+// LootChanceMutation represents an operation that mutates the LootChance nodes in the graph.
+type LootChanceMutation struct {
+	config
+	op            Op
+	typ           string
+	id            *int
+	good          *bool
+	tier          *int
+	addtier       *int
+	slot          *int
+	addslot       *int
+	min_stat      *int
+	addmin_stat   *int
+	pct           *float64
+	addpct        *float64
+	clearedFields map[string]struct{}
+	place         *int
+	clearedplace  bool
+	item          *int
+	cleareditem   bool
+	done          bool
+	oldValue      func(context.Context) (*LootChance, error)
+	predicates    []predicate.LootChance
+}
+
+var _ ent.Mutation = (*LootChanceMutation)(nil)
+
+// lootchanceOption allows management of the mutation configuration using functional options.
+type lootchanceOption func(*LootChanceMutation)
+
+// newLootChanceMutation creates new mutation for the LootChance entity.
+func newLootChanceMutation(c config, op Op, opts ...lootchanceOption) *LootChanceMutation {
+	m := &LootChanceMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeLootChance,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withLootChanceID sets the ID field of the mutation.
+func withLootChanceID(id int) lootchanceOption {
+	return func(m *LootChanceMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *LootChance
+		)
+		m.oldValue = func(ctx context.Context) (*LootChance, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().LootChance.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withLootChance sets the old LootChance of the mutation.
+func withLootChance(node *LootChance) lootchanceOption {
+	return func(m *LootChanceMutation) {
+		m.oldValue = func(context.Context) (*LootChance, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m LootChanceMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m LootChanceMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *LootChanceMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *LootChanceMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().LootChance.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetGood sets the "good" field.
+func (m *LootChanceMutation) SetGood(b bool) {
+	m.good = &b
+}
+
+// Good returns the value of the "good" field in the mutation.
+func (m *LootChanceMutation) Good() (r bool, exists bool) {
+	v := m.good
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldGood returns the old "good" field's value of the LootChance entity.
+// If the LootChance object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *LootChanceMutation) OldGood(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldGood is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldGood requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldGood: %w", err)
+	}
+	return oldValue.Good, nil
+}
+
+// ResetGood resets all changes to the "good" field.
+func (m *LootChanceMutation) ResetGood() {
+	m.good = nil
+}
+
+// SetTier sets the "tier" field.
+func (m *LootChanceMutation) SetTier(i int) {
+	m.tier = &i
+	m.addtier = nil
+}
+
+// Tier returns the value of the "tier" field in the mutation.
+func (m *LootChanceMutation) Tier() (r int, exists bool) {
+	v := m.tier
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTier returns the old "tier" field's value of the LootChance entity.
+// If the LootChance object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *LootChanceMutation) OldTier(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTier is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTier requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTier: %w", err)
+	}
+	return oldValue.Tier, nil
+}
+
+// AddTier adds i to the "tier" field.
+func (m *LootChanceMutation) AddTier(i int) {
+	if m.addtier != nil {
+		*m.addtier += i
+	} else {
+		m.addtier = &i
+	}
+}
+
+// AddedTier returns the value that was added to the "tier" field in this mutation.
+func (m *LootChanceMutation) AddedTier() (r int, exists bool) {
+	v := m.addtier
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetTier resets all changes to the "tier" field.
+func (m *LootChanceMutation) ResetTier() {
+	m.tier = nil
+	m.addtier = nil
+}
+
+// SetSlot sets the "slot" field.
+func (m *LootChanceMutation) SetSlot(i int) {
+	m.slot = &i
+	m.addslot = nil
+}
+
+// Slot returns the value of the "slot" field in the mutation.
+func (m *LootChanceMutation) Slot() (r int, exists bool) {
+	v := m.slot
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSlot returns the old "slot" field's value of the LootChance entity.
+// If the LootChance object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *LootChanceMutation) OldSlot(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSlot is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSlot requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSlot: %w", err)
+	}
+	return oldValue.Slot, nil
+}
+
+// AddSlot adds i to the "slot" field.
+func (m *LootChanceMutation) AddSlot(i int) {
+	if m.addslot != nil {
+		*m.addslot += i
+	} else {
+		m.addslot = &i
+	}
+}
+
+// AddedSlot returns the value that was added to the "slot" field in this mutation.
+func (m *LootChanceMutation) AddedSlot() (r int, exists bool) {
+	v := m.addslot
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSlot resets all changes to the "slot" field.
+func (m *LootChanceMutation) ResetSlot() {
+	m.slot = nil
+	m.addslot = nil
+}
+
+// SetMinStat sets the "min_stat" field.
+func (m *LootChanceMutation) SetMinStat(i int) {
+	m.min_stat = &i
+	m.addmin_stat = nil
+}
+
+// MinStat returns the value of the "min_stat" field in the mutation.
+func (m *LootChanceMutation) MinStat() (r int, exists bool) {
+	v := m.min_stat
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMinStat returns the old "min_stat" field's value of the LootChance entity.
+// If the LootChance object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *LootChanceMutation) OldMinStat(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMinStat is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMinStat requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMinStat: %w", err)
+	}
+	return oldValue.MinStat, nil
+}
+
+// AddMinStat adds i to the "min_stat" field.
+func (m *LootChanceMutation) AddMinStat(i int) {
+	if m.addmin_stat != nil {
+		*m.addmin_stat += i
+	} else {
+		m.addmin_stat = &i
+	}
+}
+
+// AddedMinStat returns the value that was added to the "min_stat" field in this mutation.
+func (m *LootChanceMutation) AddedMinStat() (r int, exists bool) {
+	v := m.addmin_stat
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetMinStat resets all changes to the "min_stat" field.
+func (m *LootChanceMutation) ResetMinStat() {
+	m.min_stat = nil
+	m.addmin_stat = nil
+}
+
+// SetPct sets the "pct" field.
+func (m *LootChanceMutation) SetPct(f float64) {
+	m.pct = &f
+	m.addpct = nil
+}
+
+// Pct returns the value of the "pct" field in the mutation.
+func (m *LootChanceMutation) Pct() (r float64, exists bool) {
+	v := m.pct
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPct returns the old "pct" field's value of the LootChance entity.
+// If the LootChance object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *LootChanceMutation) OldPct(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPct is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPct requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPct: %w", err)
+	}
+	return oldValue.Pct, nil
+}
+
+// AddPct adds f to the "pct" field.
+func (m *LootChanceMutation) AddPct(f float64) {
+	if m.addpct != nil {
+		*m.addpct += f
+	} else {
+		m.addpct = &f
+	}
+}
+
+// AddedPct returns the value that was added to the "pct" field in this mutation.
+func (m *LootChanceMutation) AddedPct() (r float64, exists bool) {
+	v := m.addpct
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetPct resets all changes to the "pct" field.
+func (m *LootChanceMutation) ResetPct() {
+	m.pct = nil
+	m.addpct = nil
+}
+
+// SetPlaceID sets the "place" edge to the ExpeditionPlace entity by id.
+func (m *LootChanceMutation) SetPlaceID(id int) {
+	m.place = &id
+}
+
+// ClearPlace clears the "place" edge to the ExpeditionPlace entity.
+func (m *LootChanceMutation) ClearPlace() {
+	m.clearedplace = true
+}
+
+// PlaceCleared reports if the "place" edge to the ExpeditionPlace entity was cleared.
+func (m *LootChanceMutation) PlaceCleared() bool {
+	return m.clearedplace
+}
+
+// PlaceID returns the "place" edge ID in the mutation.
+func (m *LootChanceMutation) PlaceID() (id int, exists bool) {
+	if m.place != nil {
+		return *m.place, true
+	}
+	return
+}
+
+// PlaceIDs returns the "place" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// PlaceID instead. It exists only for internal usage by the builders.
+func (m *LootChanceMutation) PlaceIDs() (ids []int) {
+	if id := m.place; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetPlace resets all changes to the "place" edge.
+func (m *LootChanceMutation) ResetPlace() {
+	m.place = nil
+	m.clearedplace = false
+}
+
+// SetItemID sets the "item" edge to the Item entity by id.
+func (m *LootChanceMutation) SetItemID(id int) {
+	m.item = &id
+}
+
+// ClearItem clears the "item" edge to the Item entity.
+func (m *LootChanceMutation) ClearItem() {
+	m.cleareditem = true
+}
+
+// ItemCleared reports if the "item" edge to the Item entity was cleared.
+func (m *LootChanceMutation) ItemCleared() bool {
+	return m.cleareditem
+}
+
+// ItemID returns the "item" edge ID in the mutation.
+func (m *LootChanceMutation) ItemID() (id int, exists bool) {
+	if m.item != nil {
+		return *m.item, true
+	}
+	return
+}
+
+// ItemIDs returns the "item" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ItemID instead. It exists only for internal usage by the builders.
+func (m *LootChanceMutation) ItemIDs() (ids []int) {
+	if id := m.item; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetItem resets all changes to the "item" edge.
+func (m *LootChanceMutation) ResetItem() {
+	m.item = nil
+	m.cleareditem = false
+}
+
+// Where appends a list predicates to the LootChanceMutation builder.
+func (m *LootChanceMutation) Where(ps ...predicate.LootChance) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the LootChanceMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *LootChanceMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.LootChance, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *LootChanceMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *LootChanceMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (LootChance).
+func (m *LootChanceMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *LootChanceMutation) Fields() []string {
+	fields := make([]string, 0, 5)
+	if m.good != nil {
+		fields = append(fields, lootchance.FieldGood)
+	}
+	if m.tier != nil {
+		fields = append(fields, lootchance.FieldTier)
+	}
+	if m.slot != nil {
+		fields = append(fields, lootchance.FieldSlot)
+	}
+	if m.min_stat != nil {
+		fields = append(fields, lootchance.FieldMinStat)
+	}
+	if m.pct != nil {
+		fields = append(fields, lootchance.FieldPct)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *LootChanceMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case lootchance.FieldGood:
+		return m.Good()
+	case lootchance.FieldTier:
+		return m.Tier()
+	case lootchance.FieldSlot:
+		return m.Slot()
+	case lootchance.FieldMinStat:
+		return m.MinStat()
+	case lootchance.FieldPct:
+		return m.Pct()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *LootChanceMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case lootchance.FieldGood:
+		return m.OldGood(ctx)
+	case lootchance.FieldTier:
+		return m.OldTier(ctx)
+	case lootchance.FieldSlot:
+		return m.OldSlot(ctx)
+	case lootchance.FieldMinStat:
+		return m.OldMinStat(ctx)
+	case lootchance.FieldPct:
+		return m.OldPct(ctx)
+	}
+	return nil, fmt.Errorf("unknown LootChance field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *LootChanceMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case lootchance.FieldGood:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetGood(v)
+		return nil
+	case lootchance.FieldTier:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTier(v)
+		return nil
+	case lootchance.FieldSlot:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSlot(v)
+		return nil
+	case lootchance.FieldMinStat:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMinStat(v)
+		return nil
+	case lootchance.FieldPct:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPct(v)
+		return nil
+	}
+	return fmt.Errorf("unknown LootChance field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *LootChanceMutation) AddedFields() []string {
+	var fields []string
+	if m.addtier != nil {
+		fields = append(fields, lootchance.FieldTier)
+	}
+	if m.addslot != nil {
+		fields = append(fields, lootchance.FieldSlot)
+	}
+	if m.addmin_stat != nil {
+		fields = append(fields, lootchance.FieldMinStat)
+	}
+	if m.addpct != nil {
+		fields = append(fields, lootchance.FieldPct)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *LootChanceMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case lootchance.FieldTier:
+		return m.AddedTier()
+	case lootchance.FieldSlot:
+		return m.AddedSlot()
+	case lootchance.FieldMinStat:
+		return m.AddedMinStat()
+	case lootchance.FieldPct:
+		return m.AddedPct()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *LootChanceMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case lootchance.FieldTier:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTier(v)
+		return nil
+	case lootchance.FieldSlot:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSlot(v)
+		return nil
+	case lootchance.FieldMinStat:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddMinStat(v)
+		return nil
+	case lootchance.FieldPct:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPct(v)
+		return nil
+	}
+	return fmt.Errorf("unknown LootChance numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *LootChanceMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *LootChanceMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *LootChanceMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown LootChance nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *LootChanceMutation) ResetField(name string) error {
+	switch name {
+	case lootchance.FieldGood:
+		m.ResetGood()
+		return nil
+	case lootchance.FieldTier:
+		m.ResetTier()
+		return nil
+	case lootchance.FieldSlot:
+		m.ResetSlot()
+		return nil
+	case lootchance.FieldMinStat:
+		m.ResetMinStat()
+		return nil
+	case lootchance.FieldPct:
+		m.ResetPct()
+		return nil
+	}
+	return fmt.Errorf("unknown LootChance field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *LootChanceMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.place != nil {
+		edges = append(edges, lootchance.EdgePlace)
+	}
+	if m.item != nil {
+		edges = append(edges, lootchance.EdgeItem)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *LootChanceMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case lootchance.EdgePlace:
+		if id := m.place; id != nil {
+			return []ent.Value{*id}
+		}
+	case lootchance.EdgeItem:
+		if id := m.item; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *LootChanceMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *LootChanceMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *LootChanceMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedplace {
+		edges = append(edges, lootchance.EdgePlace)
+	}
+	if m.cleareditem {
+		edges = append(edges, lootchance.EdgeItem)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *LootChanceMutation) EdgeCleared(name string) bool {
+	switch name {
+	case lootchance.EdgePlace:
+		return m.clearedplace
+	case lootchance.EdgeItem:
+		return m.cleareditem
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *LootChanceMutation) ClearEdge(name string) error {
+	switch name {
+	case lootchance.EdgePlace:
+		m.ClearPlace()
+		return nil
+	case lootchance.EdgeItem:
+		m.ClearItem()
+		return nil
+	}
+	return fmt.Errorf("unknown LootChance unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *LootChanceMutation) ResetEdge(name string) error {
+	switch name {
+	case lootchance.EdgePlace:
+		m.ResetPlace()
+		return nil
+	case lootchance.EdgeItem:
+		m.ResetItem()
+		return nil
+	}
+	return fmt.Errorf("unknown LootChance edge %s", name)
 }
 
 // MoveMutation represents an operation that mutates the Move nodes in the graph.

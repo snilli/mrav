@@ -28,14 +28,20 @@ type Lock struct {
 	MinINT int
 }
 
-// Spot is a place where the monster can search, and what a search there is worth to it on average, in gold. Loot is
-// what a search there can turn up, from which Value is worked out for the monster that goes; it is nil where Value
-// is given as it is.
+// Spot is a place where the monster can search, in the building that it is, and what a search there is worth to it on
+// average, in gold: what the data says it turns up, for the monster that is to go.
 type Spot struct {
-	Name  string
-	At    Point
-	Value float64
-	Loot  *Loot
+	Name     string
+	At       Point
+	Building string
+	Value    float64
+}
+
+// Searcher is what decides what a search turns up for a monster: the intelligence and the skill that a building is
+// searched by, and whether its nature is good, which the game takes it to be above 0.
+type Searcher struct {
+	Intelligence, Skill int
+	GoodNature          bool
 }
 
 // ExpeditionMap is the map of an expedition: the tiles row by row, where the monster starts, its places, and the

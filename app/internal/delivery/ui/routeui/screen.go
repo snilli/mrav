@@ -18,9 +18,6 @@ import (
 	"app/internal/delivery/ui/status"
 )
 
-// Maps are the maps of expeditions that a route is planned on. There are none where no map is known.
-type Maps func() []domain.ExpeditionMap
-
 // A tile of the table is cellSize on a side, with cellGap between.
 const (
 	cellSize = 17
@@ -189,9 +186,8 @@ func newBox(v View, open bool) *box {
 
 // Screen is the Route panel.
 type Screen struct {
-	svc  profile.ProfileService
-	maps Maps
-	all  bool // every map is shown, as the demo does; otherwise only the one whose trip the monster is on
+	svc profile.ProfileService
+	all bool // every map is shown, as the demo does; otherwise only the one whose trip the monster is on
 
 	status  *widget.Label
 	list    *fyne.Container // the panel of each map
@@ -202,10 +198,9 @@ type Screen struct {
 
 // NewScreen is the Route panel of the maps given. In a game it shows the map of the trip that the monster is on,
 // when it is on one; with all, as the demo has it, it shows them all.
-func NewScreen(svc profile.ProfileService, maps Maps, all bool) *Screen {
+func NewScreen(svc profile.ProfileService, all bool) *Screen {
 	s := &Screen{
 		svc:    svc,
-		maps:   maps,
 		all:    all,
 		status: widget.NewLabelWithStyle("", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
 		list:   container.NewVBox(),
@@ -221,13 +216,8 @@ func (s *Screen) Content() fyne.CanvasObject { return s.content }
 
 // Load plans the routes for the monster as it is now and shows them. It is safe to call from any goroutine.
 func (s *Screen) Load(ctx context.Context) {
-	maps := s.maps()
-	if len(maps) == 0 {
-		fyne.Do(s.content.Hide)
-		return
-	}
 	p, err := s.svc.Current(ctx)
-	fyne.Do(func() { s.apply(maps, p, err) })
+	fyne.Do(func() { s.apply(p.Maps, p, err) })
 }
 
 // apply shows the routes on the maps, or why there are none. It must run on the UI thread.

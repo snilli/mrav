@@ -14,9 +14,11 @@ import (
 	"orm/ent"
 )
 
-// Client is the Ent client every adapter queries through.
+// Client is the Ent client every adapter queries through. DB is the connection under it, for the query that Ent's
+// builder does not say well.
 type Client struct {
 	*ent.Client
+	DB *sql.DB
 }
 
 const pragmas = "_pragma=foreign_keys(1)&_pragma=busy_timeout(5000)"
@@ -48,7 +50,7 @@ func open(ctx context.Context, dsn string, maxConns int) (*Client, error) {
 		_ = db.Close()
 		return nil, fmt.Errorf("ping sqlite: %w", err)
 	}
-	return &Client{Client: ent.NewClient(ent.Driver(entsql.OpenDB(dialect.SQLite, db)))}, nil
+	return &Client{Client: ent.NewClient(ent.Driver(entsql.OpenDB(dialect.SQLite, db))), DB: db}, nil
 }
 
 // Close closes the Ent driver, which closes the *sql.DB.
