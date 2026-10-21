@@ -15,11 +15,11 @@ var steamGlyphsTSV string
 var steamGlyphs = parseGlyphs(steamGlyphsTSV)
 
 // parseGlyphs reads the table that is built into the program, so a line that is not a code and its text is a
-// mistake in the program and not in anything it was given.
+// mistake in the program and not in anything it was given. A line may end in CRLF, as git checks it out on Windows.
 func parseGlyphs(tsv string) map[int]string {
 	glyphs := map[int]string{}
 	for line := range strings.Lines(tsv) {
-		code, text, ok := strings.Cut(strings.TrimSuffix(line, "\n"), "\t")
+		code, text, ok := strings.Cut(strings.TrimRight(line, "\r\n"), "\t")
 		n, err := strconv.ParseUint(code, 16, 16)
 		if !ok || err != nil {
 			panic(fmt.Sprintf("gamememory: bad glyph line %q", line))
