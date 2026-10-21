@@ -104,6 +104,17 @@ var _ = Describe("newWindow", func() {
 		w := newWindow(a, p, nil)
 		Expect(w.Canvas().Size()).To(Equal(startSize))
 	})
+
+	It("asks to be no less high than minHeight, which is less than it opens at, so that it can be made smaller", func() {
+		a := test.NewTempApp(GinkgoTB())
+		p := newParts(a,
+			mockprofile.NewMockProfileService(GinkgoT()), mockmove.NewMockMoveService(GinkgoT()),
+			mocktraining.NewMockTrainingService(GinkgoT()), mockitem.NewMockItemService(GinkgoT()), nil)
+
+		w := newWindow(a, p, nil)
+		Expect(w.Content().MinSize().Height).To(BeNumerically(">=", minHeight))
+		Expect(minHeight).To(BeNumerically("<", startSize.Height))
+	})
 })
 
 var _ = Describe("loaders", func() {

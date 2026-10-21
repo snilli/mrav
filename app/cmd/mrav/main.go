@@ -4,11 +4,14 @@ package main
 import (
 	"context"
 	"fmt"
+	"image/color"
 	"runtime"
 	"time"
 
 	"fyne.io/fyne/v2"
 	fyneapp "fyne.io/fyne/v2/app"
+	"fyne.io/fyne/v2/canvas"
+	"fyne.io/fyne/v2/container"
 	"github.com/rs/zerolog/log"
 	"go.uber.org/fx"
 
@@ -154,13 +157,19 @@ func newDemo(_ fyne.App, svc move.MoveService, monsters *fakemonster.Source, pla
 }
 
 // startSize is what the window opens at: one column wide, and a height that the pages scroll to fit, so that it sits
-// beside the game and not over it. A button adds a column, and the window grows by its width.
-var startSize = fyne.NewSize(480, 640)
+// beside the game and not over it. A button adds a column, and the window grows by its width. The window is never
+// less high than minHeight, which Fyne knows only as the least that its content asks for.
+var (
+	startSize = fyne.NewSize(480, 800)
+	minHeight = float32(640)
+)
 
 func newWindow(a fyne.App, p shellui.Parts, demo *demoui.Panel) fyne.Window {
 	w := a.NewWindow("mrav " + version + " - Monster Rancher 2 Viewer")
 	p.Demo = demo
-	w.SetContent(shellui.New(w, p).Content())
+	floor := canvas.NewRectangle(color.Transparent)
+	floor.SetMinSize(fyne.NewSize(0, minHeight))
+	w.SetContent(container.NewStack(floor, shellui.New(w, p).Content()))
 	w.Resize(startSize)
 	return w
 }
