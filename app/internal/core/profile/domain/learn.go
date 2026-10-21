@@ -2,6 +2,7 @@ package domain
 
 import (
 	"cmp"
+	"math"
 	"slices"
 
 	monster "app/internal/core/monster/domain"
@@ -14,6 +15,9 @@ type Learn struct {
 	Move   movedomain.Move
 	Chance float64
 }
+
+// Shown says whether the chance is anything to one decimal: the calculator of legendcup.com writes a smaller one as 0%.
+func (l Learn) Shown() bool { return math.Round(l.Chance*10) > 0 }
 
 // LearnChances works out, for each place of the errantry in the order of the game, the moves that it may teach the monster as it
 // is now, in the order that the place tries them, each with its chance. A move that is learned, or whose sub-genus, nature or

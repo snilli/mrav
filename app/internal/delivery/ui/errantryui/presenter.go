@@ -82,7 +82,7 @@ func gainSegments(o domain.ErrantryOutlook) []profileui.Segment {
 func readyMoves(learn []domain.Learn, cells map[int]movedomain.Cell) []Ready {
 	var ready []Ready
 	for _, l := range learn {
-		if roundTenth(l.Chance) > 0 {
+		if l.Shown() {
 			ready = append(ready, Ready{
 				Cell:   cells[l.Move.MemorySlot],
 				Chance: profileui.Box{Text: chanceText(l.Chance), Tone: chanceTone(roundTenth(l.Chance))},

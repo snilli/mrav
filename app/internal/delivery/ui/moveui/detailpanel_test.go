@@ -19,7 +19,7 @@ var _ = Describe("Detail", func() {
 		slap := domain.Move{Name: "Slap", Kind: domain.KindPower, Guts: 18, Description: "Basic tech. Chains from 30 Pats."}
 
 		d.Show(domain.Cell{Move: &slap, CanLearn: true, Requirements: []domain.Requirement{
-			{Text: "Pow at least 400", Have: "421", Met: true, Stats: []monster.Stat{monster.Pow}},
+			{Text: "POW at least 400", Have: "421", Met: true, Stats: []monster.Stat{monster.Pow}},
 		}})
 
 		Expect(d.Name()).To(Equal("Slap"))

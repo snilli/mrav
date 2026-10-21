@@ -243,7 +243,7 @@ var _ = Describe("Screen", func() {
 	It("names the stats of a requirement in the colours of the stats, and says the rest in the colour of the text", func() {
 		g := grid()
 		g.Cells[0][1].Requirements = []domain.Requirement{
-			{Text: "Pow + Int at least 400", Have: "421", Stats: []monster.Stat{monster.Pow, monster.Int}},
+			{Text: "POW + INT at least 400", Have: "421", Stats: []monster.Stat{monster.Pow, monster.Int}},
 		}
 		s.apply(g, nil)
 		test.Tap(s.cells[0][1])
@@ -252,8 +252,8 @@ var _ = Describe("Screen", func() {
 		for _, seg := range s.detail.needs[0].colored.Segments() {
 			colours[seg.Text] = seg.Color
 		}
-		Expect(colours).To(HaveKeyWithValue("Pow", profileui.StatColors[monster.Pow]))
-		Expect(colours).To(HaveKeyWithValue("Int", profileui.StatColors[monster.Int]))
+		Expect(colours).To(HaveKeyWithValue("POW", profileui.StatColors[monster.Pow]))
+		Expect(colours).To(HaveKeyWithValue("INT", profileui.StatColors[monster.Int]))
 		Expect(colours[" + "]).To(Equal(theme.Color(theme.ColorNameForeground)))
 		Expect(colours[" at least 400 (421)"]).To(Equal(theme.Color(theme.ColorNameForeground)))
 	})
@@ -261,7 +261,7 @@ var _ = Describe("Screen", func() {
 	It("lists what the selected move still needs, each as met or not, and no list when it needs nothing", func() {
 		g := grid()
 		g.Cells[0][1].Requirements = []domain.Requirement{
-			{Text: "Pow + Int at least 400", Have: "421", Met: true, Stats: []monster.Stat{monster.Pow, monster.Int}},
+			{Text: "POW + INT at least 400", Have: "421", Met: true, Stats: []monster.Stat{monster.Pow, monster.Int}},
 			{Text: "Use Pat at least 50 times", Have: "31 / 50"},
 			{Text: "The game gives no way to learn it"},
 		}
@@ -270,7 +270,7 @@ var _ = Describe("Screen", func() {
 		Expect(s.detail.needsBox.Visible()).To(BeTrue())
 		Expect(s.detail.needs).To(HaveLen(3))
 		Expect(s.detail.needs[0].mark.Text).To(Equal("✓"))
-		Expect(s.detail.needs[0].words()).To(Equal("Pow + Int at least 400 (421)"))
+		Expect(s.detail.needs[0].words()).To(Equal("POW + INT at least 400 (421)"))
 		Expect(s.detail.needs[1].mark.Text).To(Equal("✗"))
 		Expect(s.detail.needs[1].words()).To(Equal("Use Pat at least 50 times (31 / 50)"))
 		Expect(s.detail.needs[2].words()).To(Equal("The game gives no way to learn it"))

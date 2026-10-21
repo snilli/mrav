@@ -51,7 +51,7 @@ func (n Names) genera(ids []monster.Genus) string {
 	return strings.Join(names, " or ")
 }
 
-var statNames = [monster.StatCount]string{"Life", "Pow", "Int", "Skill", "Speed", "Def"}
+var statNames = [monster.StatCount]string{"LIF", "POW", "INT", "SKI", "SPD", "DEF"}
 
 func (c StatSumAtLeast) Require(m monster.Monster, _ Names) Requirement {
 	var names []string

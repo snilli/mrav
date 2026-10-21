@@ -18,7 +18,7 @@ type Genus struct {
 type Cell struct {
 	Move     *Move // nil for an empty cell
 	Learned  bool
-	CanLearn bool // not learned yet, and the monster meets the unlock rule
+	CanLearn bool // not learned yet, and the monster meets the unlock rule; CurrentGrid makes it what the errantry teaches now
 	Used     int
 	Active   bool // the move is the active one of its column
 	// Requirements is what the move still asks, condition by condition; it is empty for a move that is learned

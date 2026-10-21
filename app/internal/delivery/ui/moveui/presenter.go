@@ -4,6 +4,7 @@ package moveui
 
 import (
 	"strconv"
+	"strings"
 
 	monster "app/internal/core/monster/domain"
 	"app/internal/core/move/domain"
@@ -71,7 +72,7 @@ type DetailView struct {
 	CanLearn    bool
 	Status      string        // where the move stands, in words; empty for an empty cell
 	Nature      domain.Nature // the nature that the move asks for, to show beside its name
-	Description string
+	Description string        // the kind of tech, "Hit tech."; the requirements say the rest
 	// Requirements are what the move still asks of the monster; none for a learned move or an empty cell.
 	Requirements []RequirementView
 }
@@ -130,7 +131,7 @@ func NewDetailView(c domain.Cell) DetailView {
 		Learned:     c.Learned,
 		CanLearn:    c.CanLearn,
 		Nature:      m.Unlock.Nature(),
-		Description: m.Description,
+		Description: techType(m.Description),
 	}
 	switch {
 	case c.Learned:
@@ -151,4 +152,13 @@ func NewDetailView(c domain.Cell) DetailView {
 		v.Extra = e.Label + " " + value
 	}
 	return v
+}
+
+// techType is the first sentence of a move's description, which names its kind of tech; the rest of it says in words what the
+// requirements already show.
+func techType(description string) string {
+	if first, _, found := strings.Cut(description, "."); found {
+		return first + "."
+	}
+	return description
 }

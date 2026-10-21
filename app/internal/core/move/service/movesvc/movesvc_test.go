@@ -65,6 +65,26 @@ var _ = Describe("MoveService", func() {
 			}))
 		})
 
+		It("marks ready only what the errantry teaches now, as the Errantry page lists it", func() {
+			press := domain.Move{Genus: 7, MemorySlot: 1, Col: 1, Row: 2, Name: "Press", Icon: "Golem_2",
+				Acquire: []domain.Acquire{{Place: 2, Priority: 1, Auto: 3, Gates: []domain.Gate{{Stats: []monster.Stat{monster.Pow}, Min: 250, Max: 400}}}}}
+			roll := domain.Move{Genus: 7, MemorySlot: 2, Col: 1, Row: 3, Name: "Roll", Icon: "Golem_3",
+				Acquire: []domain.Acquire{{Place: 2, Priority: 2}}}
+			m := monster.Monster{Genus: 7}
+			m.Stats[monster.Pow] = 500
+			source.EXPECT().Current(ctx).Return(m, nil)
+			repo.EXPECT().GetGenus(ctx, monster.Genus(7)).Return(golem, nil)
+			repo.EXPECT().ListMoves(ctx, monster.Genus(7)).Return([]domain.Move{pat, press, roll}, nil)
+			repo.EXPECT().ListGenera(ctx).Return([]domain.Genus{golem}, nil)
+
+			grid, err := svc.CurrentGrid(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(grid.Cells[0][0].CanLearn).To(BeFalse(), "Pat: no place teaches it")
+			Expect(grid.Cells[0][1].CanLearn).To(BeTrue(), "Press: Mandy teaches it for sure")
+			Expect(grid.Cells[0][2].CanLearn).To(BeFalse(), "Roll: its rule is met, but Press takes all of Mandy's chance")
+			Expect(grid.Cells[0][2].Requirements).To(Equal([]domain.Requirement{{Text: "Mandy Desert teaches Press first"}}))
+		})
+
 		It("returns the repository's error when it cannot list the genera", func() {
 			source.EXPECT().Current(ctx).Return(monster.Monster{Genus: 7}, nil)
 			repo.EXPECT().GetGenus(ctx, monster.Genus(7)).Return(golem, nil)

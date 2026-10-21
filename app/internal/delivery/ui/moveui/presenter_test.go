@@ -93,6 +93,11 @@ var _ = Describe("NewDetailView", func() {
 		Expect(moveui.NewDetailView(domain.Cell{}).Status).To(BeEmpty())
 	})
 
+	It("keeps only the kind of tech from a description, which the requirements already say the rest of", func() {
+		m := domain.Move{Name: "Thrust", Description: "Hit tech. POW + SKI should total over 400 to unlock. Chains into 1-2 Thrust."}
+		Expect(moveui.NewDetailView(domain.Cell{Move: &m}).Description).To(Equal("Hit tech."))
+	})
+
 	It("adds the extra row of a move, as a literal", func() {
 		m := domain.Move{Name: "Life Steal", Extra: &domain.Extra{Label: "HP Drain:", Text: "100%"}}
 		Expect(moveui.NewDetailView(domain.Cell{Move: &m}).Extra).To(Equal("HP Drain: 100%"))
@@ -107,12 +112,12 @@ var _ = Describe("NewDetailView", func() {
 	It("lists what the monster still needs to learn the move, and where it stands on each", func() {
 		m := domain.Move{Name: "Slap"}
 		v := moveui.NewDetailView(domain.Cell{Move: &m, Requirements: []domain.Requirement{
-			{Text: "Pow + Int at least 400", Have: "421", Met: true, Stats: []monster.Stat{monster.Pow, monster.Int}},
+			{Text: "POW + INT at least 400", Have: "421", Met: true, Stats: []monster.Stat{monster.Pow, monster.Int}},
 			{Text: "Use Pat at least 50 times", Have: "31 / 50"},
 			{Text: "The game gives no way to learn it"},
 		}})
 		Expect(v.Requirements).To(Equal([]moveui.RequirementView{
-			{Text: "Pow + Int at least 400", Have: "421", Met: true, Stats: []monster.Stat{monster.Pow, monster.Int}},
+			{Text: "POW + INT at least 400", Have: "421", Met: true, Stats: []monster.Stat{monster.Pow, monster.Int}},
 			{Text: "Use Pat at least 50 times", Have: "31 / 50"},
 			{Text: "The game gives no way to learn it"},
 		}))
