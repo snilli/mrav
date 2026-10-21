@@ -8,13 +8,15 @@ cd "$(dirname "$0")"
 out=../dist
 db=internal/infrastructure/database/mrav.sqlite # what the embeddb build embeds; the copy is not in git
 
+version=$(git describe --tags --always --dirty 2>/dev/null || echo dev)
+
 mkdir -p "$out"
 cp ../data/mrav.sqlite "$db"
 trap 'rm -f "$db"' EXIT
 
 # no_emoji leaves out Fyne's 4 MB colour emoji font, which nothing here draws.
 CC=x86_64-w64-mingw32-gcc GOOS=windows GOARCH=amd64 CGO_ENABLED=1 \
-	go build -trimpath -tags embeddb,no_emoji -ldflags "-s -w -H windowsgui" -o "$out/mrav.exe" ./cmd/mrav
+	go build -trimpath -tags embeddb,no_emoji -ldflags "-s -w -H windowsgui -X main.version=$version" -o "$out/mrav.exe" ./cmd/mrav
 
 if command -v upx >/dev/null; then
 	upx --best --lzma --force -q -o "$out/mrav-upx.exe" "$out/mrav.exe" >/dev/null

@@ -83,6 +83,9 @@ func provideConfig() (*config.Config, error) {
 	return cfg, nil
 }
 
+// version is the build's, set by the build script from the git tag.
+var version = "dev"
+
 // canReadGames is whether this system can read a running game's memory, which only Windows can.
 var canReadGames = runtime.GOOS == "windows"
 
@@ -106,7 +109,7 @@ func newSource(cfg *config.Config) (port.MonsterSource, port.PlayerSource, *fake
 }
 
 func newFyneApp() fyne.App {
-	a := fyneapp.NewWithID("io.ezcards.mrav")
+	a := fyneapp.New()
 	a.Settings().SetTheme(shellui.Theme())
 	return a
 }
@@ -155,7 +158,7 @@ func newDemo(_ fyne.App, svc move.MoveService, monsters *fakemonster.Source, pla
 var startSize = fyne.NewSize(480, 640)
 
 func newWindow(a fyne.App, p shellui.Parts, demo *demoui.Panel) fyne.Window {
-	w := a.NewWindow("mrav - Monster Rancher 2 Viewer")
+	w := a.NewWindow("mrav " + version + " - Monster Rancher 2 Viewer")
 	p.Demo = demo
 	w.SetContent(shellui.New(w, p).Content())
 	w.Resize(startSize)
