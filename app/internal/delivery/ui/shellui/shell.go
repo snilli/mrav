@@ -115,7 +115,10 @@ func (s *Shell) newColumn(o *option) *column {
 	c := &column{body: container.NewStack()}
 	c.choice = widget.NewSelect(nil, func(name string) { s.choose(c, name) })
 	c.remove = widget.NewButtonWithIcon("", theme.CancelIcon(), func() { s.removeColumn(c) })
-	c.add = widget.NewButtonWithIcon("", theme.ContentAddIcon(), s.addColumn)
+	// The add button says what it does, without a fill that would draw the eye from the page: a bare + was not seen to add
+	// a column, so nobody found the others.
+	c.add = widget.NewButtonWithIcon("Col", theme.ContentAddIcon(), s.addColumn)
+	c.add.Importance = widget.LowImportance
 	bar := container.NewBorder(nil, nil, nil, container.NewHBox(c.add, c.remove), c.choice)
 	c.box = container.NewBorder(bar, nil, nil, nil, c.body)
 	c.show(o)

@@ -4,6 +4,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/test"
 	"fyne.io/fyne/v2/theme"
+	"fyne.io/fyne/v2/widget"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -104,6 +105,11 @@ var _ = Describe("Shell", func() {
 			Expect(shown()).To(Equal([]string{"Vitals"}))
 			Expect(s.columns[0].add.Visible()).To(BeTrue())
 			Expect(s.columns[0].remove.Visible()).To(BeFalse())
+		})
+
+		It("says on the add button what it does, so that it is seen to add a column", func() {
+			Expect(s.columns[0].add.Text).To(Equal("Col"))
+			Expect(s.columns[0].add.Importance).To(Equal(widget.LowImportance))
 		})
 
 		It("adds a column that shows the first page that is not shown, and the window gets a column wider", func() {
