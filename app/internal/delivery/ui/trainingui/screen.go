@@ -62,7 +62,8 @@ func newRow(name string) *row {
 
 // Screen is the Training panel.
 type Screen struct {
-	svc training.TrainingService
+	seen status.Seen[domain.Training] // what apply last drew, so that the same is not drawn again
+	svc  training.TrainingService
 
 	status  *widget.Label
 	body    fyne.CanvasObject // the table, which is hidden for what to say in its place
@@ -101,7 +102,11 @@ func (s *Screen) Content() fyne.CanvasObject { return s.content }
 // Load asks the service for the current page and shows it. It is safe to call from any goroutine.
 func (s *Screen) Load(ctx context.Context) {
 	t, err := s.svc.Current(ctx)
-	fyne.Do(func() { s.apply(t, err) })
+	fyne.Do(func() {
+		if s.seen.Changed(t, err) {
+			s.apply(t, err)
+		}
+	})
 }
 
 // apply shows a page, or why there is none. It must run on the UI thread.

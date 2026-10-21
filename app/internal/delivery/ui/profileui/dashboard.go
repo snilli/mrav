@@ -47,6 +47,7 @@ If this cocooning information disappears, your Worm is past C Rank, therefore it
 // the vitals of its body. It is two parts so that the window can put them where it likes, and one value so that
 // they load together.
 type Dashboard struct {
+	seen status.Seen[domain.Profile] // what apply last drew, so that the same is not drawn again
 	svc  profile.ProfileService
 	opts Options
 	last *domain.Profile // what is shown, to show it again when an option changes
@@ -326,7 +327,11 @@ func (d *Dashboard) Vitals() fyne.CanvasObject { return d.vitals }
 // Load asks the service for the current profile and shows it. It is safe to call from any goroutine.
 func (d *Dashboard) Load(ctx context.Context) {
 	p, err := d.svc.Current(ctx)
-	fyne.Do(func() { d.apply(p, err) })
+	fyne.Do(func() {
+		if d.seen.Changed(p, err) {
+			d.apply(p, err)
+		}
+	})
 }
 
 // apply shows a profile, or why there is none. It must run on the UI thread.

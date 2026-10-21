@@ -402,7 +402,8 @@ func newBox(v View, size tableSize) *box {
 
 // Screen is the Route panel.
 type Screen struct {
-	svc profile.ProfileService
+	seen status.Seen[domain.Profile] // what apply last drew, so that the same is not drawn again
+	svc  profile.ProfileService
 
 	status  *widget.Label
 	list    *fyne.Container // the panel of each map
@@ -431,7 +432,11 @@ func (s *Screen) Content() fyne.CanvasObject { return s.content }
 // Load plans the routes for the monster as it is now and shows them. It is safe to call from any goroutine.
 func (s *Screen) Load(ctx context.Context) {
 	p, err := s.svc.Current(ctx)
-	fyne.Do(func() { s.apply(p.Maps, p, err) })
+	fyne.Do(func() {
+		if s.seen.Changed(p, err) {
+			s.apply(p.Maps, p, err)
+		}
+	})
 }
 
 // apply shows the routes on the maps, or why there are none. It must run on the UI thread.

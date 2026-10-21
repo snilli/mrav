@@ -434,6 +434,7 @@ func (d *detail) show(v DetailView) {
 // Screen is the Move Viewer: the grid of moves, the active move of each column, and the details of
 // the selected move.
 type Screen struct {
+	seen  status.Seen[domain.Grid] // what apply last drew, so that the same is not drawn again
 	svc   move.MoveService
 	icons *iconSet
 
@@ -505,7 +506,11 @@ func (s *Screen) Content() fyne.CanvasObject { return s.content }
 // Load asks the service for the current grid and shows it. It is safe to call from any goroutine.
 func (s *Screen) Load(ctx context.Context) {
 	g, err := s.svc.CurrentGrid(ctx)
-	fyne.Do(func() { s.apply(g, err) })
+	fyne.Do(func() {
+		if s.seen.Changed(g, err) {
+			s.apply(g, err)
+		}
+	})
 }
 
 // apply shows a grid, or why there is none. It must run on the UI thread.

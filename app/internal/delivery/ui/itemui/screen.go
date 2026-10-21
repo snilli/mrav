@@ -20,6 +20,7 @@ var buttonSize = fyne.NewSize(124, 34)
 // Screen is the Items page: a button for each place the player carries an item in, and the details of the
 // item in the place that was tapped.
 type Screen struct {
+	seen     status.Seen[[]domain.Slot] // what apply last drew, so that the same is not drawn again
 	svc      item.ItemService
 	slots    []domain.Slot
 	selected int // the place tapped; -1 for none
@@ -77,7 +78,11 @@ func (s *Screen) Content() fyne.CanvasObject { return s.content }
 // Load asks the service for what the player carries and shows it. It is safe to call from any goroutine.
 func (s *Screen) Load(ctx context.Context) {
 	slots, err := s.svc.Inventory(ctx)
-	fyne.Do(func() { s.apply(slots, err) })
+	fyne.Do(func() {
+		if s.seen.Changed(slots, err) {
+			s.apply(slots, err)
+		}
+	})
 }
 
 // apply shows the slots, or why there are none. It must run on the UI thread.
