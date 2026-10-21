@@ -197,7 +197,21 @@ var _ = Describe("Screen", func() {
 
 		Expect(s.detail.Content().Visible()).To(BeTrue())
 		Expect(s.detail.Name()).To(Equal("Ray"))
-		Expect(s.rows[0].ready.Objects[0].(*iconButton).selected).To(BeTrue(), "the icon is a new one, and marked")
+		Expect(s.rows[0].ready.Objects[0].(*iconButton).selected).To(BeTrue())
+	})
+
+	It("keeps the same icons when the page is loaded again with the same moves, so that a tap across a load is not lost", func() {
+		s.apply(baby(), grid(), nil)
+		ray := s.rows[0].ready.Objects[0].(*iconButton)
+
+		again := grid()
+		again.Cells[0][0].Used = 7
+		s.apply(baby(), again, nil)
+
+		Expect(s.rows[0].ready.Objects[0]).To(BeIdenticalTo(ray))
+		test.Tap(ray)
+		Expect(s.detail.Content().Visible()).To(BeTrue())
+		Expect(s.detail.Name()).To(Equal("Ray"))
 	})
 
 	It("takes the details away when the move that is selected is not ready any more", func() {

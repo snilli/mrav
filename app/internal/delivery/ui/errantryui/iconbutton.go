@@ -11,6 +11,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 
 	monster "app/internal/core/monster/domain"
+	movedomain "app/internal/core/move/domain"
 	"app/internal/delivery/ui/profileui"
 )
 
@@ -18,6 +19,10 @@ import (
 type moveKey struct {
 	genus monster.Genus
 	slot  int
+}
+
+func keyOf(cell movedomain.Cell) moveKey {
+	return moveKey{genus: cell.Move.Genus, slot: cell.Move.MemorySlot}
 }
 
 // iconButton is the icon of a move that can be tapped, with the chance that the place teaches it written in its bottom right

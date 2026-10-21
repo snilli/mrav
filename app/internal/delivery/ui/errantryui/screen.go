@@ -71,6 +71,7 @@ func newRow(l domain.ErrantryLocale) *row {
 
 // Screen is the Errantry panel.
 type Screen struct {
+	seen     status.Seen[loaded] // what apply last drew, so that the same is not drawn again
 	profiles profile.ProfileService
 	moves    move.MoveService
 	icons    *moveui.Icons
@@ -119,7 +120,17 @@ func (s *Screen) Load(ctx context.Context) {
 	if err == nil {
 		g, err = s.moves.CurrentGrid(ctx)
 	}
-	fyne.Do(func() { s.apply(p, g, err) })
+	fyne.Do(func() {
+		if s.seen.Changed(loaded{p, g}, err) {
+			s.apply(p, g, err)
+		}
+	})
+}
+
+// loaded is what Load gave apply.
+type loaded struct {
+	p domain.Profile
+	g movedomain.Grid
 }
 
 // choose selects a move: its icon is marked, and its details are shown.
@@ -153,17 +164,34 @@ func (s *Screen) apply(p domain.Profile, g movedomain.Grid, err error) {
 			r.weeks[week].Set(box)
 		}
 		r.gains.Set(v.Rows[i].Gains...)
-		r.ready.RemoveAll()
-		for _, ready := range v.Rows[i].Ready {
+		// The icons are kept while the moves are the same ones, and only told the new chances: an icon made again on each
+		// load would lose a tap whose press and release fall either side of it.
+		keep := len(r.ready.Objects) == len(v.Rows[i].Ready)
+		for j, ready := range v.Rows[i].Ready {
+			keep = keep && r.ready.Objects[j].(*iconButton).key == keyOf(ready.Cell)
+		}
+		if !keep {
+			r.ready.RemoveAll()
+		}
+		for j, ready := range v.Rows[i].Ready {
 			cell := ready.Cell
-			key := moveKey{genus: cell.Move.Genus, slot: cell.Move.MemorySlot}
-			button := newIconButton(key, s.icons.Image(*cell.Move, iconSize.Width, iconSize.Height), ready.Chance, func() { s.choose(key, cell) })
-			if s.selected != nil && *s.selected == key {
-				button.Select(true)
+			key := keyOf(cell)
+			choose := func() { s.choose(key, cell) }
+			var button *iconButton
+			if keep {
+				button = r.ready.Objects[j].(*iconButton)
+				button.chance.Set(ready.Chance)
+				button.onTap = choose
+			} else {
+				button = newIconButton(key, s.icons.Image(*cell.Move, iconSize.Width, iconSize.Height), ready.Chance, choose)
+				r.ready.Add(button)
+			}
+			selected := s.selected != nil && *s.selected == key
+			button.Select(selected)
+			if selected {
 				s.detail.Show(cell) // with what the monster has now
 				found = true
 			}
-			r.ready.Add(button)
 		}
 		if len(v.Rows[i].Ready) == 0 {
 			r.ready.Hide()
