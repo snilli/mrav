@@ -1,0 +1,19 @@
+.PHONY: dev build test test-integration generate mock
+
+dev:
+	cd app && go run ./cmd/mrav
+
+build:
+	cd app && go build -o bin/mrav ./cmd/mrav
+
+test:
+	cd app && ginkgo run -r --randomize-all --label-filter='!integration'
+
+test-integration:
+	cd app && ginkgo run -r --randomize-all --label-filter='integration'
+
+generate:
+	cd orm/ent && go generate ./...
+
+mock:
+	cd app && go run github.com/vektra/mockery/v3@v3.8.1
