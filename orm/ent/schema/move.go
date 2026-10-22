@@ -9,7 +9,6 @@ import (
 	"orm/stored"
 )
 
-// Move is one technique in a genus's grid. A genus's memory slots and cells are each used once.
 type Move struct{ ent.Schema }
 
 func (Move) Fields() []ent.Field {

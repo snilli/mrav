@@ -11,7 +11,6 @@ import (
 	"app/internal/core/move/domain"
 )
 
-// colours counts the pixels of an icon that satisfy a test, to say what is drawn on it.
 func colours(b []byte, is func(color.NRGBA) bool) int {
 	img, err := png.Decode(bytes.NewReader(b))
 	Expect(err).NotTo(HaveOccurred())

@@ -24,7 +24,7 @@ var _ = Describe("OpenShipped", Label("integration"), func() {
 
 		n, err := client.Genus.Query().Count(context.Background())
 		Expect(err).NotTo(HaveOccurred())
-		Expect(n).To(Equal(38)) // Pixie to Naga
+		Expect(n).To(Equal(38))
 	})
 
 	It("ships with the indexes that the schema declares and no others, because the viewer never migrates and the tests run on a schema that Ent made", func() {
@@ -42,7 +42,7 @@ var _ = Describe("OpenShipped", Label("integration"), func() {
 				declared[table.Name+"."+index.Name] = true
 			}
 			for _, column := range table.Columns {
-				if column.Unique { // a unique column is an index of its own, named by the column
+				if column.Unique {
 					declared[table.Name+"."+table.Name+"_"+column.Name+"_key"] = true
 				}
 			}

@@ -15,7 +15,6 @@ import (
 	"app/internal/delivery/ui/profileui"
 )
 
-// moveKey says which move an icon is for: a slot means a move only in the grid of one breed.
 type moveKey struct {
 	genus monster.Genus
 	slot  int
@@ -25,8 +24,6 @@ func keyOf(cell movedomain.Cell) moveKey {
 	return moveKey{genus: cell.Move.Genus, slot: cell.Move.MemorySlot}
 }
 
-// iconButton is the icon of a move that can be tapped, with the chance that the place teaches it written in its bottom right
-// corner, and a frame round it while it is the one selected.
 type iconButton struct {
 	widget.BaseWidget
 	key      moveKey
@@ -49,7 +46,6 @@ func newIconButton(key moveKey, image *canvas.Image, chance profileui.Box, onTap
 
 func (b *iconButton) Tapped(*fyne.PointEvent) { b.onTap() }
 
-// Select puts the frame round the icon, or takes it away.
 func (b *iconButton) Select(on bool) {
 	b.selected = on
 	if on {
@@ -61,6 +57,6 @@ func (b *iconButton) Select(on bool) {
 }
 
 func (b *iconButton) CreateRenderer() fyne.WidgetRenderer {
-	corner := container.NewVBox(layout.NewSpacer(), container.NewHBox(layout.NewSpacer(), b.chance)) // bottom right
+	corner := container.NewVBox(layout.NewSpacer(), container.NewHBox(layout.NewSpacer(), b.chance))
 	return widget.NewSimpleRenderer(container.NewStack(b.image, b.frame, corner))
 }

@@ -5,9 +5,6 @@ import (
 	"fyne.io/fyne/v2/theme"
 )
 
-// Beside is the layout of a row of two parts. Side by side, the first is at the left edge and the second at the right
-// edge, each as wide as it asks, or each half of the row when Even. Stacked, the second is under the first, which makes
-// the row as narrow as its wider part.
 type Beside struct {
 	Stacked bool
 	Even    bool

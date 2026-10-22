@@ -31,7 +31,6 @@ var _ = Describe("ProfileService", func() {
 	names := map[monster.Genus]string{5: "Henger", 3: "C. Pandora"}
 	desires := map[int]string{4: "Cup Jelly", 130: "Nothing", 38: "Troron"}
 
-	// expectData is every repository call a profile of the monster takes.
 	expectData := func() {
 		monsters.EXPECT().Current(ctx).Return(henger, nil)
 		players.EXPECT().Player(ctx).Return(player.Player{Money: 1500}, nil)
@@ -63,7 +62,7 @@ var _ = Describe("ProfileService", func() {
 		Expect(got.Like).To(Equal("Cup Jelly"))
 		Expect(got.Dislike).To(Equal("Nothing"))
 		Expect(got.Drug).To(Equal("Troron"))
-		Expect(got.Breeds).To(BeNil()) // the player has no ranch to read
+		Expect(got.Breeds).To(BeNil())
 	})
 
 	It("lists the main breeds with whether each is unlocked, when the game says", func() {
@@ -84,7 +83,6 @@ var _ = Describe("ProfileService", func() {
 		Expect(got.Breeds[0]).To(Equal(domain.BreedUnlock{Name: "#0"}))
 	})
 
-	// cave has a place that goes by skill, with a table for each nature: 100 G in the bad one and 300 G in the good one.
 	cave := func() []domain.ExpeditionMap {
 		return []domain.ExpeditionMap{{Name: "Cave", Width: 1, Height: 1, Spots: []domain.Spot{{
 			Name: "A", BySkill: true, Chances: []domain.Chance{
@@ -114,7 +112,7 @@ var _ = Describe("ProfileService", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(got.Maps).To(HaveLen(1))
 		spot := got.Maps[0].Spots[0]
-		Expect(spot.Value).To(BeNumerically("~", 300, 1e-9)) // the good table, whose first tier is all that it has
+		Expect(spot.Value).To(BeNumerically("~", 300, 1e-9))
 		Expect(spot.Loot).To(Equal([]domain.Drop{{Item: "Nuts", Pct: 100, Price: 300}}))
 		Expect(maps[0].Spots[0].Value).To(BeZero(), "what the repository gave is not written to")
 	})
@@ -126,7 +124,7 @@ var _ = Describe("ProfileService", func() {
 
 		got, err := svc.Current(ctx)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(got.Maps[0].Spots[0].Value).To(BeNumerically("~", 200, 1e-9)) // the bad table, second tier: from 600
+		Expect(got.Maps[0].Spots[0].Value).To(BeNumerically("~", 200, 1e-9))
 	})
 
 	It("says the monster is on no drug when its drug id is not a drug's, and --- for an id the list lacks", func() {
@@ -148,7 +146,6 @@ var _ = Describe("ProfileService", func() {
 
 	It("returns the monster source's error without asking anything else", func() {
 		monsters.EXPECT().Current(ctx).Return(monster.Monster{}, apperr.NotFound("monster", "No monster"))
-		// no other expectation: the mocks fail the test if they are called
 
 		_, err := svc.Current(ctx)
 		Expect(errors.Is(err, apperr.ErrNotFound)).To(BeTrue())

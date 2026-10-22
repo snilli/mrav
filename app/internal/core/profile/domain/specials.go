@@ -2,13 +2,11 @@ package domain
 
 import "strings"
 
-// Specials are the battle specials a monster has, as the names to show.
 type Specials struct {
 	Names   []string
-	Invalid bool // the monster has a special its breed cannot have
+	Invalid bool
 }
 
-// Text is the names, one after the other.
 func (s Specials) Text() string { return strings.Join(s.Names, ", ") }
 
 const (
@@ -20,7 +18,6 @@ const (
 	unusedFlags  = 8192 | 16384 | 32768
 )
 
-// specials are the flags in the order the game lists them.
 var specials = [...]struct {
 	flag int
 	name string
@@ -30,9 +27,6 @@ var specials = [...]struct {
 	{specialReal, "Real"}, {specialDrunk, "Drunk"}, {specialUnity, "Unity"},
 }
 
-// SpecialsOf lists the specials in the flags. Power shows in brackets when the effective nature is 20 or more,
-// and Anger when it is -20 or less, because that is when they work. Real is for Joker, Drunk for Kato and Unity
-// for Pandora; on any other breed, and for the flags the game does not use, the monster is marked invalid.
 func SpecialsOf(flags, nature, main, sub int) Specials {
 	var s Specials
 	for _, sp := range specials {

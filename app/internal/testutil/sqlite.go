@@ -1,4 +1,3 @@
-// Package testutil holds helpers for tests that need a real database.
 package testutil
 
 import (
@@ -7,7 +6,6 @@ import (
 	"orm"
 )
 
-// NewClient is a private in-memory SQLite with the schema created. Close it when done.
 func NewClient(ctx context.Context) (*orm.Client, error) {
 	client, err := orm.OpenMemory(ctx)
 	if err != nil {

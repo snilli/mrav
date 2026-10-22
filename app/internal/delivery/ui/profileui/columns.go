@@ -5,9 +5,6 @@ import (
 	"fyne.io/fyne/v2/theme"
 )
 
-// Columns is the layout of a row in a table: a column of positive width is that wide, and the columns of zero
-// share what is left. A row with fewer objects than columns leaves its last columns empty, and a hidden object
-// keeps its column, so the rows of a table line up.
 type Columns []float32
 
 func (c Columns) Layout(objs []fyne.CanvasObject, size fyne.Size) {

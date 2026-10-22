@@ -12,8 +12,6 @@ import (
 	"app/internal/infrastructure/memo"
 )
 
-// Repository reads the game's list of items through Ent's query builder. The list never changes while the viewer runs, so it
-// is read once and kept; what the pages are given is shared, so they must not write to it.
 type Repository struct {
 	client *orm.Client
 	items  memo.Cache[struct{}, []domain.Item]

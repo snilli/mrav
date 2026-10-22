@@ -35,7 +35,7 @@ var _ = Describe("newSource", func() {
 		for _, game := range []string{"duckstation", "mr2dx"} {
 			monsters, players, fakeMonster, fakePlayer := newSource(&config.Config{Game: game})
 			Expect(monsters).To(BeAssignableToTypeOf(&gamememory.Source{}), game)
-			Expect(players).To(BeIdenticalTo(monsters), game) // one game, read for both
+			Expect(players).To(BeIdenticalTo(monsters), game)
 			Expect(fakeMonster).To(BeNil(), game)
 			Expect(fakePlayer).To(BeNil(), game)
 		}

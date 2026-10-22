@@ -7,15 +7,11 @@ import (
 	"strings"
 )
 
-// steamGlyphsTSV is MR2DX's character table, from MR2AV's CharMapping: a code in hex, a tab, the text.
-//
 //go:embed steam_glyphs.tsv
 var steamGlyphsTSV string
 
 var steamGlyphs = parseGlyphs(steamGlyphsTSV)
 
-// parseGlyphs reads the table that is built into the program, so a line that is not a code and its text is a
-// mistake in the program and not in anything it was given. A line may end in CRLF, as git checks it out on Windows.
 func parseGlyphs(tsv string) map[int]string {
 	glyphs := map[int]string{}
 	for line := range strings.Lines(tsv) {
@@ -29,14 +25,11 @@ func parseGlyphs(tsv string) map[int]string {
 	return glyphs
 }
 
-// readText reads a name. The PlayStation's names are one byte a glyph and end at 255. MR2DX's are one byte for a
-// space or a digit and two for the rest, the bytes B0 to B6 beginning a pair, and end at FF. What the table does
-// not know shows as "_" on the PlayStation and "?" on Steam, as in MR2AV.
 func readText(r *reader, t Text) string {
 	if t.Addr == 0 {
 		return ""
 	}
-	b := r.read(t.Addr, t.Len+1) // one more than the name, because a pair can begin on its last byte
+	b := r.read(t.Addr, t.Len+1)
 	var name strings.Builder
 	for i := 0; i < t.Len; i++ {
 		code := int(b[i])

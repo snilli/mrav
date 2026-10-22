@@ -10,7 +10,6 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-// Flag is a yes-or-no fact of the monster as a small label: lit in its tone when it is so, dim when it is not.
 type Flag struct {
 	widget.BaseWidget
 	tone Tone
@@ -32,7 +31,6 @@ func NewFlag(text string, tone Tone) *Flag {
 
 func (f *Flag) On() bool { return f.on }
 
-// SetText changes the words of the flag.
 func (f *Flag) SetText(text string) {
 	f.txt.Text = text
 	f.Refresh()

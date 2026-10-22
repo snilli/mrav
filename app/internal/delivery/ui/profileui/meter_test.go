@@ -12,7 +12,6 @@ import (
 var _ = Describe("Meter", func() {
 	BeforeEach(func() { test.NewTempApp(GinkgoTB()) })
 
-	// sized is a meter that has been laid out 100 wide, which is where its parts get their sizes.
 	sized := func(m *Meter) *Meter {
 		test.WidgetRenderer(m)
 		m.Resize(fyne.NewSize(100, 10))

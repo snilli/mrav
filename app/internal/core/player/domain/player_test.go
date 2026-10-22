@@ -15,12 +15,12 @@ var _ = Describe("Player", func() {
 	})
 
 	It("says which buttons are held by their bits, in the order of the names", func() {
-		held := domain.Player{Input: 16 | 32 | 4096}.Held() // Circle, Cross, Up
+		held := domain.Player{Input: 16 | 32 | 4096}.Held()
 		for b, name := range domain.ButtonNames {
 			Expect(held[b]).To(Equal(name == "Circle" || name == "Cross" || name == "Up"), name)
 		}
 		Expect(domain.Player{}.Held()).To(Equal([domain.ButtonCount]bool{}))
-		Expect(domain.Player{Input: 0xFFFF}.Held()[domain.ButtonCount-1]).To(BeTrue()) // Left is the top bit
+		Expect(domain.Player{Input: 0xFFFF}.Held()[domain.ButtonCount-1]).To(BeTrue())
 	})
 
 	It("names the buttons the way MR2AV orders them", func() {

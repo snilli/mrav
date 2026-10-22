@@ -117,7 +117,7 @@ var _ = Describe("labels", func() {
 
 		It("shows nothing for a code that is no genus", func() {
 			Expect(domain.GenusLabel(44, false, names)).To(Equal("---"))
-			Expect(domain.GenusLabel(12, true, names)).To(Equal("---")) // a genus the table does not have
+			Expect(domain.GenusLabel(12, true, names)).To(Equal("---"))
 		})
 	})
 })

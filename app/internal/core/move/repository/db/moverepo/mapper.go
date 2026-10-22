@@ -39,11 +39,8 @@ func toMove(e *ent.Move, genus monster.Genus) (movedomain.Move, error) {
 	}, nil
 }
 
-// errantryPlaces is how many places the errantry has, which an entry of moves.acquire names from 1.
 const errantryPlaces = 5
 
-// domainAcquire reads the JSON shape of moves.acquire back into the places that teach a move. No entries is nil. A place that
-// the errantry does not have, or a gate that does not rise, is an error.
 func domainAcquire(es []stored.Acquire) ([]movedomain.Acquire, error) {
 	if len(es) == 0 {
 		return nil, nil
@@ -98,8 +95,6 @@ func genera(ids []int) []monster.Genus {
 	return out
 }
 
-// domainConditions reads the JSON shape of moves.unlock back into conditions: the inverse of what the
-// importer stores. No conditions is nil, the unconditional rule. A shape it does not know is an error.
 func domainConditions(cs []stored.Condition) ([]movedomain.Condition, error) {
 	if len(cs) == 0 {
 		return nil, nil

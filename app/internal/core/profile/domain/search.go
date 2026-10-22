@@ -5,9 +5,6 @@ import (
 	"slices"
 )
 
-// Chance is a row of the tables of a place: an item that a search may turn up, and the chance in percent that it does, for
-// the tier of the stat that starts at MinStat, in the table for a good nature or for the other. A tier is from its MinStat to
-// the next one's. Slot is the row of the table that the chance is in, and Price what the item sells for, 0 where it is not sold.
 type Chance struct {
 	Good    bool
 	MinStat int
@@ -17,11 +14,6 @@ type Chance struct {
 	Price   int
 }
 
-// Searched is what a search of the place is worth on average, in gold, and what it may turn up, for a monster that searches
-// as the searcher does: the table is the one for its nature, the tier is the highest that its stat reaches, which is its
-// skill where the building goes by skill and its intelligence where it does not, and each item is worth its chance by its
-// price. What may turn up is the likeliest first, and by the row of the table where it is as likely, and leaves out what the
-// tier never turns up.
 func (s Spot) Searched(by Searcher) (value float64, loot []Drop) {
 	stat := by.Intelligence
 	if s.BySkill {
@@ -55,8 +47,6 @@ func (s Spot) Searched(by Searcher) (value float64, loot []Drop) {
 	return value, loot
 }
 
-// For is the map with what a search of each of its places is worth and may turn up for the searcher. The map itself, which many
-// may share, is not written to: its places are copied, in their order.
 func (m ExpeditionMap) For(by Searcher) ExpeditionMap {
 	spots := make([]Spot, len(m.Spots))
 	for i, s := range m.Spots {

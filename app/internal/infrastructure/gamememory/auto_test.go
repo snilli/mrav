@@ -22,7 +22,7 @@ var _ = Describe("Auto", func() {
 	BeforeEach(func() {
 		ctx = context.Background()
 		first, second = monsterImage(ps1MR2AV, ps1Name, nil), monsterImage(ps1MR2AV, ps1Name, nil)
-		second.i32(ps1MR2AV.money, 500) // so that the two games can be told apart: the first has 987654
+		second.i32(ps1MR2AV.money, 500)
 		firstErr, secondErr = nil, nil
 		attach := func(mem *image, err *error) Attach {
 			return func() (Memory, error) {
@@ -67,7 +67,7 @@ var _ = Describe("Auto", func() {
 		first.ram = make([]byte, ramSize)
 		_, err := auto.Current(ctx)
 		Expect(errors.Is(err, apperr.ErrNotFound)).To(BeTrue())
-		Expect(reason(err)).To(Equal("No monster")) // not what the second game, which has one, would say
+		Expect(reason(err)).To(Equal("No monster"))
 	})
 
 	It("says why no game could be read, naming each", func() {

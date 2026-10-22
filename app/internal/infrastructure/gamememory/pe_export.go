@@ -9,8 +9,6 @@ import (
 	"io"
 )
 
-// exportRVA is where a 64-bit PE file's export table puts name: the offset of the exported thing from the
-// base address the module is loaded at. DuckStation exports its pointer to the console's RAM this way.
 func exportRVA(r io.ReaderAt, name string) (uint32, error) {
 	f, err := pe.NewFile(r)
 	if err != nil {
@@ -25,7 +23,6 @@ func exportRVA(r io.ReaderAt, name string) (uint32, error) {
 		return 0, errors.New("exports nothing")
 	}
 
-	// read is n bytes at an address that is relative to the module's base; the file lays its sections out differently.
 	read := func(rva uint32, n int) ([]byte, error) {
 		for _, s := range f.Sections {
 			if rva >= s.VirtualAddress && rva-s.VirtualAddress < max(s.VirtualSize, s.Size) {
@@ -41,7 +38,6 @@ func exportRVA(r io.ReaderAt, name string) (uint32, error) {
 		return binary.LittleEndian.Uint32(p), err
 	}
 
-	// The directory is 40 bytes: the number of names at 24, then where the function, name and ordinal tables are.
 	head, err := read(dir, 40)
 	if err != nil {
 		return 0, err

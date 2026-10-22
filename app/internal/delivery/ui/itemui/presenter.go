@@ -1,11 +1,9 @@
-// Package itemui is the Items page: the places the player carries items in, and what the game's list says of each.
 package itemui
 
 import "app/internal/core/item/domain"
 
 const blank = "-----"
 
-// DetailView is what the details of one slot show, every value already in the game's words.
 type DetailView struct {
 	Name        string
 	Kind        string
@@ -15,7 +13,6 @@ type DetailView struct {
 	Purchase    string
 }
 
-// SlotName is what a slot's button says: the name of its item, or dashes for an empty place.
 func SlotName(s domain.Slot) string {
 	switch {
 	case s.Locked:
@@ -26,7 +23,6 @@ func SlotName(s domain.Slot) string {
 	return s.Item.Name
 }
 
-// NewDetailView says what a slot holds. A nil slot is none selected.
 func NewDetailView(s *domain.Slot) DetailView {
 	if s != nil && s.Locked {
 		return DetailView{

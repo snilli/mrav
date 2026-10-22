@@ -49,8 +49,8 @@ var _ = Describe("profilerepo", Label("integration"), func() {
 		seed(1, 38, 1, "Moo (CD)").SetOtherwise("Moo (N/S)").SetGuts(18).SetMatchGuts(true).SetGrowth([]int{3, 3, 0, 1, 1, 3}).SaveX(ctx)
 		seed(1, 0, 0, "Tiamat").SetOtherwise("Tiamat (N/S)").SetGuts(14).SetGrowth([]int{1, 3, 4, 2, 2, 1}).SaveX(ctx)
 		seed(1, 38, 0, "Moo (DNA Capsule)").SetOtherwise("Moo (N/S)").SetGuts(19).SetMatchGuts(true).SetGrowth([]int{2, 4, 4, 2, 1, 2}).SaveX(ctx)
-		seed(1, 39, 0, "Kasumi").SaveX(ctx) // a fixed name: no guts rate, no growth rates
-		seed(0, 0, 0, "Pixie").SaveX(ctx)   // another main genus
+		seed(1, 39, 0, "Kasumi").SaveX(ctx)
+		seed(0, 0, 0, "Pixie").SaveX(ctx)
 
 		got, err := repo.ListBreedRules(ctx, 1)
 		Expect(err).NotTo(HaveOccurred())

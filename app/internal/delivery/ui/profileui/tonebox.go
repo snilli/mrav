@@ -11,10 +11,8 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-// toneNone is no fill at all, so that the theme shows through.
 var toneNone color.Color = color.Transparent
 
-// toneColors are the fills of the tones, which are MR2AV's colours, and the blue of the bars.
 var toneColors = map[Tone]color.Color{
 	ToneRed:         color.NRGBA{R: 255, A: 255},
 	ToneOrangeRed:   color.NRGBA{R: 255, G: 69, A: 255},
@@ -31,7 +29,6 @@ var toneColors = map[Tone]color.Color{
 	ToneAccent:      color.NRGBA{R: 91, G: 141, B: 239, A: 255},
 }
 
-// ToneBox shows a value on the colour of its tone: black text, or white on the two dark fills.
 type ToneBox struct {
 	widget.BaseWidget
 	bg      *canvas.Rectangle
@@ -50,14 +47,12 @@ func NewToneBox() *ToneBox {
 	return b
 }
 
-// Large makes the box's text big and bold, for a title.
 func (b *ToneBox) Large() *ToneBox {
 	b.txt.TextSize = 22
 	b.txt.TextStyle = fyne.TextStyle{Bold: true}
 	return b
 }
 
-// Compact makes the box small, for the corner of an icon: small bold text with hardly any room round it.
 func (b *ToneBox) Compact() *ToneBox {
 	b.txt.TextSize = 10
 	b.txt.TextStyle = fyne.TextStyle{Bold: true}
@@ -65,7 +60,6 @@ func (b *ToneBox) Compact() *ToneBox {
 	return b
 }
 
-// Box is what the box was last given to show.
 func (b *ToneBox) Box() Box { return b.box }
 
 func (b *ToneBox) Set(box Box) {

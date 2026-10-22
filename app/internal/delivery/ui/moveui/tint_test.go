@@ -12,8 +12,6 @@ import (
 	"app/internal/core/move/domain"
 )
 
-// icon is a made-up icon of three pixels in a row: the black of an outline, the white of a fill, and the grey of the
-// ground, as the game's icons have them.
 func icon() []byte {
 	img := image.NewNRGBA(image.Rect(0, 0, 3, 1))
 	img.Set(0, 0, color.NRGBA{A: 255})

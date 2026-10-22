@@ -20,15 +20,11 @@ import (
 	"app/internal/delivery/ui/status"
 )
 
-// A tile of the table is cellSize on a side, with cellGap between.
 const (
 	cellSize = 17
 	cellGap  = 1
 )
 
-// tableLayout puts its objects in rows of cols tiles, and asks for no more than the table is. Nothing in it
-// scrolls: the table is as wide as a column of the window, and a scroll of its own would take the wheel away from
-// the column, which has to scroll to the panels below.
 type tableLayout struct{ cols int }
 
 func (t tableLayout) MinSize(objs []fyne.CanvasObject) fyne.Size {
@@ -43,18 +39,15 @@ func (t tableLayout) Layout(objs []fyne.CanvasObject, size fyne.Size) {
 	if t.cols <= 0 {
 		return
 	}
-	left := max((size.Width-t.MinSize(objs).Width)/2, 0) // the table is in the middle of what it is given
+	left := max((size.Width-t.MinSize(objs).Width)/2, 0)
 	for i, o := range objs {
 		o.Move(fyne.NewPos(left+float32(i%t.cols*(cellSize+cellGap)), float32(i/t.cols*(cellSize+cellGap))))
 		o.Resize(fyne.NewSize(cellSize, cellSize))
 	}
 }
 
-// tableSize is the size, in tiles, of the table that every map is drawn on: as wide and as tall as the biggest of the maps, so
-// that the maps are as big as each other, with a smaller one in the middle of it and walls round it.
 type tableSize struct{ w, h int }
 
-// rowsOf is how many rows of tiles a map has.
 func rowsOf(m domain.ExpeditionMap) int {
 	if m.Width <= 0 {
 		return 0
@@ -70,25 +63,22 @@ func tableSizeOf(maps []domain.ExpeditionMap) tableSize {
 	return t
 }
 
-// The fills of the tiles of the table.
 var (
 	floorFill = color.NRGBA{R: 96, G: 102, B: 112, A: 255}
 	wallFill  = color.NRGBA{R: 24, G: 27, B: 33, A: 255}
 	rockFill  = color.NRGBA{R: 139, G: 90, B: 43, A: 255}
 	routeFill = color.NRGBA{R: 235, G: 150, B: 15, A: 255}
 	startFill = color.NRGBA{R: 65, G: 105, B: 225, A: 255}
-	stopFill  = color.NRGBA{R: 50, G: 180, B: 50, A: 255} // a place that the route takes
-	spotFill  = color.NRGBA{R: 70, G: 110, B: 85, A: 255} // a place that it leaves out
+	stopFill  = color.NRGBA{R: 50, G: 180, B: 50, A: 255}
+	spotFill  = color.NRGBA{R: 70, G: 110, B: 85, A: 255}
 
-	// markerFill is the tile that the monster is on: the colour of the box that gives its place above the map.
 	markerFill = color.NRGBA{R: 255, G: 105, B: 180, A: 255}
 
-	gateFill     = color.NRGBA{R: 160, G: 200, B: 80, A: 255} // a gate that the monster can find the way through
-	shutFill     = color.NRGBA{R: 80, G: 92, B: 62, A: 255}   // a gate that it cannot
+	gateFill     = color.NRGBA{R: 160, G: 200, B: 80, A: 255}
+	shutFill     = color.NRGBA{R: 80, G: 92, B: 62, A: 255}
 	teleportFill = color.NRGBA{R: 160, G: 110, B: 210, A: 255}
 )
 
-// cell is a tile of the table: its fill, and the letter on it where it has one.
 type cell struct {
 	bg     *canvas.Rectangle
 	text   *canvas.Text
@@ -105,8 +95,6 @@ func newCell() *cell {
 	return c
 }
 
-// newTable is the tiles of a map as a table of the size given, with the route and the places marked in it. The map is in the
-// middle of the table, and the tiles round it are walls, which are padding and not the map's own tiles: cells are those only.
 func newTable(v View, size tableSize) (table fyne.CanvasObject, cells, padding []*cell) {
 	m := v.Map
 	onRoute := make(map[domain.Point]bool, len(v.Route.Path))
@@ -125,7 +113,7 @@ func newTable(v View, size tableSize) (table fyne.CanvasObject, cells, padding [
 	for _, l := range m.Locks {
 		locks[l.At] = l.MinINT
 	}
-	labels := make(map[domain.Point]string, len(m.Portals)) // T1, E1, ... as the guide writes them on its maps
+	labels := make(map[domain.Point]string, len(m.Portals))
 	for _, p := range m.Portals {
 		labels[p.At] = p.Label
 	}
@@ -152,16 +140,16 @@ func newTable(v View, size tableSize) (table fyne.CanvasObject, cells, padding [
 		case tile == domain.Rock:
 			c.bg.FillColor = rockFill
 			if onRoute[p] {
-				c.text.Text = "•" // the route breaks through it
+				c.text.Text = "•"
 			}
 		case onRoute[p]:
-			c.bg.FillColor, c.text.Text = routeFill, labels[p] // a place to land, when it is one, keeps its label
+			c.bg.FillColor, c.text.Text = routeFill, labels[p]
 		case labels[p] != "":
 			c.bg.FillColor, c.text.Text = teleportFill, labels[p]
 		default:
 			c.bg.FillColor = floorFill
 		}
-		if v.Marker != nil && p == *v.Marker { // where the monster is
+		if v.Marker != nil && p == *v.Marker {
 			c.bg.FillColor, c.text.Text, c.text.Color = markerFill, "★", color.Black
 			c.bg.StrokeColor, c.bg.StrokeWidth = color.White, 2
 		}
@@ -177,7 +165,7 @@ func newTable(v View, size tableSize) (table fyne.CanvasObject, cells, padding [
 			if i := p.Y*m.Width + p.X; p.X >= 0 && p.X < m.Width && p.Y >= 0 && i < len(m.Tiles) {
 				c = tileCell(p, m.Tiles[i])
 				cells = append(cells, c)
-			} else { // outside the map
+			} else {
 				c = newCell()
 				c.bg.FillColor = wallFill
 				padding = append(padding, c)
@@ -188,11 +176,8 @@ func newTable(v View, size tableSize) (table fyne.CanvasObject, cells, padding [
 	return container.New(tableLayout{cols: size.w}, objects...), cells, padding
 }
 
-// keyColumns is how many tiles of the key, with their words, stand side by side.
 const keyColumns = 2
 
-// newKey is the key to a map: each kind of tile that the map has, drawn as it is drawn on the map, with a few words beside it.
-// A kind that the map does not have is left out.
 func newKey(v View) (fyne.CanvasObject, []keyItem) {
 	m := v.Map
 	onRoute := make(map[domain.Point]bool, len(v.Route.Path))
@@ -229,7 +214,7 @@ func newKey(v View) (fyne.CanvasObject, []keyItem) {
 		}
 	}
 
-	var loose, broken bool // rocks that the route leaves, and rocks that it breaks
+	var loose, broken bool
 	teleport := false
 	for i, tile := range m.Tiles {
 		p := domain.Point{X: i % m.Width, Y: i / m.Width}
@@ -289,17 +274,14 @@ func newKey(v View) (fyne.CanvasObject, []keyItem) {
 	return container.NewGridWithColumns(keyColumns, objects...), items
 }
 
-// lootColumns is how many items of a place are written side by side.
 const lootColumns = 3
 
-// placeRow is a place under the map: its letter, its building, where it stands in the route and what it is worth, and
-// what a search of it may turn up, with the chance of each.
 type placeRow struct {
 	letter   *profileui.ToneBox
 	building *widget.Label
 	note     *widget.Label
 	loot     []*widget.Label
-	empty    *widget.Label // says that nothing turns up there, when nothing does
+	empty    *widget.Label
 	object   fyne.CanvasObject
 }
 
@@ -337,25 +319,23 @@ func newPlaceRow(p PlaceView) *placeRow {
 	return r
 }
 
-// keyItem is a tile of the key to the map, the tile itself as it is drawn there, and a few words beside it.
 type keyItem struct {
 	swatch *cell
 	label  *widget.Label
 }
 
-// box is one map: a heading that says what the route is worth, the monster's standing on the trip, the table, and the places.
 type box struct {
 	name      string
 	title     *widget.Label
 	object    fyne.CanvasObject
 	summary   *widget.Label
 	key       []keyItem
-	teleports *widget.Label // where each teleport leads, under the key to the map; hidden where the map has none
+	teleports *widget.Label
 	table     fyne.CanvasObject
-	standing  []*profileui.ToneBox // the energy, the place and the steps of the monster on the trip, above the map
-	places    []*placeRow          // the places of the map, the route's first
-	cells     []*cell              // the tiles of the map, in its order
-	padding   []*cell              // the walls that make the table as big as the biggest map's
+	standing  []*profileui.ToneBox
+	places    []*placeRow
+	cells     []*cell
+	padding   []*cell
 }
 
 func newBox(v View, size tableSize) *box {
@@ -400,20 +380,17 @@ func newBox(v View, size tableSize) *box {
 	return b
 }
 
-// Screen is the Route panel.
 type Screen struct {
-	seen status.Seen[domain.Profile] // what apply last drew, so that the same is not drawn again
+	seen status.Seen[domain.Profile]
 	svc  profile.ProfileService
 
 	status  *widget.Label
-	list    *fyne.Container // the panel of each map
+	list    *fyne.Container
 	content *fyne.Container
 	boxes   []*box
-	drawn   string // what the panels were built from, so that they are built again only when it changes
+	drawn   string
 }
 
-// NewScreen is the Route panel of the maps given. It shows the map of the trip that is on offer to the monster this
-// week, which is the one whose week has come and that the monster is fit for.
 func NewScreen(svc profile.ProfileService) *Screen {
 	s := &Screen{
 		svc:    svc,
@@ -422,14 +399,12 @@ func NewScreen(svc profile.ProfileService) *Screen {
 	}
 	s.status.Hide()
 	s.content = container.NewVBox(s.status, s.list)
-	s.content.Hide() // until there is a map to show
+	s.content.Hide()
 	return s
 }
 
-// Content is what to put in a window.
 func (s *Screen) Content() fyne.CanvasObject { return s.content }
 
-// Load plans the routes for the monster as it is now and shows them. It is safe to call from any goroutine.
 func (s *Screen) Load(ctx context.Context) {
 	p, err := s.svc.Current(ctx)
 	fyne.Do(func() {
@@ -439,7 +414,6 @@ func (s *Screen) Load(ctx context.Context) {
 	})
 }
 
-// apply shows the routes on the maps, or why there are none. It must run on the UI thread.
 func (s *Screen) apply(maps []domain.ExpeditionMap, p domain.Profile, err error) {
 	if err != nil {
 		s.content.Show()
@@ -452,7 +426,7 @@ func (s *Screen) apply(maps []domain.ExpeditionMap, p domain.Profile, err error)
 	var views []View
 	var problems []string
 	var built strings.Builder
-	size := tableSizeOf(maps) // of all the maps, so that the one shown is as big as it is when they all are
+	size := tableSizeOf(maps)
 	fmt.Fprint(&built, size.w, "x", size.h, ";")
 	for _, m := range maps {
 		if !m.Open(p.Player.Ranch, p.Monster) {
@@ -464,7 +438,7 @@ func (s *Screen) apply(maps []domain.ExpeditionMap, p domain.Profile, err error)
 			continue
 		}
 		views = append(views, v)
-		fmt.Fprint(&built, v.Name, "|", v.Summary, "|", v.Places, "|", v.Route.Path, "|", v.Standing, ";") // Standing says where the monster is
+		fmt.Fprint(&built, v.Name, "|", v.Summary, "|", v.Places, "|", v.Route.Path, "|", v.Standing, ";")
 	}
 	drawn := built.String()
 	s.status.SetText(strings.Join(problems, "\n"))
@@ -473,7 +447,7 @@ func (s *Screen) apply(maps []domain.ExpeditionMap, p domain.Profile, err error)
 	} else {
 		s.status.Hide()
 	}
-	if len(views) == 0 && len(problems) == 0 { // no map has its trip on: there is nothing to show
+	if len(views) == 0 && len(problems) == 0 {
 		s.clear()
 		s.content.Hide()
 		return
@@ -493,7 +467,6 @@ func (s *Screen) apply(maps []domain.ExpeditionMap, p domain.Profile, err error)
 	s.list.Refresh()
 }
 
-// clear takes every panel away.
 func (s *Screen) clear() {
 	s.list.RemoveAll()
 	s.boxes, s.drawn = nil, ""

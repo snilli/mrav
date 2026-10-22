@@ -13,15 +13,12 @@ type export struct {
 	rva  uint32
 }
 
-// buildPE is the smallest 64-bit PE file that has an export table: the headers, and one section, .edata,
-// holding the table. The function addresses are in the reverse order of the names, so that finding an export
-// has to go through the ordinals.
 func buildPE(exports []export) []byte {
 	const (
-		peAt      = 0x40 // where the PE signature is: the DOS header's e_lfanew
-		optSize   = 240  // a PE32+ optional header with its 16 data directories
+		peAt      = 0x40
+		optSize   = 240
 		sectionAt = peAt + 4 + 20 + optSize
-		dataAt    = 0x200 // the section's place in the file
+		dataAt    = 0x200
 		dataRVA   = 0x1000
 		dirSize   = 40
 	)
@@ -33,9 +30,9 @@ func buildPE(exports []export) []byte {
 
 	var data bytes.Buffer
 	put := func(v any) { Expect(binary.Write(&data, binary.LittleEndian, v)).To(Succeed()) }
-	put([]uint32{0, 0})                                             // Characteristics, TimeDateStamp
-	put([]uint16{0, 0})                                             // MajorVersion, MinorVersion
-	put([]uint32{stringsRVA, 1, n, n, funcsRVA, namesRVA, ordsRVA}) // Name, Base, NumberOfFunctions, NumberOfNames, the three tables
+	put([]uint32{0, 0})
+	put([]uint16{0, 0})
+	put([]uint32{stringsRVA, 1, n, n, funcsRVA, namesRVA, ordsRVA})
 	for i := range exports {
 		put(exports[n-1-uint32(i)].rva)
 	}
@@ -58,20 +55,20 @@ func buildPE(exports []export) []byte {
 	le.PutUint32(file[0x3C:], peAt)
 	copy(file[peAt:], "PE\x00\x00")
 	coff := file[peAt+4:]
-	le.PutUint16(coff[0:], 0x8664)   // Machine: x64
-	le.PutUint16(coff[2:], 1)        // NumberOfSections
-	le.PutUint16(coff[16:], optSize) // SizeOfOptionalHeader
+	le.PutUint16(coff[0:], 0x8664)
+	le.PutUint16(coff[2:], 1)
+	le.PutUint16(coff[16:], optSize)
 	opt := file[peAt+4+20:]
-	le.PutUint16(opt[0:], 0x20B)                // Magic: PE32+
-	le.PutUint32(opt[108:], 16)                 // NumberOfRvaAndSizes
-	le.PutUint32(opt[112:], dataRVA)            // the export directory: where,
-	le.PutUint32(opt[116:], uint32(data.Len())) // and how long
+	le.PutUint16(opt[0:], 0x20B)
+	le.PutUint32(opt[108:], 16)
+	le.PutUint32(opt[112:], dataRVA)
+	le.PutUint32(opt[116:], uint32(data.Len()))
 	sec := file[sectionAt:]
 	copy(sec, ".edata")
-	le.PutUint32(sec[8:], 0x200)    // VirtualSize
-	le.PutUint32(sec[12:], dataRVA) // VirtualAddress
-	le.PutUint32(sec[16:], 0x200)   // SizeOfRawData
-	le.PutUint32(sec[20:], dataAt)  // PointerToRawData
+	le.PutUint32(sec[8:], 0x200)
+	le.PutUint32(sec[12:], dataRVA)
+	le.PutUint32(sec[16:], 0x200)
+	le.PutUint32(sec[20:], dataAt)
 	copy(file[dataAt:], data.Bytes())
 	return file
 }

@@ -46,7 +46,6 @@ var _ = Describe("TrainingService", func() {
 
 	It("returns the source's error without asking the repository", func() {
 		source.EXPECT().Current(ctx).Return(monster.Monster{}, apperr.NotFound("monster", "No monster"))
-		// no repository expectation: the mock fails the test if it is called
 
 		_, err := svc.Current(ctx)
 		Expect(errors.Is(err, apperr.ErrNotFound)).To(BeTrue())

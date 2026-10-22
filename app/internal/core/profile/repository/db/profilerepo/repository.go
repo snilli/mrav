@@ -21,9 +21,6 @@ import (
 	"app/internal/infrastructure/memo"
 )
 
-// Repository reads the data the Monster page names things from through Ent's query builder. None of it changes while the
-// viewer runs, so each answer is read once and kept: the pages ask twice a second, and what they are given is shared, so they
-// must not write to it.
 type Repository struct {
 	client  *orm.Client
 	genera  memo.Cache[struct{}, map[monster.Genus]string]
@@ -70,7 +67,7 @@ func (r *Repository) loadBreedRules(ctx context.Context, main int) ([]domain.Bre
 		rule := domain.BreedRule{
 			Main: b.MainGenus, Sub: b.SubGenus, Name: b.Name, Otherwise: b.Otherwise, Guts: b.Guts, MatchGuts: b.MatchGuts,
 		}
-		if len(b.Growth) > 0 { // none means any growth rates will do
+		if len(b.Growth) > 0 {
 			growth, err := growthOf(b.Growth)
 			if err != nil {
 				return nil, fmt.Errorf("breed %d/%d: %w", b.MainGenus, b.SubGenus, err)
@@ -118,9 +115,6 @@ func (r *Repository) loadDesireNames(ctx context.Context) (map[int]string, error
 	return names, nil
 }
 
-// ListExpeditionMaps reads the maps, their places, their locks and the tables of chances of the places, each with a
-// statement that looks the rows up by an index and gives them in the order of it, and puts them together here: what a
-// search is worth to a monster is the domain's to work out from the tables, not the database's.
 func (r *Repository) ListExpeditionMaps(ctx context.Context) ([]domain.ExpeditionMap, error) {
 	return r.maps.Get(struct{}{}, func() ([]domain.ExpeditionMap, error) { return r.loadExpeditionMaps(ctx) })
 }
@@ -146,13 +140,13 @@ func (r *Repository) loadExpeditionMaps(ctx context.Context) ([]domain.Expeditio
 		return nil, err
 	}
 
-	chances := make(map[int][]domain.Chance, len(places)) // by the id of the place
+	chances := make(map[int][]domain.Chance, len(places))
 	for _, c := range rules {
 		chances[c.PlaceID] = append(chances[c.PlaceID], domain.Chance{
 			Good: c.Good, MinStat: c.MinStat, Slot: c.Slot, Item: c.Edges.Item.Name, Pct: c.Pct, Price: price(c.Edges.Item.SalePrice),
 		})
 	}
-	placesOf := make(map[int][]*ent.ExpeditionPlace, len(rows)) // by the id of the map
+	placesOf := make(map[int][]*ent.ExpeditionPlace, len(rows))
 	for _, p := range places {
 		placesOf[p.MapID] = append(placesOf[p.MapID], p)
 	}
@@ -172,8 +166,6 @@ func (r *Repository) loadExpeditionMaps(ctx context.Context) ([]domain.Expeditio
 	return maps, nil
 }
 
-// price is what an item sells for, in gold: the price that the data has for it, 0 where it is not a number, as it is not for
-// what is not sold.
 func price(sale string) int {
 	n, err := strconv.Atoi(sale)
 	if err != nil || n < 0 {
@@ -182,7 +174,6 @@ func price(sale string) int {
 	return n
 }
 
-// mapOf reads the tiles of a stored map, and gives it its places with their tables of chances and its locks.
 func mapOf(row *ent.ExpeditionMap, places []*ent.ExpeditionPlace, locks []*ent.ExpeditionLock, chances map[int][]domain.Chance) (domain.ExpeditionMap, error) {
 	lines := strings.Split(row.Rows, "\n")
 	m := domain.ExpeditionMap{
@@ -203,7 +194,7 @@ func mapOf(row *ent.ExpeditionMap, places []*ent.ExpeditionPlace, locks []*ent.E
 				m.Tiles = append(m.Tiles, domain.Gate)
 			case 'T':
 				m.Tiles = append(m.Tiles, domain.Teleport)
-			default: // a floor, the start, or a place
+			default:
 				m.Tiles = append(m.Tiles, domain.Floor)
 			}
 		}
@@ -223,7 +214,6 @@ func mapOf(row *ent.ExpeditionMap, places []*ent.ExpeditionPlace, locks []*ent.E
 	return m, nil
 }
 
-// growthOf is the six growth rates a rule wants, in the order of monster.Stat.
 func growthOf(rates []int) ([monster.StatCount]int, error) {
 	var growth [monster.StatCount]int
 	if len(rates) != monster.StatCount {

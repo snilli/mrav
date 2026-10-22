@@ -1,5 +1,3 @@
-// Package domain is how the game's numbers read on the Monster, Life Index and Training pages: grades, labels,
-// names, and the rules MR2AV applies to them. Pure Go.
 package domain
 
 import (
@@ -8,7 +6,6 @@ import (
 	monster "app/internal/core/monster/domain"
 )
 
-// Level is how a percentage reads.
 type Level int
 
 const (
@@ -18,7 +15,6 @@ const (
 	LevelHigh
 )
 
-// NatureLabel is what an effective nature is called.
 type NatureLabel string
 
 const (
@@ -31,7 +27,6 @@ const (
 
 var growthGrades = [...]string{"E", "D", "C", "B", "A", "S", "S2", "S3", "S4", "S5", "F"}
 
-// GrowthGrade is the letter of a growth rate: 0 is E up to 4 for A, and S and F lie beyond.
 func GrowthGrade(rate int) string {
 	if rate < 0 || rate >= len(growthGrades) {
 		return "---"
@@ -39,7 +34,6 @@ func GrowthGrade(rate int) string {
 	return growthGrades[rate]
 }
 
-// ArenaGrade is the letter of the arena speed: 0 is E up to 4 for A.
 func ArenaGrade(speed int) string {
 	if speed < 0 || speed > 4 {
 		return "---"
@@ -47,7 +41,6 @@ func ArenaGrade(speed int) string {
 	return growthGrades[speed]
 }
 
-// NatureOf names an effective nature.
 func NatureOf(effective int) NatureLabel {
 	switch {
 	case effective <= -60:
@@ -63,7 +56,6 @@ func NatureOf(effective int) NatureLabel {
 	}
 }
 
-// FormLabel describes a form, which runs from -100 (skinny) to 100 (plump).
 func FormLabel(form int) string {
 	switch {
 	case form >= -19 && form <= 19:
@@ -80,7 +72,6 @@ func FormLabel(form int) string {
 	return "---"
 }
 
-// MotivationOf says how eager a monster is for a drill: under 30 percent is low, 81 and over is high.
 func MotivationOf(percent int) Level {
 	switch {
 	case percent > -1 && percent < 30:
@@ -98,7 +89,6 @@ var lifeStages = [...]string{
 	"6 - Sub-Prime", "7 - Elder", "8 - Elder 2", "9 - Old Age", "10 - Twilight",
 }
 
-// LifeStageText names a life stage, and says when the monster has no lifespan left, whatever its stage.
 func LifeStageText(stage, lifespan int) string {
 	switch {
 	case lifespan <= 0:
@@ -109,7 +99,6 @@ func LifeStageText(stage, lifespan int) string {
 	return lifeStages[stage]
 }
 
-// LifeTypeName names the way a monster ages.
 func LifeTypeName(lifeType int) string {
 	switch lifeType {
 	case 0:
@@ -126,7 +115,6 @@ func LifeTypeName(lifeType int) string {
 	return "Unrecognised"
 }
 
-// PlayTypeName names the way a monster likes to play.
 func PlayTypeName(play int) string {
 	switch play {
 	case 0:
@@ -139,8 +127,6 @@ func PlayTypeName(play int) string {
 	return "---"
 }
 
-// GenusLabel is a genus's name. The codes 38 to 43 are breeds that are not in the game's list and show as
-// "??? #n" as a sub breed; as a main breed they, and any other code without a name, show as "---".
 func GenusLabel(code int, main bool, names map[monster.Genus]string) string {
 	if name, ok := names[monster.Genus(code)]; ok {
 		return name

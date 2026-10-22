@@ -19,7 +19,6 @@ var _ = Describe("Columns", func() {
 		pad = theme.Padding()
 	})
 
-	// cells are n objects that each want 20 by 30 at the least.
 	cells := func(n int) []fyne.CanvasObject {
 		objs := make([]fyne.CanvasObject, n)
 		for i := range objs {

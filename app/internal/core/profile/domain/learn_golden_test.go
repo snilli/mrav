@@ -17,9 +17,6 @@ import (
 	"app/internal/testutil"
 )
 
-// golden is one case of testdata/learn_golden.json: a monster as the domain holds it, and what each place of the calculator of
-// legendcup.com listed for it, as {slot of the move, chance in percent to one decimal}. The page's own calcChance, run on 92
-// monsters, gave them, and it was checked against the live page for 18 of them. The slots are ours, not the page's.
 type golden struct {
 	Name    string
 	Genus   int

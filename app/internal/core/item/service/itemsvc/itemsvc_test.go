@@ -36,7 +36,7 @@ var _ = Describe("ItemService", func() {
 	It("fills the twenty slots with the items the player carries", func() {
 		p := player.Player{}
 		for slot := range p.Items {
-			p.Items[slot] = 178 // an empty slot
+			p.Items[slot] = 178
 		}
 		p.Items[0], p.Items[3] = 29, 0
 		players.EXPECT().Player(ctx).Return(p, nil)
@@ -56,7 +56,7 @@ var _ = Describe("ItemService", func() {
 
 		slots, err := svc.Inventory(ctx)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(slots[13].Locked).To(BeFalse()) // a house one up gives 14
+		Expect(slots[13].Locked).To(BeFalse())
 		Expect(slots[14].Locked).To(BeTrue())
 	})
 
@@ -73,7 +73,6 @@ var _ = Describe("ItemService", func() {
 
 	It("returns the source's error without asking the repository", func() {
 		players.EXPECT().Player(ctx).Return(player.Player{}, apperr.NotFound("game", "DuckStation is not running"))
-		// no repository expectation: the mock fails the test if it is called
 
 		_, err := svc.Inventory(ctx)
 		Expect(errors.Is(err, apperr.ErrNotFound)).To(BeTrue())

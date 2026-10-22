@@ -1,5 +1,3 @@
-// Package profileui is the dashboard of the monster: a pure presenter that turns a profile into what the screen
-// shows, and the Fyne widgets that draw it, bars and coloured boxes included.
 package profileui
 
 import (
@@ -11,7 +9,6 @@ import (
 	"app/internal/core/profile/domain"
 )
 
-// Tone is the colour a box is filled with, named as MR2AV names it. ToneNone is no fill at all.
 type Tone int
 
 const (
@@ -28,44 +25,38 @@ const (
 	ToneHotPink
 	ToneGray
 	ToneBlack
-	ToneAccent // the blue of a bar
+	ToneAccent
 )
 
-// Box is a value and the colour it is shown on.
 type Box struct {
 	Text string
 	Tone Tone
 }
 
-// Options are the two switches MR2AV has on the Monster page.
 type Options struct {
-	GutsPerSecond  bool // show the guts rate as guts a second
-	GrowthFromZero bool // number the growth rates from 0 instead of from 1
+	GutsPerSecond  bool
+	GrowthFromZero bool
 }
 
-// Bar is how far a bar is filled, from 0 to 1, and the colour it is filled with.
 type Bar struct {
 	Ratio float64
 	Tone  Tone
 }
 
-// Bars are the bars of the Monster page.
 type Bars struct {
-	Stats     [monster.StatCount]float64 // each stat out of 999
+	Stats     [monster.StatCount]float64
 	Fatigue   Bar
 	Stress    Bar
-	Nature    Bar // where the nature lies from -100 to 100; its tone is not used
-	Lifespan  Bar // the lifespan left out of the lifespan the monster began with
-	LifeIndex Bar // the life index out of the 280 at which a monster loses the most
+	Nature    Bar
+	Lifespan  Bar
+	LifeIndex Bar
 }
 
-// CocoonView is what the cocoon facts of a young Worm show.
 type CocoonView struct {
-	CupJellies Box // green once a Worm has eaten enough to become a Beaclon
+	CupJellies Box
 	Ready      bool
 }
 
-// MonsterView is what the Monster page shows, every value already in the game's words.
 type MonsterView struct {
 	Breed           Box
 	GivenName       string
@@ -76,14 +67,14 @@ type MonsterView struct {
 	LifeType        string
 	Lifespan        string
 	InitialLifespan string
-	Stats           [monster.StatCount]string // by stat; Speed and Defense also show the effective value in brackets
+	Stats           [monster.StatCount]string
 	StatTotal       string
 	Growth          [monster.StatCount]Box
 	Loyalty         string
 	Spoil           string
 	Fear            string
 	Fame            Box
-	Rank            string // the grade of the monster as the game writes it, E to S
+	Rank            string
 	Stress          string
 	Fatigue         string
 	LifeIndex       Box
@@ -106,19 +97,17 @@ type MonsterView struct {
 	PrizeMoney      string
 	NextSale        string
 	ErrantrySale    bool
-	Cocoon          *CocoonView // nil unless the monster is a Worm that can still cocoon
+	Cocoon          *CocoonView
 	Bars            Bars
-	FatigueWord     string // how the game says the fatigue: seems tired
-	Record          string // wins, losses and knock-outs
-	History         string // the ailments and runaways of its life
+	FatigueWord     string
+	Record          string
+	History         string
 	Ranch           RanchView
 	Expeditions     ExpeditionsView
 }
 
-// gradeTones colour the grades E to A, which growth rates and the arena speed share.
 var gradeTones = [...]Tone{ToneOrangeRed, ToneOrange, ToneYellow, ToneYellowGreen, ToneLimeGreen}
 
-// arenaTone colours an arena speed: only E to A have a colour.
 func arenaTone(speed int) Tone {
 	if speed >= 0 && speed < len(gradeTones) {
 		return gradeTones[speed]
@@ -126,7 +115,6 @@ func arenaTone(speed int) Tone {
 	return ToneNone
 }
 
-// gradeTone colours a growth rate: E to A as the arena speed, and S and beyond, and F, in pink.
 func gradeTone(rate int) Tone {
 	if rate >= len(gradeTones) && rate <= 10 {
 		return ToneHotPink
@@ -232,7 +220,6 @@ func NewMonsterView(p domain.Profile, o Options) MonsterView {
 	return v
 }
 
-// fraction is part out of whole as a ratio from 0 to 1; with no whole it is 0.
 func fraction(part, whole int) float64 {
 	if whole <= 0 {
 		return 0
@@ -240,7 +227,6 @@ func fraction(part, whole int) float64 {
 	return min(max(float64(part)/float64(whole), 0), 1)
 }
 
-// conditionTone colours fatigue and stress: green under 40, orange under 70, red from there.
 func conditionTone(value int) Tone {
 	switch {
 	case value < 40:
@@ -251,7 +237,6 @@ func conditionTone(value int) Tone {
 	return ToneRed
 }
 
-// lifespanTone colours the lifespan left: green over half of what it began with, orange over a quarter, red after.
 func lifespanTone(left, initial int) Tone {
 	switch ratio := fraction(left, initial); {
 	case ratio > 0.5:
@@ -276,8 +261,6 @@ func natureBox(effective int) Box {
 	return b
 }
 
-// desireBox shows the name of what a monster wants or does not want, in a colour when it is a Tablet or a
-// Battle, which matter for its growth.
 func desireBox(name string, tone Tone) Box {
 	b := Box{Text: name}
 	if name == "Tablet" || name == "Battle" {
@@ -286,7 +269,6 @@ func desireBox(name string, tone Tone) Box {
 	return b
 }
 
-// MotivationTone colours how eager a monster is to train: orange-red when low, green when high.
 func MotivationTone(percent int) Tone {
 	switch domain.MotivationOf(percent) {
 	case domain.LevelLow:

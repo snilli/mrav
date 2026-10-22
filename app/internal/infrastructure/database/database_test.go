@@ -20,7 +20,6 @@ var _ = Describe("database", func() {
 		path string
 	)
 
-	// existing makes a database file with the schema, as `import` leaves one.
 	existing := func() {
 		c, err := orm.Open(ctx, path)
 		Expect(err).NotTo(HaveOccurred())

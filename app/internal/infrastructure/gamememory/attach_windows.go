@@ -2,9 +2,6 @@
 
 package gamememory
 
-// Written from MR2AV's attach code and Microsoft's documentation, and only compiled so far (GOOS=windows go vet):
-// it has not been run against a live DuckStation or MR2DX.
-
 import (
 	"encoding/binary"
 	"errors"
@@ -17,19 +14,14 @@ import (
 	"golang.org/x/sys/windows"
 )
 
-// steamRAMOffset is where the English release of MR2DX keeps the console's RAM inside MF2.exe. The Japanese
-// release keeps it at 0x2CA504 and is not supported: MR2AV tells the two apart by the exe's file description.
 const steamRAMOffset = 0x2DEC6C
 
-// process is a running program whose memory can be read.
 type process struct {
 	handle windows.Handle
-	base   uintptr // where its exe is loaded
-	path   string  // the exe's file
+	base   uintptr
+	path   string
 }
 
-// openProcess finds a running program whose exe name starts with prefix, in lower case, as MR2AV does.
-// name is what to call it when it is not running.
 func openProcess(prefix, name string) (*process, error) {
 	pid, found, err := findPID(prefix)
 	if err != nil {
@@ -62,13 +54,12 @@ func findPID(prefix string) (pid uint32, found bool, err error) {
 			return e.ProcessID, true, nil
 		}
 	}
-	if errors.Is(err, windows.ERROR_NO_MORE_FILES) { // the end of the list, not a failure
+	if errors.Is(err, windows.ERROR_NO_MORE_FILES) {
 		err = nil
 	}
 	return 0, false, err
 }
 
-// mainModule is where a process's exe is loaded, and the file it was loaded from.
 func mainModule(pid uint32) (base uintptr, path string, err error) {
 	snap, err := windows.CreateToolhelp32Snapshot(windows.TH32CS_SNAPMODULE|windows.TH32CS_SNAPMODULE32, pid)
 	if err != nil {
@@ -77,7 +68,7 @@ func mainModule(pid uint32) (base uintptr, path string, err error) {
 	defer windows.CloseHandle(snap)
 
 	m := windows.ModuleEntry32{Size: uint32(unsafe.Sizeof(windows.ModuleEntry32{}))}
-	if err := windows.Module32First(snap, &m); err != nil { // the first module is the exe
+	if err := windows.Module32First(snap, &m); err != nil {
 		return 0, "", err
 	}
 	return m.ModBaseAddr, windows.UTF16ToString(m.ExePath[:]), nil
@@ -94,7 +85,6 @@ func (p *process) read(addr uintptr, buf []byte) error {
 	return nil
 }
 
-// processMemory is the console's RAM, which starts at ram inside the process.
 type processMemory struct {
 	*process
 	ram uintptr
@@ -104,7 +94,6 @@ func (m processMemory) Read(addr uint32, p []byte) error {
 	return m.process.read(m.ram+uintptr(addr), p)
 }
 
-// ReadModule reads the exe the process runs, from where it is loaded.
 func (m processMemory) ReadModule(offset uint32, p []byte) error {
 	return m.process.read(m.process.base+uintptr(offset), p)
 }
@@ -130,8 +119,6 @@ func attachDuckStation() (_ Memory, err error) {
 		}
 	}()
 
-	// DuckStation has no fixed place for the RAM: its exe exports a pointer to it, named RAM. The export is
-	// in the exe's header on disk; the pointer itself is read from the running program.
 	rva, err := exportOf(p.path, "RAM")
 	if err != nil {
 		return nil, fmt.Errorf("cannot find DuckStation's RAM: %w", err)

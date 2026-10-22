@@ -1,6 +1,5 @@
 package domain
 
-// IsDrug says whether an item id is one of the drugs, which are the ids 34 to 41.
 func IsDrug(id int) bool { return id > 33 && id < 42 }
 
 var drugTips = map[int]string{
@@ -12,5 +11,4 @@ var drugTips = map[int]string{
 	41: "Paradoxine:\nTraining stimulant. Increases POW and SKI by 30 for each Success/Cheat/Great for four weeks.\nEach increase also decreases SPD and DEF by 10%.\n-18 Weeks of lifespan on use.",
 }
 
-// DrugTip explains what a drug does, as MR2AV does. It is empty for a drug MR2AV has nothing to say about.
 func DrugTip(id int) string { return drugTips[id] }

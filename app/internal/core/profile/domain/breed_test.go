@@ -8,7 +8,6 @@ import (
 	"app/internal/core/profile/domain"
 )
 
-// growth is Life, Pow, Int, Skill, Speed, Defense, the order of monster.Stat.
 type growth = [monster.StatCount]int
 
 func mon(main, sub, guts int, g growth) monster.Monster {

@@ -26,9 +26,6 @@ import (
 	mocktraining "app/mock/core/training"
 )
 
-// trainingOf is the Training page of a monster at its life stage 4 whose growth rates are all 2, with a training
-// boost of the bits given, in a table whose every text says where it is from, as "k1 (a/b)". Its motivation for
-// the first drill is 85 and for the swim 100.
 func trainingOf(boost int) domain.Training {
 	var gains []domain.Gain
 	for _, kind := range []int{domain.KindLight, domain.KindHeavy, domain.KindHeavySecondary} {
@@ -41,7 +38,6 @@ func trainingOf(boost int) domain.Training {
 	return domain.Build(m, domain.NewGains(gains))
 }
 
-// withAccordion is whether there is an accordion anywhere in an object, in the containers and scrolls that hold it.
 func withAccordion(o fyne.CanvasObject) bool {
 	var children []fyne.CanvasObject
 	switch o := o.(type) {
@@ -125,9 +121,9 @@ var _ = Describe("Screen", func() {
 		Expect(s.rows[2].star.Text).To(BeEmpty())
 		Expect(s.rows[9].star.Text).To(Equal("★"))
 
-		Expect(s.rows[0].bg.FillColor).To(Equal(recommendedFill))   // 85% is keen
-		Expect(s.rows[1].bg.FillColor).To(Equal(color.Transparent)) // 20% is not
-		Expect(s.rows[2].bg.FillColor).To(Equal(color.Transparent)) // keen or not, no specialty
+		Expect(s.rows[0].bg.FillColor).To(Equal(recommendedFill))
+		Expect(s.rows[1].bg.FillColor).To(Equal(color.Transparent))
+		Expect(s.rows[2].bg.FillColor).To(Equal(color.Transparent))
 		Expect(s.rows[9].bg.FillColor).To(Equal(recommendedFill))
 	})
 
@@ -172,7 +168,6 @@ var _ = Describe("Screen", func() {
 		Eventually(func() string { return s.rows[0].star.Text }).Should(Equal("★"))
 	})
 
-	// A screenshot of the page, for looking at: SCREENSHOT_DIR=/some/dir go test -ginkgo.label-filter=screenshot
 	It("renders the page to a PNG", Label("screenshot"), func() {
 		dir := os.Getenv("SCREENSHOT_DIR")
 		if dir == "" {

@@ -10,15 +10,11 @@ import (
 	"app/internal/core/move/domain"
 )
 
-// The game draws the icon of a move that runs on power in yellow, and one that runs on intelligence in green. The icons
-// here are black, white and grey, so the white of the fill is what is given the colour.
 var (
 	powerFill        = color.NRGBA{R: 255, G: 222, B: 48, A: 255}
 	intelligenceFill = color.NRGBA{R: 64, G: 224, B: 96, A: 255}
 )
 
-// tint gives an icon the colour of the kind of its move, in place of its white, and leaves the black and the grey as
-// they are. An icon of a move of no known kind is as it was.
 func tint(icon []byte, kind domain.Kind) ([]byte, error) {
 	var fill color.NRGBA
 	switch kind {

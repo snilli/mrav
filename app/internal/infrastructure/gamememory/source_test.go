@@ -93,10 +93,10 @@ var _ = Describe("Source", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		mem.fail = errors.New("access denied")
-		_, err = src.Current(ctx) // the game is lost
+		_, err = src.Current(ctx)
 		Expect(err).To(HaveOccurred())
 		mem.fail = nil
-		_, err = src.Current(ctx) // and found again, with no wait
+		_, err = src.Current(ctx)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(attached).To(Equal(2))
 	})

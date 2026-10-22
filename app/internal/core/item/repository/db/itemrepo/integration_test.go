@@ -46,7 +46,7 @@ var _ = Describe("itemrepo", Label("integration"), func() {
 
 		got, err := itemrepo.New(client).ListItems(ctx)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(got).To(HaveLen(179)) // ids 0 to 177, and the empty slot's 178
+		Expect(got).To(HaveLen(179))
 		for i, it := range got {
 			Expect(it.Code).To(Equal(i))
 		}
@@ -56,10 +56,10 @@ var _ = Describe("itemrepo", Label("integration"), func() {
 		Expect(got[0].PurchasePrice).To(Equal("10"))
 		Expect(got[29].SalePrice).To(Equal("100"))
 		Expect(got[60].PurchasePrice).To(Equal("???"))
-		Expect(got[65].Effect).To(Equal("Decreases Stress by 1.")) // the one whose line had an extra field
+		Expect(got[65].Effect).To(Equal("Decreases Stress by 1."))
 		Expect(got[130].DesireName).To(Equal("Nothing"))
 		Expect(got[131].DesireName).To(Equal("Battle"))
-		Expect(got[172].Name).To(Equal("Reward")) // the one whose line lost its name
+		Expect(got[172].Name).To(Equal("Reward"))
 		Expect(got[178].Name).To(Equal("No item"))
 	})
 })

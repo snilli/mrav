@@ -1,5 +1,3 @@
-// Package trainingui is the Training panel: each drill with what it gives the monster, how keen the monster is for
-// it and whether it is a specialty, and the places the monster is good at.
 package trainingui
 
 import (
@@ -24,19 +22,13 @@ const (
 	noGain = "N/A"
 	star   = "★"
 
-	// firstPlace is the first of the specialties that are places rather than drills: the pool, then the places
-	// of the map.
 	firstPlace = 9
 )
 
-// recommendedFill is the green behind a drill that is a specialty and that the monster is keen on.
 var recommendedFill color.Color = color.NRGBA{R: 50, G: 205, B: 50, A: 70}
 
-// columns are the columns of every row of the table: the drill, what it gives, the bar of the motivation and its
-// percent, and the star of a specialty.
 var columns = profileui.Columns{80, 0, 90, 48, 24}
 
-// row is a drill in the table.
 type row struct {
 	name    *widget.Label
 	gain    *profileui.ColorText
@@ -60,13 +52,12 @@ func newRow(name string) *row {
 	return r
 }
 
-// Screen is the Training panel.
 type Screen struct {
-	seen status.Seen[domain.Training] // what apply last drew, so that the same is not drawn again
+	seen status.Seen[domain.Training]
 	svc  training.TrainingService
 
 	status  *widget.Label
-	body    fyne.CanvasObject // the table, which is hidden for what to say in its place
+	body    fyne.CanvasObject
 	content fyne.CanvasObject
 	rows    []*row
 	places  *widget.Label
@@ -96,10 +87,8 @@ func NewScreen(svc training.TrainingService) *Screen {
 	return s
 }
 
-// Content is what to put in a window.
 func (s *Screen) Content() fyne.CanvasObject { return s.content }
 
-// Load asks the service for the current page and shows it. It is safe to call from any goroutine.
 func (s *Screen) Load(ctx context.Context) {
 	t, err := s.svc.Current(ctx)
 	fyne.Do(func() {
@@ -109,7 +98,6 @@ func (s *Screen) Load(ctx context.Context) {
 	})
 }
 
-// apply shows a page, or why there is none. It must run on the UI thread.
 func (s *Screen) apply(t domain.Training, err error) {
 	if err != nil {
 		s.status.SetText(status.Message(err))
@@ -148,8 +136,6 @@ func (s *Screen) apply(t domain.Training, err error) {
 	s.places.SetText("Good places: " + strings.Join(places, ", "))
 }
 
-// gainSegments are what a drill gives, a stat to a part, the stat named in its colour: the primary stat, and for a heavy
-// drill the other.
 func gainSegments(g domain.DrillGains) []profileui.Segment {
 	segments := gainText(g.Drill.Primary, g.Primary)
 	if g.Drill.Heavy {
@@ -159,8 +145,6 @@ func gainSegments(g domain.DrillGains) []profileui.Segment {
 	return segments
 }
 
-// gainText is a stat and what each outcome of the drill gives it: the table says "9-12 (9/10/11/12)", the range and then
-// the four outcomes, and the outcomes say all of it.
 func gainText(stat monster.Stat, text string) []profileui.Segment {
 	if text == noGain {
 		return []profileui.Segment{{Text: noGain}}

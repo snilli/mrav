@@ -51,8 +51,6 @@ var _ = Describe("moverepo", Label("integration"), func() {
 		Expect(err).NotTo(HaveOccurred())
 		DeferCleanup(client.Close)
 
-		// Seed the way the database holds its rows: the unlock rule and the extra row as their stored JSON
-		// shapes, written by hand, so what the repository returns is what its mapper makes of them.
 		pixie := client.Genus.Create().SetCode(0).SetName("Pixie").SaveX(ctx)
 		dragon := client.Genus.Create().SetCode(1).SetName("Dragon").SaveX(ctx)
 		seed := func(genusID int, m movedomain.Move) *ent.MoveCreate {

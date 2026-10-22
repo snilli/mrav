@@ -18,7 +18,7 @@ var _ = Describe("Requirements", func() {
 	It("says a stat sum in the names of the stats, with what the monster has", func() {
 		m := monster.Monster{Stats: [monster.StatCount]int{0, 300, 154, 0, 0, 0}}
 		c := domain.StatSumAtLeast{Stats: []monster.Stat{monster.Pow, monster.Int}, Min: 400}
-		stats := []monster.Stat{monster.Pow, monster.Int} // which stats the words are about, to show them in their colours
+		stats := []monster.Stat{monster.Pow, monster.Int}
 		Expect(require(c, m)).To(Equal(domain.Requirement{Text: "POW + INT at least 400", Have: "454", Met: true, Stats: stats}))
 
 		m.Stats[monster.Int] = 99

@@ -12,9 +12,6 @@ import (
 	monster "app/internal/core/monster/domain"
 )
 
-// StatColors are the colours of the stats, by stat, as the breeder's sheet draws them: the yellow of Life, the red of
-// Pow, the green of Int, the magenta of Skill, the cyan of Speed and the blue of Defense. Wherever a stat is named, it is
-// named in its colour.
 var StatColors = [monster.StatCount]color.Color{
 	monster.Life:    color.NRGBA{R: 254, G: 254, B: 145, A: 255},
 	monster.Pow:     color.NRGBA{R: 238, G: 134, B: 131, A: 255},
@@ -24,14 +21,11 @@ var StatColors = [monster.StatCount]color.Color{
 	monster.Defense: color.NRGBA{R: 127, G: 127, B: 246, A: 255},
 }
 
-// Segment is a piece of text in a colour; a Segment with no colour is in the colour of the text.
 type Segment struct {
 	Text  string
 	Color color.Color
 }
 
-// ColorText is text of several colours on one line, such as a stat's name in its colour and what is said of it in the
-// colour of the text. It is padded as a label is, so that it lines up with one.
 type ColorText struct {
 	widget.BaseWidget
 	texts []*canvas.Text
@@ -44,7 +38,6 @@ func NewColorText(segments ...Segment) *ColorText {
 	return c
 }
 
-// Set changes the segments.
 func (c *ColorText) Set(segments ...Segment) {
 	c.texts = c.texts[:0]
 	for _, s := range segments {
@@ -57,7 +50,6 @@ func (c *ColorText) Set(segments ...Segment) {
 	c.Refresh()
 }
 
-// Segments are the pieces of text, as they were last set.
 func (c *ColorText) Segments() []Segment {
 	segments := make([]Segment, len(c.texts))
 	for i, t := range c.texts {
@@ -66,7 +58,6 @@ func (c *ColorText) Segments() []Segment {
 	return segments
 }
 
-// String is the words of all the segments.
 func (c *ColorText) String() string {
 	var b strings.Builder
 	for _, t := range c.texts {

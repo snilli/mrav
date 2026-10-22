@@ -9,28 +9,23 @@ import (
 )
 
 const (
-	markerWidth = 4  // how wide a gauge's marker is
-	barHeight   = 10 // how tall every bar is, whatever the row around it
+	markerWidth = 4
+	barHeight   = 10
 )
 
-// trackColor is the empty part of a bar: dark, so that it shows in either theme.
 var trackColor color.Color = color.NRGBA{R: 0x2f, G: 0x33, B: 0x38, A: 0xff}
 
-// Meter is a bar that fills in proportion to a value, in the colour of a tone. As a gauge it shows a marker at the
-// value instead of a fill.
 type Meter struct {
 	widget.BaseWidget
 	track  *canvas.Rectangle
 	fill   *canvas.Rectangle
 	ratio  float64
 	marker bool
-	color  color.Color // the fill's colour whatever the tone, when it has one
+	color  color.Color
 }
 
 func NewMeter() *Meter { return newMeter(false) }
 
-// NewGauge is a Meter that marks the value instead of filling up to it, for a value that runs from low to high
-// with the good in the middle or at one end, such as a nature.
 func NewGauge() *Meter { return newMeter(true) }
 
 func newMeter(marker bool) *Meter {
@@ -44,14 +39,11 @@ func newMeter(marker bool) *Meter {
 	return m
 }
 
-// Colored makes the meter fill in a colour of its own, and not in the colour of the tone it is given.
 func (m *Meter) Colored(c color.Color) *Meter {
 	m.color, m.fill.FillColor = c, c
 	return m
 }
 
-// Set fills the meter to a ratio of 0 to 1, which it keeps to, in the colour of a tone: the accent colour for
-// none, or the colour the meter was given. A gauge's marker is always white.
 func (m *Meter) Set(ratio float64, tone Tone) {
 	m.ratio = min(max(ratio, 0), 1)
 	switch fill, ok := toneColors[tone]; {
@@ -67,14 +59,12 @@ func (m *Meter) Set(ratio float64, tone Tone) {
 	m.Refresh()
 }
 
-// Ratio is how full the meter is, from 0 to 1.
 func (m *Meter) Ratio() float64 { return m.ratio }
 
 func (m *Meter) CreateRenderer() fyne.WidgetRenderer { return &meterRenderer{m: m} }
 
 type meterRenderer struct{ m *Meter }
 
-// Layout keeps the bar barHeight tall in the middle of whatever height a row gives it.
 func (r *meterRenderer) Layout(size fyne.Size) {
 	m := r.m
 	y := (size.Height - barHeight) / 2

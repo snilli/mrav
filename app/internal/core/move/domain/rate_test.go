@@ -50,7 +50,6 @@ var _ = Describe("Rate", func() {
 		Entry("an unknown scale is read as force, as the game's default is", domain.Scale(9), 27, "C (27)"),
 	)
 
-	// The author wrote these four grades by hand in the source (Dragon, Inferno); the rating must agree.
 	DescribeTable("agrees with the grades the source's author wrote by hand",
 		func(scale domain.Scale, raw int, want string) {
 			Expect(domain.Rate(scale, raw)).To(Equal(want))
