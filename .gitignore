@@ -1,5 +1,6 @@
 .env
 .remember/
 app/bin/
+app/tmp/
 *.test
 coverage*
