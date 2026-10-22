@@ -21,8 +21,6 @@ import (
 	"app/internal/delivery/ui/status"
 )
 
-// The game's icons are 48x32 pixels; the grid draws them one and a half times that, which leaves room under it for what
-// a move needs, and the row of active moves draws them as they are.
 const (
 	zoom       = 1.5
 	iconW      = 48 * zoom
@@ -33,19 +31,17 @@ const (
 	ribbonH    = 14
 )
 
-// The colours that say where a move stands: learned, ready to learn, and not yet.
 var (
 	metColor    color.Color = color.NRGBA{R: 50, G: 205, B: 50, A: 255}
 	readyColor  color.Color = color.NRGBA{R: 255, G: 159, B: 28, A: 255}
+	chanceColor color.Color = color.NRGBA{R: 79, G: 195, B: 247, A: 255}
 	lockedColor color.Color = color.NRGBA{R: 150, G: 150, B: 150, A: 255}
 	unmetColor  color.Color = color.NRGBA{R: 255, G: 69, A: 255}
-	dimColor    color.Color = color.NRGBA{A: 150} // laid over a move that is not yet, to push it back
+	dimColor    color.Color = color.NRGBA{A: 150}
 )
 
-// IconFunc returns the PNG of an icon by key.
 type IconFunc func(key string) ([]byte, error)
 
-// iconSet turns icon keys into Fyne resources, once each. A missing icon shows as an empty cell.
 type iconSet struct {
 	load  IconFunc
 	cache map[string]fyne.Resource
@@ -67,8 +63,6 @@ func (is *iconSet) resource(key string) fyne.Resource {
 	return r
 }
 
-// tinted is the icon in the colour of the kind of its move, made once for each. A kind with no colour, or an icon that
-// cannot be tinted, is the plain icon.
 func (is *iconSet) tinted(key string, kind domain.Kind) fyne.Resource {
 	if kind != domain.KindPower && kind != domain.KindIntelligence {
 		return is.resource(key)
@@ -90,7 +84,6 @@ func (is *iconSet) tinted(key string, kind domain.Kind) fyne.Resource {
 	return r
 }
 
-// nature is the mark of a nature, made once; nil for a move that asks for none.
 func (is *iconSet) nature(n domain.Nature) fyne.Resource {
 	b := natureIcon(n)
 	if b == nil {
@@ -105,7 +98,6 @@ func (is *iconSet) nature(n domain.Nature) fyne.Resource {
 	return r
 }
 
-// pixelImage draws a resource without smoothing: these are pixel icons.
 func pixelImage(r fyne.Resource, w, h float32) *canvas.Image {
 	img := canvas.NewImageFromResource(r)
 	img.ScaleMode = canvas.ImageScalePixels
@@ -125,7 +117,6 @@ func setVisible(o fyne.CanvasObject, on bool) {
 	}
 }
 
-// picture is an image that remembers which icon it shows.
 type picture struct {
 	img  *canvas.Image
 	key  string
@@ -144,17 +135,17 @@ func (p *picture) show(key string, kind domain.Kind, is *iconSet) {
 	p.img.Refresh()
 }
 
-// cell is one place of the grid: the icon, and what says where the move stands: a green frame when it is learned,
-// an orange frame and a ribbon when it is ready to learn, a dimming when it is not yet; with the selection.
 type cell struct {
 	widget.BaseWidget
 	iconKey   string
 	iconKind  domain.Kind
 	icon      *canvas.Image
-	nature    *canvas.Image // the mark of the nature that the move asks for, in the corner; hidden when it asks for none
+	nature    *canvas.Image
 	dim       *canvas.Rectangle
 	frame     *canvas.Rectangle
 	ribbon    *fyne.Container
+	ribbonBg  *canvas.Rectangle
+	ribbonTxt *canvas.Text
 	highlight *canvas.Image
 	body      *fyne.Container
 	onTap     func()
@@ -174,14 +165,13 @@ func newCell(is *iconSet, onTap func()) *cell {
 	c.frame.StrokeWidth = frameWidth
 	c.frame.Resize(fyne.NewSize(iconW, iconH))
 
-	ribbonBg := canvas.NewRectangle(readyColor)
-	ribbonBg.Move(fyne.NewPos(0, iconH-ribbonH))
-	ribbonBg.Resize(fyne.NewSize(iconW, ribbonH))
-	ribbonTxt := canvas.NewText("READY", color.Black)
-	ribbonTxt.TextSize, ribbonTxt.TextStyle = 10, fyne.TextStyle{Bold: true}
-	want := ribbonTxt.MinSize()
-	ribbonTxt.Move(fyne.NewPos((iconW-want.Width)/2, iconH-ribbonH+(ribbonH-want.Height)/2))
-	c.ribbon = container.NewWithoutLayout(ribbonBg, ribbonTxt)
+	c.ribbonBg = canvas.NewRectangle(readyColor)
+	c.ribbonBg.Move(fyne.NewPos(0, iconH-ribbonH))
+	c.ribbonBg.Resize(fyne.NewSize(iconW, ribbonH))
+	c.ribbonTxt = canvas.NewText("READY", color.Black)
+	c.ribbonTxt.TextSize, c.ribbonTxt.TextStyle = 10, fyne.TextStyle{Bold: true}
+	c.centreRibbonText()
+	c.ribbon = container.NewWithoutLayout(c.ribbonBg, c.ribbonTxt)
 	c.ribbon.Resize(fyne.NewSize(iconW, iconH))
 
 	c.nature.Move(fyne.NewPos(2*zoom, 2*zoom))
@@ -191,6 +181,11 @@ func newCell(is *iconSet, onTap func()) *cell {
 	c.body = container.NewWithoutLayout(c.icon, c.dim, c.frame, c.ribbon, c.highlight, c.nature)
 	c.ExtendBaseWidget(c)
 	return c
+}
+
+func (c *cell) centreRibbonText() {
+	want := c.ribbonTxt.MinSize()
+	c.ribbonTxt.Move(fyne.NewPos((iconW-want.Width)/2, iconH-ribbonH+(ribbonH-want.Height)/2))
 }
 
 func (c *cell) CreateRenderer() fyne.WidgetRenderer { return widget.NewSimpleRenderer(c.body) }
@@ -208,29 +203,45 @@ func (c *cell) show(v CellView, is *iconSet) {
 	}
 	setVisible(c.nature, v.Nature != domain.NatureNone)
 	setVisible(c.dim, v.Locked)
-	setVisible(c.ribbon, v.CanLearn)
-	setVisible(c.frame, v.Learned || v.CanLearn)
-	c.frame.StrokeColor = readyColor
-	if v.Learned {
-		c.frame.StrokeColor = metColor
+	setVisible(c.ribbon, v.CanLearn || v.Chance != "")
+	text, fill := "READY", readyColor
+	if v.Chance != "" {
+		text, fill = v.Chance, chanceColor
 	}
+	if c.ribbonTxt.Text != text {
+		c.ribbonTxt.Text = text
+		c.centreRibbonText()
+		c.ribbonTxt.Refresh()
+	}
+	if c.ribbonBg.FillColor != fill {
+		c.ribbonBg.FillColor = fill
+		c.ribbonBg.Refresh()
+	}
+	stroke := readyColor
+	switch {
+	case v.Learned:
+		stroke = metColor
+	case v.Chance != "":
+		stroke = chanceColor
+	}
+	setVisible(c.frame, v.Learned || v.CanLearn || v.Chance != "")
+	c.frame.StrokeColor = stroke
 	c.frame.Refresh()
 }
 
-// legend counts the moves in each state, beside the colour that marks it.
 type legend struct {
-	learned, ready, locked *widget.Label
-	object                 fyne.CanvasObject
+	learned, ready, chance, locked *widget.Label
+	object                         fyne.CanvasObject
 }
 
 func newLegend() *legend {
-	l := &legend{learned: widget.NewLabel(""), ready: widget.NewLabel(""), locked: widget.NewLabel("")}
+	l := &legend{learned: widget.NewLabel(""), ready: widget.NewLabel(""), chance: widget.NewLabel(""), locked: widget.NewLabel("")}
 	item := func(c color.Color, label *widget.Label) fyne.CanvasObject {
 		swatch := canvas.NewRectangle(c)
 		swatch.SetMinSize(fyne.NewSize(12, 12))
 		return container.NewHBox(container.NewCenter(swatch), label)
 	}
-	l.object = container.NewHBox(item(metColor, l.learned), item(readyColor, l.ready), item(lockedColor, l.locked))
+	l.object = container.NewHBox(item(metColor, l.learned), item(readyColor, l.ready), item(chanceColor, l.chance), item(lockedColor, l.locked))
 	l.show(GridView{})
 	return l
 }
@@ -238,10 +249,10 @@ func newLegend() *legend {
 func (l *legend) show(v GridView) {
 	l.learned.SetText(fmt.Sprintf("Learned %d", v.Learned))
 	l.ready.SetText(fmt.Sprintf("Ready to learn %d", v.Ready))
+	l.chance.SetText(fmt.Sprintf("Errantry chance %d", v.Chance))
 	l.locked.SetText(fmt.Sprintf("Not yet %d", v.Locked))
 }
 
-// badge is a few words on a coloured ground, hidden when there are none.
 type badge struct {
 	bg     *canvas.Rectangle
 	txt    *canvas.Text
@@ -264,15 +275,13 @@ func (b *badge) set(text string, fill color.Color) {
 	setVisible(b.object, text != "")
 }
 
-// need is one line of the list of what a move asks of the monster: a mark for met or not, and the words.
 type need struct {
 	mark    *canvas.Text
-	label   *widget.Label        // the words, when they are all of one colour
-	colored *profileui.ColorText // the words, when stats are named in them, each in its colour
+	label   *widget.Label
+	colored *profileui.ColorText
 	object  fyne.CanvasObject
 }
 
-// words are what the line says.
 func (n need) words() string {
 	if n.colored != nil {
 		return n.colored.String()
@@ -280,8 +289,6 @@ func (n need) words() string {
 	return n.label.Text
 }
 
-// statSegments are the words of a requirement of stats, each stat in its colour, or none when the text does not start
-// with the stats that it says it does.
 func statSegments(r RequirementView) []profileui.Segment {
 	lead, rest, found := strings.Cut(r.Text, " at least ")
 	words := strings.Split(lead, " + ")
@@ -325,15 +332,14 @@ func newNeed(r RequirementView) need {
 	return n
 }
 
-// detail is the panel of numbers and words about the selected move.
 type detail struct {
 	name                                                 *canvas.Text
-	nature                                               *canvas.Image // the nature that the move asks for, before its name
+	nature                                               *canvas.Image
 	icons                                                *iconSet
 	status                                               *badge
 	guts, damage, hit, withering, sharpness, extra, uses *widget.Label
 	description                                          *widget.Label
-	needsBox                                             *fyne.Container // the heading and the list; hidden when the move needs nothing
+	needsBox                                             *fyne.Container
 	requirements                                         *fyne.Container
 	needs                                                []need
 	content                                              fyne.CanvasObject
@@ -366,7 +372,7 @@ func newDetail(is *iconSet) *detail {
 	)
 	d.requirements = container.NewVBox()
 	d.needsBox = container.NewVBox(
-		widget.NewLabelWithStyle("To learn it", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
+		widget.NewLabelWithStyle("To unlock it", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
 		d.requirements,
 	)
 	d.needsBox.Hide()
@@ -384,7 +390,7 @@ func newDetail(is *iconSet) *detail {
 func nameColor(k domain.Kind) color.Color {
 	switch k {
 	case domain.KindPower:
-		return color.NRGBA{R: 0xDA, G: 0xA5, B: 0x20, A: 0xFF} // goldenrod, as in MR2AV
+		return color.NRGBA{R: 0xDA, G: 0xA5, B: 0x20, A: 0xFF}
 	case domain.KindIntelligence:
 		return color.NRGBA{R: 0x3C, G: 0xB3, B: 0x71, A: 0xFF}
 	}
@@ -404,6 +410,8 @@ func (d *detail) show(v DetailView) {
 		d.status.set(v.Status, metColor)
 	case v.CanLearn:
 		d.status.set(v.Status, readyColor)
+	case v.Chance != "":
+		d.status.set(v.Status, chanceColor)
 	default:
 		d.status.set(v.Status, lockedColor)
 	}
@@ -431,17 +439,15 @@ func (d *detail) show(v DetailView) {
 	setVisible(d.needsBox, len(d.needs) > 0)
 }
 
-// Screen is the Move Viewer: the grid of moves, the active move of each column, and the details of
-// the selected move.
 type Screen struct {
-	seen  status.Seen[domain.Grid] // what apply last drew, so that the same is not drawn again
+	seen  status.Seen[domain.Grid]
 	svc   move.MoveService
 	icons *iconSet
 
 	cells [domain.Columns][domain.Rows]*cell
 
-	cellGrid  fyne.CanvasObject // the columns of cells, side by side
-	activeRow fyne.CanvasObject // the label and the active moves
+	cellGrid  fyne.CanvasObject
+	activeRow fyne.CanvasObject
 	active    [domain.Columns]*picture
 	genus     *widget.Label
 	legend    *legend
@@ -449,7 +455,7 @@ type Screen struct {
 
 	body    fyne.CanvasObject
 	content fyne.CanvasObject
-	grid    domain.Grid // the grid last shown, for the details of the selected cell
+	grid    domain.Grid
 	hasSel  bool
 	selCol  int
 	selRow  int
@@ -474,7 +480,7 @@ func NewScreen(svc move.MoveService, icons IconFunc) *Screen {
 		}
 		columns[c] = container.New(layout.NewCustomPaddedVBoxLayout(0), cells...)
 	}
-	slices.Reverse(columns) // the last column is shown first, and the active moves under the columns follow
+	slices.Reverse(columns)
 	s.cellGrid = container.New(layout.NewCustomPaddedHBoxLayout(0), columns...)
 
 	pictures := make([]fyne.CanvasObject, domain.Columns)
@@ -485,7 +491,6 @@ func NewScreen(svc move.MoveService, icons IconFunc) *Screen {
 	slices.Reverse(pictures)
 	actives := append([]fyne.CanvasObject{profileui.Quiet("Active moves")}, pictures...)
 	s.activeRow = container.NewHBox(actives...)
-	// What shows the moves is in the middle of the panel; the text of the selected move under it starts at the left.
 	s.body = container.NewVBox(
 		container.NewCenter(s.genus),
 		container.NewCenter(s.legend.object),
@@ -500,10 +505,8 @@ func NewScreen(svc move.MoveService, icons IconFunc) *Screen {
 	return s
 }
 
-// Content is what to put in a window.
 func (s *Screen) Content() fyne.CanvasObject { return s.content }
 
-// Load asks the service for the current grid and shows it. It is safe to call from any goroutine.
 func (s *Screen) Load(ctx context.Context) {
 	g, err := s.svc.CurrentGrid(ctx)
 	fyne.Do(func() {
@@ -513,7 +516,6 @@ func (s *Screen) Load(ctx context.Context) {
 	})
 }
 
-// apply shows a grid, or why there is none. It must run on the UI thread.
 func (s *Screen) apply(g domain.Grid, err error) {
 	if err != nil {
 		g = domain.Grid{}
@@ -538,7 +540,6 @@ func (s *Screen) selectCell(col, row int) {
 	s.showSelection()
 }
 
-// showSelection highlights the selected cell and shows its details from the grid last shown.
 func (s *Screen) showSelection() {
 	for c := range s.cells {
 		for r := range s.cells[c] {

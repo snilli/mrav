@@ -57,7 +57,34 @@ var _ = Describe("NewGridView", func() {
 		v := moveui.NewGridView(grid())
 		Expect(v.Learned).To(Equal(1))
 		Expect(v.Ready).To(Equal(1))
+		Expect(v.Chance).To(BeZero())
 		Expect(v.Locked).To(Equal(1))
+	})
+
+	Describe("a move that a place of the errantry teaches only by luck", func() {
+		luck := domain.Move{Col: 1, Row: 4, Name: "Luck", Icon: "Pixie_4"}
+		withLuck := func() domain.Grid {
+			g := grid()
+			g.Cells[0][3] = domain.Cell{Move: &luck, Chance: 2.96, Place: "Mandy Desert"}
+			return g
+		}
+
+		It("shows its chance, and is neither ready nor dimmed as a move that is not yet", func() {
+			Expect(moveui.NewGridView(withLuck()).Cells[0][3]).To(Equal(moveui.CellView{Icon: "Pixie_4", Chance: "3%"}))
+		})
+
+		It("is counted as a chance, and not as ready or not yet", func() {
+			v := moveui.NewGridView(withLuck())
+			Expect(v.Chance).To(Equal(1))
+			Expect(v.Ready).To(Equal(1))
+			Expect(v.Locked).To(Equal(1))
+		})
+
+		It("is not shown with a chance when it is ready, which says all that it needs to", func() {
+			g := grid()
+			g.Cells[0][1] = domain.Cell{Move: &slap, CanLearn: true, Chance: 100, Place: "Mandy Desert"}
+			Expect(moveui.NewGridView(g).Cells[0][1]).To(Equal(moveui.CellView{Icon: "Pixie_2", CanLearn: true}))
+		})
 	})
 
 	It("shows the icon of each column's active move, and No Move where it has none", func() {
@@ -74,7 +101,7 @@ var _ = Describe("NewDetailView", func() {
 		v := moveui.NewDetailView(domain.Cell{Move: &m, Used: 40, CanLearn: true})
 		Expect(v).To(Equal(moveui.DetailView{
 			Name: "Slap", Kind: domain.KindPower, Guts: "18", Damage: "D (15)", Hit: "A (9)",
-			Withering: "E (5)", Sharpness: "---", Uses: "40", CanLearn: true, Status: "READY TO LEARN", Description: "Basic tech.",
+			Withering: "E (5)", Sharpness: "---", Uses: "40", CanLearn: true, Status: "READY TO LEARN", Description: "Type: Basic",
 		}))
 	})
 
@@ -93,9 +120,32 @@ var _ = Describe("NewDetailView", func() {
 		Expect(moveui.NewDetailView(domain.Cell{}).Status).To(BeEmpty())
 	})
 
+	It("says only the chance on the badge of a move that a place of the errantry teaches by luck, and where on the line of its type", func() {
+		m := domain.Move{Name: "Slap", Description: "Basic tech. Chains from 30 Pats."}
+		sure := moveui.NewDetailView(domain.Cell{Move: &m, CanLearn: true, Chance: 100, Place: "Mandy Desert"})
+		Expect(sure.Status).To(Equal("READY TO LEARN"))
+		Expect(sure.Chance).To(BeEmpty())
+		Expect(sure.Description).To(Equal("Type: Basic · Location: Mandy Desert"))
+
+		luck := moveui.NewDetailView(domain.Cell{Move: &m, Chance: 3.04, Place: "Mandy Desert"})
+		Expect(luck.Status).To(Equal("3%"))
+		Expect(luck.Chance).To(Equal("3%"))
+		Expect(luck.CanLearn).To(BeFalse())
+		Expect(luck.Description).To(Equal("Type: Basic · Location: Mandy Desert"))
+	})
+
+	It("says only the type when no place teaches the move, and only the location when the description names no type", func() {
+		typed := domain.Move{Name: "Slap", Description: "Sharp tech. INT should be over 100."}
+		Expect(moveui.NewDetailView(domain.Cell{Move: &typed}).Description).To(Equal("Type: Sharp"))
+
+		plain := domain.Move{Name: "Odd"}
+		Expect(moveui.NewDetailView(domain.Cell{Move: &plain, Chance: 3, Place: "Mandy Desert"}).Description).To(Equal("Location: Mandy Desert"))
+		Expect(moveui.NewDetailView(domain.Cell{Move: &plain}).Description).To(BeEmpty())
+	})
+
 	It("keeps only the kind of tech from a description, which the requirements already say the rest of", func() {
 		m := domain.Move{Name: "Thrust", Description: "Hit tech. POW + SKI should total over 400 to unlock. Chains into 1-2 Thrust."}
-		Expect(moveui.NewDetailView(domain.Cell{Move: &m}).Description).To(Equal("Hit tech."))
+		Expect(moveui.NewDetailView(domain.Cell{Move: &m}).Description).To(Equal("Type: Hit"))
 	})
 
 	It("adds the extra row of a move, as a literal", func() {

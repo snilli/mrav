@@ -24,7 +24,6 @@ import (
 	mockprofile "app/mock/core/profile"
 )
 
-// whitePixel is the icon of every move, which is all that these tests need of one.
 func whitePixel(string) ([]byte, error) {
 	img := image.NewNRGBA(image.Rect(0, 0, 1, 1))
 	img.Set(0, 0, color.White)
@@ -35,7 +34,6 @@ func whitePixel(string) ([]byte, error) {
 	return b.Bytes(), nil
 }
 
-// labelTexts are the words of every label inside an object.
 func labelTexts(o fyne.CanvasObject) []string {
 	switch o := o.(type) {
 	case *widget.Label:
@@ -113,7 +111,7 @@ var _ = Describe("Screen", func() {
 		win := test.NewWindow(s.Content())
 		win.Resize(fyne.NewSize(480, 900))
 		s.apply(baby(), grid(), nil)
-		win.Resize(fyne.NewSize(480, 900)) // laid out again, now that there is something to show
+		win.Resize(fyne.NewSize(480, 900))
 		at := func(o fyne.CanvasObject) fyne.Position {
 			return fyne.CurrentApp().Driver().AbsolutePositionForObject(o)
 		}
@@ -187,6 +185,17 @@ var _ = Describe("Screen", func() {
 		Expect(flame.selected).To(BeTrue())
 	})
 
+	It("lays the details out when an icon is tapped, so that the window draws them at once and does not wait for something else to", func() {
+		w := test.NewWindow(s.Content())
+		DeferCleanup(w.Close)
+		w.Resize(fyne.NewSize(480, 800))
+		s.apply(baby(), grid(), nil)
+
+		test.Tap(s.rows[0].ready.Objects[0].(*iconButton))
+
+		Expect(s.detail.Content().Size().Height).To(BeNumerically(">", 0))
+	})
+
 	It("keeps the move that is selected, and its mark, when the page is loaded again", func() {
 		s.apply(baby(), grid(), nil)
 		test.Tap(s.rows[0].ready.Objects[0].(*iconButton))
@@ -219,7 +228,7 @@ var _ = Describe("Screen", func() {
 		test.Tap(s.rows[0].ready.Objects[0].(*iconButton))
 
 		learned := baby()
-		learned.Monster.Learned[1] = true // Ray
+		learned.Monster.Learned[1] = true
 		s.apply(learned, grid(), nil)
 
 		Expect(s.detail.Content().Visible()).To(BeFalse())

@@ -1,5 +1,3 @@
-// Package domain is the Training page: which drills and places a monster does well at, and what each drill
-// gives it. Pure Go.
 package domain
 
 import (
@@ -9,39 +7,30 @@ import (
 )
 
 const (
-	// The kinds of gain: the stat a light drill trains, the main stat of a heavy drill, and its other stat.
 	KindLight          = 0
 	KindHeavy          = 1
 	KindHeavySecondary = 3
 
-	// SpecialtyCount is how many specialties the training boost can name, one to a bit.
 	SpecialtyCount = 16
 
 	noGain = "N/A"
 )
 
-// SpecialtyNames are what the bits of monster.Monster.TrainBoost stand for, the lowest bit first.
 var SpecialtyNames = [SpecialtyCount]string{
 	"Domino", "Study", "Run", "Shoot", "Dodge", "Endure", "Pull", "Meditate", "Leap",
 	"Pool", "Torble Sea", "Papas Mountain", "Mandy Desert", "Parepare Jungle", "Kawrea Volcano", "???",
 }
 
-// Drill is a kind of training. A light drill trains one stat; a heavy drill trains its main stat a lot and
-// another a little.
 type Drill struct {
 	Name      string
 	Heavy     bool
 	Primary   monster.Stat
-	Secondary monster.Stat // only for a heavy drill
-	// Slot is the drill's place among the monster's motivations and among the bits of its training boost. The swim
-	// is the pool's.
-	Slot int
+	Secondary monster.Stat
+	Slot      int
 }
 
-// recommendedMotivation is the motivation from which a drill is keen: the 81 percent where MR2AV's boxes go green.
 const recommendedMotivation = 81
 
-// drills are the drills in the order the page lists them.
 var drills = [...]Drill{
 	{Name: "Domino", Primary: monster.Pow, Slot: 0},
 	{Name: "Study", Primary: monster.Int, Slot: 1},
@@ -55,17 +44,12 @@ var drills = [...]Drill{
 	{Name: "Swim", Heavy: true, Primary: monster.Life, Secondary: monster.Defense, Slot: swimSlot},
 }
 
-// swimSlot is the slot of the swim, the last of the drills.
 const swimSlot = 9
 
-// patchedSwim is the swim of a game that is patched, which trains the two stats the other way round from the vanilla
-// swim in the list of drills.
 var patchedSwim = Drill{Name: "Swim", Heavy: true, Primary: monster.Defense, Secondary: monster.Life, Slot: swimSlot}
 
-// Drills are the drills of the page, in its order.
 func Drills() []Drill { return slices.Clone(drills[:]) }
 
-// Gain is what a drill gives, in words, for one kind of gain at a life stage and a growth rate.
 type Gain struct {
 	LifeStage  int
 	GrowthRate int
@@ -75,7 +59,6 @@ type Gain struct {
 
 type gainKey struct{ stage, rate, kind int }
 
-// Gains is the table of gains.
 type Gains struct{ byKey map[gainKey]string }
 
 func NewGains(list []Gain) Gains {
@@ -86,8 +69,6 @@ func NewGains(list []Gain) Gains {
 	return g
 }
 
-// Text is the gain at a life stage and growth rate, or N/A where the table has none, such as for a growth
-// rate past A.
 func (g Gains) Text(stage, rate, kind int) string {
 	if text, ok := g.byKey[gainKey{stage, rate, kind}]; ok {
 		return text
@@ -95,25 +76,20 @@ func (g Gains) Text(stage, rate, kind int) string {
 	return noGain
 }
 
-// DrillGains is what one drill gives the monster: Primary for the stat it trains, Secondary for the other stat
-// of a heavy drill, and N/A for a light drill's. With it go how keen the monster is for the drill, whether the
-// drill is one it specialises in, and whether the two together make it worth doing.
 type DrillGains struct {
 	Drill       Drill
 	Primary     string
 	Secondary   string
-	Motivation  int  // percent
-	Specialty   bool // the monster is good at this drill
-	Recommended bool // a specialty the monster is keen on
+	Motivation  int
+	Specialty   bool
+	Recommended bool
 }
 
-// Training is the Training page.
 type Training struct {
-	Specialties [SpecialtyCount]bool // by bit, as SpecialtyNames
+	Specialties [SpecialtyCount]bool
 	Drills      []DrillGains
 }
 
-// Build reads what each drill gives a monster from its life stage and the growth rates of the stats it trains.
 func Build(m monster.Monster, gains Gains) Training {
 	var t Training
 	for bit := range t.Specialties {

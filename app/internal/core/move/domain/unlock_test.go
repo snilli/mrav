@@ -11,7 +11,6 @@ import (
 func rule(cs ...domain.Condition) domain.UnlockRule { return domain.UnlockRule{All: cs} }
 
 var _ = Describe("UnlockRule.Holds", func() {
-	// Pow 200, Int 300, Speed 500; nature +20; sub-genus 5; move slot 3 used 30 times.
 	m := monster.Monster{SubGenus: 5, Nature: 20}
 	m.Stats[monster.Pow], m.Stats[monster.Int], m.Stats[monster.Speed] = 200, 300, 500
 	m.Used[3] = 30

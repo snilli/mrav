@@ -16,15 +16,10 @@ import (
 	"app/internal/delivery/ui/status"
 )
 
-// columns are the columns of every row of the table: the words about the place, and then the chances of the four weeks, over
-// the moves that are ready to learn, which share what is left.
 var columns = profileui.Columns{140, 0}
 
-// iconSize is the size of the icon of a move, as the game draws it.
 var iconSize = fyne.NewSize(48, 32)
 
-// lineLayout keeps a line as high as an icon for its one object and puts the object in the middle of it, so that a place with
-// no move to show is as high as one with a line of icons.
 type lineLayout struct{}
 
 func (lineLayout) MinSize(objs []fyne.CanvasObject) fyne.Size {
@@ -38,15 +33,13 @@ func (lineLayout) Layout(objs []fyne.CanvasObject, size fyne.Size) {
 	objs[0].Move(fyne.NewPos(0, (size.Height-h)/2))
 }
 
-// row is a place in the table: its name and what it would give on the left, and on the right the chances of its weeks and under them the
-// moves that it teaches that are ready to learn.
 type row struct {
 	place    *widget.Label
 	weeks    [domain.ErrantryWeeks]*profileui.ToneBox
 	gains    *profileui.ColorText
-	ready    *fyne.Container   // the icons of the moves that are ready to learn, as many to a line as there is room for
-	none     *widget.Label     // says that there are none, when there are none
-	noneLine fyne.CanvasObject // the line that keeps the room of a line of icons for it
+	ready    *fyne.Container
+	none     *widget.Label
+	noneLine fyne.CanvasObject
 	object   fyne.CanvasObject
 }
 
@@ -69,19 +62,18 @@ func newRow(l domain.ErrantryLocale) *row {
 	return r
 }
 
-// Screen is the Errantry panel.
 type Screen struct {
-	seen     status.Seen[loaded] // what apply last drew, so that the same is not drawn again
+	seen     status.Seen[loaded]
 	profiles profile.ProfileService
 	moves    move.MoveService
 	icons    *moveui.Icons
 
 	status   *widget.Label
-	body     fyne.CanvasObject // the table and the details, hidden until there is a monster, and for what to say in its place
+	body     fyne.CanvasObject
 	content  fyne.CanvasObject
 	rows     []*row
-	detail   *moveui.Detail // the details of the move whose icon was tapped, under the table
-	selected *moveKey       // the move whose icon was tapped, while it is still ready to learn
+	detail   *moveui.Detail
+	selected *moveKey
 }
 
 func NewScreen(profiles profile.ProfileService, moves move.MoveService, icons *moveui.Icons) *Screen {
@@ -102,18 +94,15 @@ func NewScreen(profiles profile.ProfileService, moves move.MoveService, icons *m
 		s.rows = append(s.rows, r)
 		table.Add(r.object)
 	}
-	s.detail.Content().Hide() // until the icon of a move is tapped
+	s.detail.Content().Hide()
 	s.body = container.NewVBox(table, s.detail.Content())
-	s.body.Hide() // until there is a monster
+	s.body.Hide()
 	s.content = container.NewPadded(container.NewVBox(s.status, s.body))
 	return s
 }
 
-// Content is what to put in a window.
 func (s *Screen) Content() fyne.CanvasObject { return s.content }
 
-// Load asks the services for the monster as it is now and for its moves, and shows the chances for it. It is safe to call
-// from any goroutine.
 func (s *Screen) Load(ctx context.Context) {
 	p, err := s.profiles.Current(ctx)
 	var g movedomain.Grid
@@ -127,13 +116,11 @@ func (s *Screen) Load(ctx context.Context) {
 	})
 }
 
-// loaded is what Load gave apply.
 type loaded struct {
 	p domain.Profile
 	g movedomain.Grid
 }
 
-// choose selects a move: its icon is marked, and its details are shown.
 func (s *Screen) choose(key moveKey, cell movedomain.Cell) {
 	s.selected = &key
 	for _, r := range s.rows {
@@ -144,9 +131,10 @@ func (s *Screen) choose(key moveKey, cell movedomain.Cell) {
 	}
 	s.detail.Show(cell)
 	s.detail.Content().Show()
+	// Show only clears Hidden: the parent's Refresh is what lays the details out and redraws.
+	s.body.Refresh()
 }
 
-// apply shows the chances and the moves, or why there are none. It must run on the UI thread.
 func (s *Screen) apply(p domain.Profile, g movedomain.Grid, err error) {
 	if err != nil {
 		s.status.SetText(status.Message(err))
@@ -158,14 +146,12 @@ func (s *Screen) apply(p domain.Profile, g movedomain.Grid, err error) {
 	s.body.Show()
 
 	v := NewView(p, g)
-	found := false // the move that was selected is still ready
+	found := false
 	for i, r := range s.rows {
 		for week, box := range v.Rows[i].Weeks {
 			r.weeks[week].Set(box)
 		}
 		r.gains.Set(v.Rows[i].Gains...)
-		// The icons are kept while the moves are the same ones, and only told the new chances: an icon made again on each
-		// load would lose a tap whose press and release fall either side of it.
 		keep := len(r.ready.Objects) == len(v.Rows[i].Ready)
 		for j, ready := range v.Rows[i].Ready {
 			keep = keep && r.ready.Objects[j].(*iconButton).key == keyOf(ready.Cell)
@@ -189,7 +175,7 @@ func (s *Screen) apply(p domain.Profile, g movedomain.Grid, err error) {
 			selected := s.selected != nil && *s.selected == key
 			button.Select(selected)
 			if selected {
-				s.detail.Show(cell) // with what the monster has now
+				s.detail.Show(cell)
 				found = true
 			}
 		}

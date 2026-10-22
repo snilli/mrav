@@ -35,18 +35,20 @@ func (s *Service) CurrentGrid(ctx context.Context) (domain.Grid, error) {
 	return grid, nil
 }
 
-// keepToErrantry marks ready only the moves that a place of the errantry would teach now, with a chance the Errantry page
-// shows, so that the Moves page counts what the Errantry page lists: a move whose rule is met is not ready while one before
-// it at its place takes all the chance, and one that the place may teach by luck before its rule is met is. A move held back
-// so is given one more requirement, which names the move that its place teaches first.
 func keepToErrantry(g *domain.Grid, m monster.Monster, moves []domain.Move) {
-	taught := map[int]bool{}  // by memory slot
-	first := map[int]string{} // by memory slot: what a place teaches before a move that it holds back
+	type teach struct {
+		learn profile.Learn
+		place string
+	}
+	best := map[int]teach{}
+	first := map[int]string{}
 	locales := profile.ErrantryLocales()
 	for i, place := range profile.LearnChances(m, moves) {
 		for j, l := range place {
 			slot := l.Move.MemorySlot
-			taught[slot] = taught[slot] || l.Shown()
+			if l.Shown() && l.Chance > best[slot].learn.Chance {
+				best[slot] = teach{l, locales[i].Name}
+			}
 			if !l.Shown() && j > 0 && first[slot] == "" {
 				first[slot] = fmt.Sprintf("%s teaches %s first", locales[i].Name, place[0].Move.Name)
 			}
@@ -59,8 +61,9 @@ func keepToErrantry(g *domain.Grid, m monster.Monster, moves []domain.Move) {
 				continue
 			}
 			slot := cell.Move.MemorySlot
-			cell.CanLearn = taught[slot]
-			if !taught[slot] && first[slot] != "" {
+			t, taught := best[slot]
+			cell.CanLearn, cell.Chance, cell.Place = taught && t.learn.Sure(), t.learn.Chance, t.place
+			if !taught && first[slot] != "" {
 				cell.Requirements = append(cell.Requirements, domain.Requirement{Text: first[slot]})
 			}
 		}

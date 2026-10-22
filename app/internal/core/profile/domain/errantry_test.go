@@ -9,8 +9,6 @@ import (
 )
 
 var _ = Describe("ErrantryChance", func() {
-	// The page's own calculator gave these, as the number of the 29 rolls that succeed, in the weeks 1 to 4, for the life
-	// stage 1, 3, 5 and 10, with the stat gain, the life gain, the fatigue and the fear it was given.
 	DescribeTable("is the chance that the calculator of legendcup.com gives",
 		func(statGain, lifeGain, fatigue, fear int, byStage map[int][4]int) {
 			for stage, rolls := range byStage {
@@ -53,7 +51,6 @@ var _ = Describe("ErrantryChance", func() {
 })
 
 var _ = Describe("ErrantryGainOf", func() {
-	// From the page's table of the gains: the stat gain of the place down the side, the life stage across the top.
 	DescribeTable("is what the page's table says an errantry gives a stat, and the Life that goes with it",
 		func(stage, level, min, max, life int) {
 			Expect(domain.ErrantryGainOf(stage, level)).To(Equal(domain.ErrantryGain{Min: min, Max: max, Life: life}))
@@ -83,7 +80,6 @@ var _ = Describe("ErrantryLocales", func() {
 })
 
 var _ = Describe("PlanErrantry", func() {
-	// Life, Pow, Int, Skill, Speed, Defense: the growth rates 1, 2, 3, 4, 0 and 2, which are the gains 2, 3, 4, 5, 1 and 3
 	m := monster.Monster{LifeStage: 4, Fatigue: 30, Fear: 40, Growth: [monster.StatCount]int{1, 2, 3, 4, 0, 2}}
 
 	It("has the five places of an errantry, in the order of the game, each with the stat that it trains", func() {
@@ -114,7 +110,7 @@ var _ = Describe("PlanErrantry", func() {
 	It("works out the chance of each week for the life stage, the fatigue and the fear that the monster has now", func() {
 		for _, o := range domain.PlanErrantry(m) {
 			for week := 1; week <= domain.ErrantryWeeks; week++ {
-				want := domain.ErrantryChance(5, week, o.Level, 2, 30, 40) // the stage 5 is the index 4, and the life gain is the rate of Life, 1, plus 1
+				want := domain.ErrantryChance(5, week, o.Level, 2, 30, 40)
 				Expect(o.Chances[week-1]).To(Equal(want), "%s, week %d", o.Locale.Name, week)
 			}
 		}

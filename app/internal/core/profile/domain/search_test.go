@@ -8,7 +8,6 @@ import (
 )
 
 var _ = Describe("what a search of a place turns up", func() {
-	// mine is searched by intelligence: two tiers, from 0 and from 100, with a table of its own for a good nature.
 	mine := func() domain.Spot {
 		return domain.Spot{Name: "A", Chances: []domain.Chance{
 			{MinStat: 0, Slot: 0, Item: "Gem", Pct: 10, Price: 1000},
@@ -19,7 +18,6 @@ var _ = Describe("what a search of a place turns up", func() {
 			{Good: true, MinStat: 100, Slot: 0, Item: "Gem", Pct: 60, Price: 1000},
 		}}
 	}
-	// tree is searched by skill: nothing that sells in the first tier, a gem for sure in the second.
 	tree := func() domain.Spot {
 		return domain.Spot{Name: "B", BySkill: true, Chances: []domain.Chance{
 			{MinStat: 0, Item: "Glue", Pct: 100, Price: 0},

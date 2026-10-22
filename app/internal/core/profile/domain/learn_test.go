@@ -11,7 +11,6 @@ import (
 	"app/internal/core/profile/domain"
 )
 
-// listed says a place's list as "slot:chance" with one decimal, the way the calculator of legendcup.com rounds.
 func listed(l []domain.Learn) []string {
 	out := make([]string, len(l))
 	for i, x := range l {
@@ -20,14 +19,21 @@ func listed(l []domain.Learn) []string {
 	return out
 }
 
+var _ = DescribeTable("Learn.Sure says whether a place teaches the move for sure: its chance is all to one decimal",
+	func(chance float64, want bool) { Expect(domain.Learn{Chance: chance}.Sure()).To(Equal(want)) },
+	Entry("all", 100.0, true),
+	Entry("all, but for the error of the sums that left it", 99.99999, true),
+	Entry("rounds up to all", 99.96, true),
+	Entry("a little short", 99.9, false),
+	Entry("a chance", 3.0, false),
+	Entry("none", 0.0, false),
+)
+
 var _ = Describe("LearnChances", func() {
 	pow := []monster.Stat{monster.Pow}
-	// papas is an entry of the first place that asks for the Pow and loyalty total to be from 100 to 200, and gives 3 percent of
-	// what is left however short it is.
 	papas := func(priority int) movedomain.Acquire {
 		return movedomain.Acquire{Place: 1, Priority: priority, Auto: 3, Gates: []movedomain.Gate{{Stats: pow, Min: 100, Max: 200}}}
 	}
-	// far is an entry of the first place that asks for a Pow and loyalty total of 400 to 500, which no test monster has.
 	far := func(priority int) movedomain.Acquire {
 		return movedomain.Acquire{Place: 1, Priority: priority, Auto: 3, Gates: []movedomain.Gate{{Stats: pow, Min: 400, Max: 500}}}
 	}
@@ -53,7 +59,7 @@ var _ = Describe("LearnChances", func() {
 
 		It("counts loyalty, which is half of the spoil and of the fear, with the stats", func() {
 			m := withPow(110)
-			m.Spoil, m.Fear = 80, 80 // loyalty 80, with 110 Pow: 190 in all
+			m.Spoil, m.Fear = 80, 80
 			Expect(papasOf(m, mv(1, papas(1)))).To(Equal([]string{"1:90.3"}))
 		})
 
@@ -69,8 +75,6 @@ var _ = Describe("LearnChances", func() {
 		})
 
 		It("is the lowest of its gates when it has two", func() {
-			// Hopper's Jump Blow, as the calculator gave it for 120 Pow, 190 Speed and 20 loyalty: Pow and loyalty, 140, is 80
-			// percent of the way from 100 to 150, and Speed and loyalty, 210, is 60 percent of the way from 150 to 250.
 			a := movedomain.Acquire{Place: 1, Priority: 1, Auto: 3, Gates: []movedomain.Gate{
 				{Stats: pow, Min: 100, Max: 150}, {Stats: []monster.Stat{monster.Speed}, Min: 150, Max: 250}}}
 			m := monster.Monster{Stats: [monster.StatCount]int{monster.Pow: 120, monster.Speed: 190}, Spoil: 20, Fear: 20}
@@ -116,7 +120,6 @@ var _ = Describe("LearnChances", func() {
 	})
 
 	Describe("what keeps a move out of the list, and leaves what is left alone", func() {
-		// With the first move kept out, the second has the whole of what is left, and gets 51.5 percent of it.
 		keptOut := func(m monster.Monster, first movedomain.Acquire) {
 			Expect(papasOf(m, mv(1, first), mv(2, papas(2)))).To(Equal([]string{"2:51.5"}))
 		}

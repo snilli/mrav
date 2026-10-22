@@ -15,7 +15,6 @@ import (
 	"app/internal/testutil"
 )
 
-// statement is a statement that a repository sent, with its arguments.
 type statement struct {
 	query string
 	args  []any
@@ -35,7 +34,6 @@ var _ = Describe("the queries of the viewer", Label("integration"), func() {
 		DeferCleanup(client.Close)
 
 		moves, items, gains, profiles := moverepo.New(client), itemrepo.New(client), trainingrepo.New(client), profilerepo.New(client)
-		// askAll is every question that the pages put to the repositories, once, as the first refresh does.
 		askAll := func() {
 			genera, err := moves.ListGenera(ctx)
 			Expect(err).NotTo(HaveOccurred())
@@ -64,11 +62,11 @@ var _ = Describe("the queries of the viewer", Label("integration"), func() {
 
 		Expect(len(sent)).To(BeNumerically(">=", 12), "every repository was asked, and a map takes more than one statement")
 		first := len(sent)
-		askAll() // as the second refresh does, and the next, twice a second
+		askAll()
 		Expect(sent[first:]).To(BeEmpty(), "the data never changes while the viewer runs, so it is read once")
 
 		sent = sent[:first]
-		var slow []string // all of them, so that one run says what is left to do
+		var slow []string
 		for _, s := range sent {
 			plan, err := testutil.Plan(ctx, client.DB, s.query, s.args...)
 			Expect(err).NotTo(HaveOccurred(), s.query)

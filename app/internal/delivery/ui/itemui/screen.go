@@ -14,16 +14,13 @@ import (
 	"app/internal/delivery/ui/status"
 )
 
-// buttonSize is the size of the button of a place, which has room for the longest of the names.
 var buttonSize = fyne.NewSize(124, 34)
 
-// Screen is the Items page: a button for each place the player carries an item in, and the details of the
-// item in the place that was tapped.
 type Screen struct {
-	seen     status.Seen[[]domain.Slot] // what apply last drew, so that the same is not drawn again
+	seen     status.Seen[[]domain.Slot]
 	svc      item.ItemService
 	slots    []domain.Slot
-	selected int // the place tapped; -1 for none
+	selected int
 
 	status      *widget.Label
 	body        fyne.CanvasObject
@@ -58,8 +55,6 @@ func NewScreen(svc item.ItemService) *Screen {
 		s.buttons[i] = widget.NewButton(blank, func() { s.selected = i; s.showDetail() })
 		buttons[i] = s.buttons[i]
 	}
-	// As many to a row as the page is wide: two rows of ten, as the game lays them out, when it is wide; and a name that
-	// is too long for its button is cut short, never the window made wider.
 	s.strip = container.NewGridWrap(buttonSize, buttons...)
 	s.body = container.NewVBox(
 		s.strip,
@@ -72,10 +67,8 @@ func NewScreen(svc item.ItemService) *Screen {
 	return s
 }
 
-// Content is what to put in a window.
 func (s *Screen) Content() fyne.CanvasObject { return s.content }
 
-// Load asks the service for what the player carries and shows it. It is safe to call from any goroutine.
 func (s *Screen) Load(ctx context.Context) {
 	slots, err := s.svc.Inventory(ctx)
 	fyne.Do(func() {
@@ -85,7 +78,6 @@ func (s *Screen) Load(ctx context.Context) {
 	})
 }
 
-// apply shows the slots, or why there are none. It must run on the UI thread.
 func (s *Screen) apply(slots []domain.Slot, err error) {
 	if err != nil {
 		s.status.SetText(status.Message(err))
@@ -109,7 +101,6 @@ func (s *Screen) apply(slots []domain.Slot, err error) {
 	s.showDetail()
 }
 
-// showDetail shows the details of the place tapped, from the slots last shown.
 func (s *Screen) showDetail() {
 	var slot *domain.Slot
 	if s.selected >= 0 && s.selected < len(s.slots) {

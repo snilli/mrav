@@ -1,5 +1,3 @@
-// Package moveui is the Move Viewer window: a pure presenter that turns a grid into what the screen
-// shows, and the Fyne widgets that draw it.
 package moveui
 
 import (
@@ -8,72 +6,65 @@ import (
 
 	monster "app/internal/core/monster/domain"
 	"app/internal/core/move/domain"
+	"app/internal/delivery/ui/profileui"
 )
 
-// The names of the overlays in the icon assets.
 const (
 	NoMove    = "No_Move"
 	Highlight = "hilight"
 )
 
-// Where a move stands, in words.
 const (
 	statusLearned = "LEARNED"
 	statusReady   = "READY TO LEARN"
 	statusLocked  = "NOT YET"
 )
 
-// emptyText is what the game says about an empty cell.
 const emptyText = "Click on a move to learn more."
 
-// CellView is what one cell of the grid shows.
 type CellView struct {
 	Empty    bool
-	Icon     string // an asset key; NoMove for an empty cell
+	Icon     string
 	Learned  bool
 	CanLearn bool
-	Locked   bool // a move that is neither learned nor ready to learn yet
+	Chance   string
+	Locked   bool
 	Active   bool
-	Kind     domain.Kind   // whether the move runs on power or on intelligence, which its icon is coloured by
-	Nature   domain.Nature // the nature that the move asks for, which its icon is marked with
+	Kind     domain.Kind
+	Nature   domain.Nature
 }
 
-// GridView is what the whole grid shows.
 type GridView struct {
-	Genus  string
-	Cells  [domain.Columns][domain.Rows]CellView // Cells[col-1][row-1]
-	Active [domain.Columns]string                // the icon of each column's active move; NoMove when it has none
-	// ActiveKind is the kind of each column's active move.
-	ActiveKind [domain.Columns]domain.Kind
-	// How many moves are learned, ready to learn, and not yet; the empty cells are none of these.
-	Learned, Ready, Locked int
+	Genus                          string
+	Cells                          [domain.Columns][domain.Rows]CellView
+	Active                         [domain.Columns]string
+	ActiveKind                     [domain.Columns]domain.Kind
+	Learned, Ready, Chance, Locked int
 }
 
-// RequirementView is one thing a move asks of a monster before it can learn it, and where the monster stands on it.
 type RequirementView struct {
 	Text  string
-	Have  string // what the monster has, when that is a number; empty otherwise
+	Have  string
 	Met   bool
-	Stats []monster.Stat // the stats that the text starts with, to be shown in their colours
+	Stats []monster.Stat
 }
 
-// DetailView is what the details of one cell show, every value already in the game's words.
 type DetailView struct {
-	Name        string
-	Kind        domain.Kind
-	Guts        string
-	Damage      string
-	Hit         string
-	Withering   string
-	Sharpness   string
-	Extra       string // "Recovery: B (30)"; empty when the move has no extra row
-	Uses        string
-	Learned     bool
-	CanLearn    bool
-	Status      string        // where the move stands, in words; empty for an empty cell
-	Nature      domain.Nature // the nature that the move asks for, to show beside its name
-	Description string        // the kind of tech, "Hit tech."; the requirements say the rest
-	// Requirements are what the move still asks of the monster; none for a learned move or an empty cell.
+	Name         string
+	Kind         domain.Kind
+	Guts         string
+	Damage       string
+	Hit          string
+	Withering    string
+	Sharpness    string
+	Extra        string
+	Uses         string
+	Learned      bool
+	CanLearn     bool
+	Chance       string
+	Status       string
+	Nature       domain.Nature
+	Description  string
 	Requirements []RequirementView
 }
 
@@ -89,6 +80,8 @@ func NewGridView(g domain.Grid) GridView {
 				v.Learned++
 			case cv.CanLearn:
 				v.Ready++
+			case cv.Chance != "":
+				v.Chance++
 			default:
 				v.Locked++
 			}
@@ -105,10 +98,18 @@ func newCellView(c domain.Cell) CellView {
 	if c.Move == nil {
 		return CellView{Empty: true, Icon: NoMove}
 	}
+	chance := chanceOf(c)
 	return CellView{
-		Icon: c.Move.Icon, Learned: c.Learned, CanLearn: c.CanLearn, Locked: !c.Learned && !c.CanLearn, Active: c.Active,
-		Kind: c.Move.Kind, Nature: c.Move.Unlock.Nature(),
+		Icon: c.Move.Icon, Learned: c.Learned, CanLearn: c.CanLearn, Chance: chance, Locked: !c.Learned && !c.CanLearn && chance == "",
+		Active: c.Active, Kind: c.Move.Kind, Nature: c.Move.Unlock.Nature(),
 	}
+}
+
+func chanceOf(c domain.Cell) string {
+	if c.Learned || c.CanLearn || c.Chance <= 0 {
+		return ""
+	}
+	return profileui.ChanceText(c.Chance)
 }
 
 func NewDetailView(c domain.Cell) DetailView {
@@ -130,14 +131,17 @@ func NewDetailView(c domain.Cell) DetailView {
 		Uses:        strconv.Itoa(c.Used),
 		Learned:     c.Learned,
 		CanLearn:    c.CanLearn,
+		Chance:      chanceOf(c),
 		Nature:      m.Unlock.Nature(),
-		Description: techType(m.Description),
+		Description: describe(kindOf(m.Description), c.Place),
 	}
 	switch {
 	case c.Learned:
 		v.Status = statusLearned
 	case c.CanLearn:
 		v.Status = statusReady
+	case v.Chance != "":
+		v.Status = v.Chance
 	default:
 		v.Status = statusLocked
 	}
@@ -154,11 +158,18 @@ func NewDetailView(c domain.Cell) DetailView {
 	return v
 }
 
-// techType is the first sentence of a move's description, which names its kind of tech; the rest of it says in words what the
-// requirements already show.
-func techType(description string) string {
-	if first, _, found := strings.Cut(description, "."); found {
-		return first + "."
+func kindOf(description string) string {
+	first, _, _ := strings.Cut(description, ".")
+	return strings.TrimSuffix(first, " tech")
+}
+
+func describe(kind, place string) string {
+	var parts []string
+	if kind != "" {
+		parts = append(parts, "Type: "+kind)
 	}
-	return description
+	if place != "" {
+		parts = append(parts, "Location: "+place)
+	}
+	return strings.Join(parts, " · ")
 }

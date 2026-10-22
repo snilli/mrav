@@ -9,23 +9,15 @@ import (
 	movedomain "app/internal/core/move/domain"
 )
 
-// Learn is a move that a place of the errantry may teach a monster as it is now, and the chance in percent that it does, which is
-// 0 when only the stats are short.
 type Learn struct {
 	Move   movedomain.Move
 	Chance float64
 }
 
-// Shown says whether the chance is anything to one decimal: the calculator of legendcup.com writes a smaller one as 0%.
 func (l Learn) Shown() bool { return math.Round(l.Chance*10) > 0 }
 
-// LearnChances works out, for each place of the errantry in the order of the game, the moves that it may teach the monster as it
-// is now, in the order that the place tries them, each with its chance. A move that is learned, or whose sub-genus, nature or
-// chain the monster does not meet, is not listed, and leaves what is left to the next ones. It is calcChance of the Errantry
-// calculator of legendcup.com, which works so: a place starts with 100 percent, and each move that it may teach takes its chance
-// from what is left. The chance of a move rises with the total of the monster's loyalty and the stats of its gate: below the
-// bottom it is the auto learn share of what is left, and from there it climbs to all that is left at the top. A move with two
-// gates has the lower of the two chances, and one with none takes all that is left.
+func (l Learn) Sure() bool { return math.Round(l.Chance*10) >= 1000 }
+
 func LearnChances(m monster.Monster, moves []movedomain.Move) [len(errantryLocales)][]Learn {
 	type entry struct {
 		move    movedomain.Move
@@ -60,13 +52,10 @@ func LearnChances(m monster.Monster, moves []movedomain.Move) [len(errantryLocal
 	return out
 }
 
-// learned says whether the monster has learned the move in a memory slot.
 func learned(m monster.Monster, slot int) bool {
 	return slot >= 0 && slot < monster.SlotCount && m.Learned[slot]
 }
 
-// meets says whether the monster is of a sub-genus, has a nature and has used the moves that an entry asks for. The stats are not
-// asked here: they only change the chance.
 func meets(m monster.Monster, a movedomain.Acquire) bool {
 	switch {
 	case len(a.SubIn) > 0 && !(movedomain.SubGenusIn{IDs: a.SubIn}).Holds(m):
@@ -83,9 +72,6 @@ func meets(m monster.Monster, a movedomain.Acquire) bool {
 	return true
 }
 
-// gateChance is the chance, in percent, that a stat total gives of what is left. Between the bottom and the top of the gate the
-// auto learn share is not cut down to what is left, as the calculator has it, so the chance jumps at the bottom when little is
-// left.
 func gateChance(total float64, g movedomain.Gate, auto int, left float64) float64 {
 	switch {
 	case total < float64(g.Min):

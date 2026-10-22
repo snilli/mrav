@@ -21,7 +21,6 @@ import (
 	mockitem "app/mock/core/item"
 )
 
-// slots are the twenty places, with a Magic Banana in the second and the rest empty.
 func slots() []domain.Slot {
 	out := make([]domain.Slot, player.ItemSlots)
 	for i := range out {
@@ -55,7 +54,6 @@ var _ = Describe("Screen", func() {
 	})
 
 	Describe("the twenty buttons", func() {
-		// rows is how many lines the buttons fall on when the page is as wide as asked.
 		rows := func(width float32) int {
 			win := test.NewWindow(s.Content())
 			win.Resize(fyne.NewSize(width, 900))
@@ -147,7 +145,6 @@ var _ = Describe("Screen", func() {
 		Eventually(func() string { return s.buttons[1].Text }).Should(Equal("Magic Banana"))
 	})
 
-	// A screenshot of the page, for looking at: SCREENSHOT_DIR=/some/dir go test -ginkgo.label-filter=screenshot
 	It("renders the page to a PNG", Label("screenshot"), func() {
 		dir := os.Getenv("SCREENSHOT_DIR")
 		if dir == "" {

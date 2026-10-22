@@ -115,14 +115,14 @@ var _ = Describe("Screen", func() {
 		green := func(c color.NRGBA) bool { return c == intelligenceFill }
 		white := func(c color.NRGBA) bool { return c.R == 255 && c.G == 255 && c.B == 255 }
 
-		pat := s.cells[0][0].icon.Resource.Content() // power
+		pat := s.cells[0][0].icon.Resource.Content()
 		Expect(colours(pat, power)).To(BeNumerically(">", 0))
 		Expect(colours(pat, white)).To(BeZero())
 		Expect(colours(pat, green)).To(BeZero())
-		bolt := s.cells[0][2].icon.Resource.Content() // intelligence
+		bolt := s.cells[0][2].icon.Resource.Content()
 		Expect(colours(bolt, green)).To(BeNumerically(">", 0))
 		Expect(colours(bolt, power)).To(BeZero())
-		active := s.active[0].img.Resource.Content() // the active move is Pat
+		active := s.active[0].img.Resource.Content()
 		Expect(colours(active, power)).To(BeNumerically(">", 0))
 		empty := s.cells[3][5].icon.Resource.Content()
 		Expect(colours(empty, power) + colours(empty, green)).To(BeZero())
@@ -131,7 +131,7 @@ var _ = Describe("Screen", func() {
 	It("keeps the colour of a cell when its move changes, and gives the new move its own", func() {
 		s.apply(grid(), nil)
 		g := grid()
-		g.Cells[0][0] = domain.Cell{Move: &bolt} // an intelligence move where a power one was
+		g.Cells[0][0] = domain.Cell{Move: &bolt}
 		s.apply(g, nil)
 		Expect(colours(s.cells[0][0].icon.Resource.Content(), func(c color.NRGBA) bool { return c == intelligenceFill })).To(BeNumerically(">", 0))
 	})
@@ -152,7 +152,7 @@ var _ = Describe("Screen", func() {
 		Expect(s.cells[0][0].nature.Visible()).To(BeFalse())
 		Expect(s.cells[3][5].nature.Visible()).To(BeFalse())
 
-		s.apply(grid(), nil) // the move that asked for a nature is gone: so is its mark
+		s.apply(grid(), nil)
 		Expect(s.cells[1][0].nature.Visible()).To(BeFalse())
 	})
 
@@ -175,7 +175,7 @@ var _ = Describe("Screen", func() {
 		Expect(s.detail.name.Text).To(Equal("Slap"))
 		Expect(s.detail.damage.Text).To(Equal("D (15)"))
 		Expect(s.detail.withering.Text).To(Equal("E (5)"))
-		Expect(s.detail.description.Text).To(Equal("Basic tech."))
+		Expect(s.detail.description.Text).To(Equal("Type: Basic"))
 		Expect(s.detail.status.txt.Text).To(Equal("READY TO LEARN"))
 		Expect(s.cells[0][1].highlight.Visible()).To(BeTrue())
 		Expect(s.cells[0][0].highlight.Visible()).To(BeFalse())
@@ -213,11 +213,65 @@ var _ = Describe("Screen", func() {
 		Expect(s.cells[0][1].ribbon.Visible()).To(BeFalse())
 	})
 
-	It("counts the moves learned, ready to learn and not yet, above the grid", func() {
+	It("counts the moves learned, ready to learn, a chance of the errantry and not yet, above the grid", func() {
 		s.apply(grid(), nil)
 		Expect(s.legend.learned.Text).To(Equal("Learned 1"))
 		Expect(s.legend.ready.Text).To(Equal("Ready to learn 1"))
+		Expect(s.legend.chance.Text).To(Equal("Errantry chance 0"))
 		Expect(s.legend.locked.Text).To(Equal("Not yet 1"))
+
+		g := grid()
+		g.Cells[0][2].Chance, g.Cells[0][2].Place = 2.96, "Mandy Desert"
+		s.apply(g, nil)
+		Expect(s.legend.chance.Text).To(Equal("Errantry chance 1"))
+		Expect(s.legend.locked.Text).To(Equal("Not yet 0"))
+	})
+
+	Describe("a move that a place of the errantry teaches only by luck", func() {
+		luck := func() domain.Grid {
+			g := grid()
+			g.Cells[0][2].Chance, g.Cells[0][2].Place = 2.96, "Mandy Desert"
+			return g
+		}
+
+		It("has a ribbon with its chance and a frame, both in a colour of its own, as a move that is learned or ready has, and no dimming", func() {
+			s.apply(luck(), nil)
+			c, ready := s.cells[0][2], s.cells[0][1]
+
+			Expect(c.ribbon.Visible()).To(BeTrue())
+			Expect(c.ribbonTxt.Text).To(Equal("3%"))
+			Expect(c.ribbonBg.FillColor).To(Equal(chanceColor))
+			Expect(c.frame.Visible()).To(BeTrue())
+			Expect(c.frame.StrokeColor).To(Equal(chanceColor))
+			Expect(c.dim.Visible()).To(BeFalse())
+
+			Expect(ready.ribbonTxt.Text).To(Equal("READY"), "a move that is ready keeps its word and its colour")
+			Expect(ready.ribbonBg.FillColor).To(Equal(readyColor))
+		})
+
+		It("goes back to the word and the colour of ready, or to no ribbon, when it changes", func() {
+			s.apply(luck(), nil)
+			g := luck()
+			g.Cells[0][2].CanLearn = true
+			s.apply(g, nil)
+			Expect(s.cells[0][2].ribbonTxt.Text).To(Equal("READY"))
+			Expect(s.cells[0][2].ribbonBg.FillColor).To(Equal(readyColor))
+			Expect(s.cells[0][2].frame.StrokeColor).To(Equal(readyColor))
+
+			s.apply(grid(), nil)
+			Expect(s.cells[0][2].ribbon.Visible()).To(BeFalse())
+			Expect(s.cells[0][2].frame.Visible()).To(BeFalse())
+			Expect(s.cells[0][2].dim.Visible()).To(BeTrue())
+		})
+
+		It("says its chance alone on the badge of its details, in the colour of its ribbon, and its place on the line of its type", func() {
+			s.apply(luck(), nil)
+			test.Tap(s.cells[0][2])
+
+			Expect(s.detail.status.txt.Text).To(Equal("3%"))
+			Expect(s.detail.status.bg.FillColor).To(Equal(chanceColor))
+			Expect(s.detail.description.Text).To(Equal("Type: Needs more · Location: Mandy Desert"))
+		})
 	})
 
 	It("says where the selected move stands on a badge in the colour of its frame, and none for an empty cell", func() {
@@ -318,7 +372,6 @@ var _ = Describe("Screen", func() {
 		Eventually(func() string { return s.genus.Text }).Should(Equal("Pixie"))
 	})
 
-	// A screenshot of the real thing, for looking at: SCREENSHOT_DIR=/some/dir ginkgo run --label-filter=screenshot
 	It("renders the real Dragon grid to a PNG", Label("screenshot"), func() {
 		dir := os.Getenv("SCREENSHOT_DIR")
 		if dir == "" {
@@ -354,7 +407,6 @@ var _ = Describe("Screen", func() {
 		f, err := os.Create(filepath.Join(dir, "move-viewer-dragon.png"))
 		Expect(err).NotTo(HaveOccurred())
 		DeferCleanup(f.Close)
-		// The screen is a scroll, whose smallest size is a few pixels, so draw what it holds at its own size.
 		Expect(png.Encode(f, software.Render(real.body, theme.DefaultTheme()))).To(Succeed())
 	})
 })

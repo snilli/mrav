@@ -10,7 +10,6 @@ import (
 	"app/internal/core/training/domain"
 )
 
-// everyGain has a text that says where it came from, so that the text a drill shows says which stat it read.
 func everyGain() domain.Gains {
 	var list []domain.Gain
 	for stage := range 10 {
@@ -47,7 +46,6 @@ var _ = Describe("Drills", func() {
 })
 
 var _ = Describe("Build", func() {
-	// Life, Pow, Int, Skill, Speed, Defense
 	m := monster.Monster{LifeStage: 4, Growth: [monster.StatCount]int{1, 2, 3, 4, 0, 2}}
 
 	It("offers the ten drills of the page, in its order, with one swim", func() {
@@ -112,7 +110,7 @@ var _ = Describe("Build", func() {
 
 	It("says which drills the monster specialises in, by the bit of each, the swim by the pool", func() {
 		s := m
-		s.TrainBoost = 1<<0 | 1<<6 | 1<<9 // Domino, Pull, Pool
+		s.TrainBoost = 1<<0 | 1<<6 | 1<<9
 		var got []string
 		for _, d := range domain.Build(s, everyGain()).Drills {
 			if d.Specialty {
@@ -147,7 +145,7 @@ var _ = Describe("Build", func() {
 
 	It("says which drills and places the monster specialises in, by the bits of its training boost", func() {
 		s := m
-		s.TrainBoost = 1<<0 | 1<<2 | 1<<15 // Domino, Run, ???
+		s.TrainBoost = 1<<0 | 1<<2 | 1<<15
 		got := domain.Build(s, everyGain()).Specialties
 		for bit, on := range got {
 			Expect(on).To(Equal(bit == 0 || bit == 2 || bit == 15), domain.SpecialtyNames[bit])

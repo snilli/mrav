@@ -10,23 +10,16 @@ import (
 	"app/internal/delivery/ui/profileui"
 )
 
-// baby is a monster at its first life stage, with every growth rate C, which is the gain 3, and no fatigue or fear: the
-// calculator of the page gives it 29, 20, 6 and 0 rolls of the 29 in the four weeks. It has learned the special Bang, and has
-// no stats, so every move that asks for stats gives it only its auto learn share.
 func baby() domain.Profile {
 	m := monster.Monster{Lifespan: 100, Growth: [monster.StatCount]int{2, 2, 2, 2, 2, 2}}
 	m.Learned[4] = true
 	return domain.Profile{Monster: m}
 }
 
-// gate is a gate of the loyalty and stat total from 250 to 400.
 func gate(stat monster.Stat) []movedomain.Gate {
 	return []movedomain.Gate{{Stats: []monster.Stat{stat}, Min: 250, Max: 400}}
 }
 
-// techs are a sharp move that a monster with no stats is given 3 percent of at Papas, a heavy one that it is given 3 percent
-// of at Mandy, a basic one that is taught at Parepare once the move in slot 9 has been used 30 times, one that is taught at
-// Papas once Ray has been used 50 times, and a special one that is learned already.
 var (
 	ray     = movedomain.Move{MemorySlot: 1, Name: "Ray", Icon: "Pixie_1", Description: "Sharp tech. INT should be over 250 to unlock.", Acquire: []movedomain.Acquire{{Place: 1, Priority: 1, Auto: 3, Gates: gate(monster.Int)}}}
 	slap    = movedomain.Move{MemorySlot: 2, Name: "Slap", Icon: "Pixie_2", Description: "Basic tech. Chains from 30 Pats.", Acquire: []movedomain.Acquire{{Place: 3, Priority: 1, Chain: &movedomain.Chain{Slot: 9, Uses: 30}}}}
@@ -35,7 +28,6 @@ var (
 	megaray = movedomain.Move{MemorySlot: 5, Name: "Megaray", Icon: "Pixie_5", Description: "Sharp tech. Chains from 50 Rays.", Acquire: []movedomain.Acquire{{Place: 1, Priority: 2, Chain: &movedomain.Chain{Slot: 1, Uses: 50}}}}
 )
 
-// grid holds them: Ray, Slap, Flame, Megaray and Bang.
 func grid() movedomain.Grid {
 	var g movedomain.Grid
 	g.Cells[0][0] = movedomain.Cell{Move: &ray, CanLearn: true}
@@ -69,7 +61,7 @@ var _ = Describe("NewView", func() {
 	})
 
 	It("says what the trip would give: the stat of the place and the Life, each named in its colour", func() {
-		row := NewView(baby(), movedomain.Grid{}).Rows[0] // the first stage and the gain 3: the stat 2 to 5, and 3 Life
+		row := NewView(baby(), movedomain.Grid{}).Rows[0]
 
 		var text string
 		colours := map[string]any{}
@@ -124,15 +116,6 @@ var _ = Describe("NewView", func() {
 
 		Expect(names(NewView(baby(), g).Rows[3])).To(BeEmpty())
 	})
-
-	DescribeTable("says the chance of a move as the calculator does, to one decimal and without a needless .0",
-		func(percent float64, want string) { Expect(chanceText(percent)).To(Equal(want)) },
-		Entry("all", 100.0, "100%"),
-		Entry("a whole number", 3.0, "3%"),
-		Entry("with a decimal", 41.84, "41.8%"),
-		Entry("rounded up", 41.86, "41.9%"),
-		Entry("under one", 0.5, "0.5%"),
-	)
 
 	DescribeTable("tones a chance by how likely it is",
 		func(percent float64, want profileui.Tone) { Expect(chanceTone(percent)).To(Equal(want)) },
