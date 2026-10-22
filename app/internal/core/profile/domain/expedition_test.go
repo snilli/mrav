@@ -21,14 +21,33 @@ var _ = Describe("Expeditions", func() {
 		Expect(names).To(Equal([]string{"Torles Mountains", "Kawrea Volcano", "Parepare Jungle"}))
 	})
 
-	It("leave out the first expedition, Phoenix Volcano Adventure, which can be made once only and of which the game does not say whether it was", func() {
+	It("leave out the first expedition, Phoenix Volcano Adventure, which can be made once only and has no map", func() {
 		for _, e := range domain.Expeditions {
 			Expect(e.Name).NotTo(Equal("Phoenix Volcano Adventure"))
 		}
 	})
 
+	It("keep the first expedition apart: in June week 1, for life 140, fame 40 and grade D, from row 14, column 8, with rocks that break at less power", func() {
+		Expect(domain.Phoenix).To(Equal(domain.Expedition{
+			Name: "Phoenix Volcano Adventure", Month: 6, Week: 1, Life: 140, Fame: 40, Rank: 1,
+			Origin: domain.Point{X: 8, Y: 14}, RockPow: 100,
+		}))
+	})
+
+	DescribeTable("a trip's BreakChance is 50% at the power that its rocks need, rising to 100% 150 above it",
+		func(e domain.Expedition, pow int, want float64) {
+			Expect(e.BreakChance(pow)).To(BeNumerically("~", want, 1e-9))
+		},
+		Entry("the first expedition at 100", domain.Phoenix, 100, 0.5),
+		Entry("the first expedition at 250", domain.Phoenix, 250, 1.0),
+		Entry("the first expedition far above", domain.Phoenix, 600, 1.0),
+		Entry("another trip at 350", domain.Expeditions[2], 350, 0.5),
+		Entry("another trip at 500", domain.Expeditions[2], 500, 1.0),
+		Entry("another trip at 100, which is almost nothing", domain.Expeditions[2], 100, 0.05),
+	)
+
 	It("ask a monster for life, fame and a grade, and say how much of each it has, a grade as its rank", func() {
-		torles := domain.Expeditions[0] // Life 210, Fame 50, grade C
+		torles := domain.Expeditions[0]
 		m := monster.Monster{Stats: [monster.StatCount]int{monster.Life: 305}, Fame: 40, Rank: 3}
 		Expect(torles.Conditions(m)).To(Equal([]domain.Condition{
 			{Kind: domain.CondLife, Need: 210, Have: 305},
@@ -38,12 +57,12 @@ var _ = Describe("Expeditions", func() {
 	})
 
 	It("take the exact amount as enough, and a lower grade as not", func() {
-		kawrea := domain.Expeditions[1] // Life 280, Fame 50, grade B
+		kawrea := domain.Expeditions[1]
 		m := monster.Monster{Stats: [monster.StatCount]int{monster.Life: 280}, Fame: 50, Rank: 2}
 		conditions := kawrea.Conditions(m)
 		Expect(conditions[0].Met()).To(BeTrue())
 		Expect(conditions[1].Met()).To(BeTrue())
-		Expect(conditions[2].Met()).To(BeFalse()) // grade C, not B
+		Expect(conditions[2].Met()).To(BeFalse())
 	})
 
 	DescribeTable("RankLetter writes a rank as the game's letter",

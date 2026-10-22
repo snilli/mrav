@@ -10,11 +10,11 @@ import (
 	player "app/internal/core/player/domain"
 )
 
-// noMonster is what the screen shows when the memory holds none.
-const noMonster = "No monster"
+const (
+	noMonster = "No monster"
+	noYear    = 0xFFFF
+)
 
-// reader reads what decode needs from the game's RAM, a few bytes at a time. The first failure sticks: after it
-// everything reads as zero, and err says what went wrong.
 type reader struct {
 	mem Memory
 	err error
@@ -35,29 +35,20 @@ func (r *reader) i32(addr uint32) int {
 	return int(int32(binary.LittleEndian.Uint32(r.read(addr, 4))))
 }
 
-// natureSwing is how far the nature moves from its base, up to 100 either way: the sine of the nature, a turn being
-// 4096, as the game keeps it in whole numbers over 4096, and then 100 of that, each rounded to the nearest whole number,
-// away from zero when it is halfway. MR2AV cut the sine toward zero instead, which is a step off for half of the angles,
-// -10, -6, 89 and 959 among them.
 func natureSwing(nature int) int {
 	sine := math.Round(math.Sin(math.Pi*float64(nature)/2048) * 4096)
 	return int(math.Round(sine * 100 / 4096))
 }
 
-// decode reads the monster out of the game's RAM the way MR2AV does: a byte is unsigned, a stat and the nature
-// are two bytes and signed, the nature base and the form are signed bytes. It is apperr.ErrNotFound when no
-// monster is loaded, and the memory's own error when the memory cannot be read.
 func decode(l Layout, mem Memory) (monster.Monster, error) {
 	r := &reader{mem: mem}
 
 	genus, sub := r.u8(l.Genus), r.u8(l.SubGenus)
-	growth := r.read(l.Growth, monster.StatCount) // Power, Intelligence, Life, Skill, Speed, Defence
+	growth := r.read(l.Growth, monster.StatCount)
 	guts := r.u8(l.GutsRate)
 	if r.err != nil {
 		return monster.Monster{}, r.err
 	}
-	// No monster is loaded when the guts rate is nothing and the breed is a blank (Pixie/Pixie or 46/46) or a
-	// growth rate is nothing. A real monster's guts rate is never nothing.
 	blank := genus == 0 && sub == 0 || genus == 46 && sub == 46
 	if guts == 0 && (blank || slices.Contains(growth, 0)) {
 		return monster.Monster{}, apperr.NotFound("monster", noMonster)
@@ -111,13 +102,12 @@ func decode(l Layout, mem Memory) (monster.Monster, error) {
 	for s := range m.Stats {
 		m.Stats[s] = r.i16(l.Stats[s])
 	}
-	rec := r.read(l.Record, 16) // wins, losses, knock-outs, a gap, injuries, runaways, sicknesses, resistance
+	rec := r.read(l.Record, 16)
 	count := func(i int) int { return int(binary.LittleEndian.Uint16(rec[2*i:])) }
 	m.Record = monster.Record{
 		Wins: count(0), Losses: count(1), KOs: count(2),
 		Injuries: count(4), Runaways: count(5), Sicknesses: count(6), Resistance: count(7),
 	}
-	// The game keeps the growth rates in the order Power, Intelligence, Life, Skill, Speed, Defence.
 	m.Growth[monster.Pow], m.Growth[monster.Int], m.Growth[monster.Life] = int(growth[0]), int(growth[1]), int(growth[2])
 	m.Growth[monster.Skill], m.Growth[monster.Speed], m.Growth[monster.Defense] = int(growth[3]), int(growth[4]), int(growth[5])
 	for d, percent := range r.read(l.Motivation, monster.DrillCount) {
@@ -140,7 +130,6 @@ func decode(l Layout, mem Memory) (monster.Monster, error) {
 	return m, nil
 }
 
-// decodePlayer reads what is not the monster: the money, the items, the timers, the breeder's name, the buttons.
 func decodePlayer(l Layout, mem Memory) (player.Player, error) {
 	r := &reader{mem: mem}
 	p := player.Player{
@@ -154,19 +143,30 @@ func decodePlayer(l Layout, mem Memory) (player.Player, error) {
 		p.Items[slot] = r.u8(l.Items + 4*uint32(slot))
 	}
 	if l.Date != 0 {
+		tournament := r.u16(l.Tournament)
+		if tournament == noYear {
+			tournament = 0
+		}
 		p.Ranch = player.Ranch{
-			Known: true, Date: r.i32(l.Date), Tournament: r.i32(l.Tournament), Grade: r.u8(l.Grade),
+			Known: true, Date: r.i32(l.Date), Tournament: tournament, Grade: r.u8(l.Grade),
 			House: r.u8(l.House), Barn: r.u8(l.Barn), Altar: r.u8(l.Altar),
 		}
 		for breed, unlocked := range r.read(l.Unlocks, player.BreedCount) {
 			p.Ranch.Unlocked[breed] = unlocked != 0
 		}
-		// The energy and the place on the expedition's map are outside the RAM, and nothing that the rest needs: a
-		// failure to read them leaves them unknown.
-		if exe, ok := mem.(ModuleMemory); ok {
-			word := func(offset uint32) (uint16, bool) {
+		if l.Phoenix != 0 {
+			p.Ranch.PhoenixKnown, p.Ranch.PhoenixDone = true, r.u16(l.Phoenix) != 0
+		}
+		var read func(addr uint32, p []byte) error
+		if exe, ok := mem.(ModuleMemory); ok && !l.WalkInRAM {
+			read = exe.ReadModule
+		} else if l.WalkInRAM {
+			read = mem.Read
+		}
+		if read != nil {
+			word := func(addr uint32) (uint16, bool) {
 				var b [2]byte
-				if offset == 0 || exe.ReadModule(offset, b[:]) != nil {
+				if addr == 0 || read(addr, b[:]) != nil {
 					return 0, false
 				}
 				return binary.LittleEndian.Uint16(b[:]), true
@@ -174,10 +174,13 @@ func decodePlayer(l Layout, mem Memory) (player.Player, error) {
 			if energy, ok := word(l.Energy); ok {
 				p.Ranch.Energy, p.Ranch.EnergyKnown = int(int16(energy)), true
 			}
-			tile, tileOK := word(l.Tile)
-			steps, stepsOK := word(l.Steps)
-			if tileOK && stepsOK {
-				p.Ranch.Tile, p.Ranch.Steps, p.Ranch.WalkKnown = int(tile), int(steps), true
+			if tile, ok := word(l.Tile); ok {
+				p.Ranch.Tile, p.Ranch.WalkKnown = int(tile), true
+			}
+			if x, ok := word(l.Position); ok {
+				if y, ok := word(l.Position + 2); ok {
+					p.Ranch.OffsetX, p.Ranch.OffsetY, p.Ranch.OffsetKnown = int(int16(x)), int(int16(y)), true
+				}
 			}
 		}
 	}

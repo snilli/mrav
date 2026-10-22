@@ -25,7 +25,6 @@ import (
 	mocktraining "app/mock/core/training"
 )
 
-// floored is a window that will not be narrower than a floor, as a real one will not be narrower than its content.
 type floored struct {
 	fyne.Window
 	width float32
@@ -92,7 +91,6 @@ var _ = Describe("Shell", func() {
 
 		width := func() float32 { return win.Canvas().Size().Width }
 		last := func() *column { return s.columns[len(s.columns)-1] }
-		// shown is the name of what each column shows, from left to right.
 		shown := func() []string {
 			var names []string
 			for _, c := range s.columns {

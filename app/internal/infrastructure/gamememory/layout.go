@@ -1,37 +1,31 @@
-// Package gamememory is a MonsterSource and a PlayerSource that read a running game: MR2 under DuckStation,
-// or Monster Rancher 1&2 DX on Steam. Every address in it comes from MR2AV, the viewer this one is ported from.
 package gamememory
 
 import monster "app/internal/core/monster/domain"
 
-// Text is a name the game keeps in its RAM: where it starts, how many bytes it can take, and which of the
-// game's two encodings it is in. A Text with no address is a name the game does not keep.
 type Text struct {
 	Addr  uint32
 	Len   int
 	Steam bool
 }
 
-// Layout says where a game keeps what the viewer shows. Every address is an offset into the PlayStation's RAM, as
-// MR2AV gives them. Fields are unsigned bytes unless said otherwise.
 type Layout struct {
 	Genus, SubGenus uint32
-	Age             uint32                    // two bytes, signed
-	Stats           [monster.StatCount]uint32 // two bytes each, signed
-	Lifespan        uint32                    // two bytes, signed
-	InitialLifespan uint32                    // two bytes, signed
-	Nature          uint32                    // two bytes, signed
-	NatureBase      uint32                    // signed
+	Age             uint32
+	Stats           [monster.StatCount]uint32
+	Lifespan        uint32
+	InitialLifespan uint32
+	Nature          uint32
+	NatureBase      uint32
 	Fatigue, Fame   uint32
 	Stress          uint32
 	Spoil, Fear     uint32
-	Form            uint32 // signed
-	Growth          uint32 // six bytes: Power, Intelligence, Life, Skill, Speed, Defence
-	TrainBoost      uint32 // two bytes, flags
+	Form            uint32
+	Growth          uint32
+	TrainBoost      uint32
 	CupJellies      uint32
 	GoldPeach       uint32
 	SilverPeach     uint32
-	Motivation      uint32 // ten bytes: Domino, Study, Run, Shoot, Dodge, Endure, Pull, Meditate, Leap, Swim
+	Motivation      uint32
 	PlayType        uint32
 	Drug            uint32
 	DrugWeeks       uint32
@@ -41,37 +35,32 @@ type Layout struct {
 	Rank            uint32
 	LifeStage       uint32
 	LifeType        uint32
-	Moves           uint32 // 24 pairs of bytes: 1 when the move is learned, then the times it was used
-	Active          uint32 // four bytes: the memory slot of each column's active move
+	Moves           uint32
+	Active          uint32
 	ArenaSpeed      uint32
-	GutsRate        uint32 // with nothing in it no monster is loaded
-	Specials        uint32 // two bytes, flags
-	PrizeMoney      uint32 // four bytes, signed
+	GutsRate        uint32
+	Specials        uint32
+	PrizeMoney      uint32
 	Name            Text
 
-	Money      uint32 // four bytes, signed
-	Items      uint32 // 20 item ids, one byte each, four bytes apart
+	Money      uint32
+	Items      uint32
 	NextSale   uint32
 	ErrantryCD uint32
 	Breeder    Text
-	Input      uint32 // two bytes, flags: the buttons held on controller 1
+	Input      uint32
 
-	// What a Cheat Engine table for MR2DX adds to MR2AV's. Record is where the monster's wins are, 16 bytes: wins,
-	// losses and knock-outs, two bytes each, a gap of two, then injuries, runaways, sicknesses and resistance. The
-	// ranch's addresses are 0 where the game's map is not known, which is the whole of the PlayStation's.
 	Record                    uint32
-	Date, Tournament          uint32 // four bytes each: the weeks since the game began, and the year of the first IMA-FIMBA tournament
-	Grade, House, Barn, Altar uint32 // a byte each
-	Unlocks                   uint32 // a byte for each main breed, by its code: 0 while it is locked
-	Energy                    uint32 // two bytes, signed, counted from the exe and not the RAM: an expedition's energy
-	Tile, Steps               uint32 // two bytes each, counted from the exe too: the tile the monster is on, and its steps
-	// PatchedSwim is for a game whose swim trains the patched way, Defense a lot and Life a little, and not the vanilla
-	// way round.
-	PatchedSwim bool
+	Date, Tournament          uint32
+	Grade, House, Barn, Altar uint32
+	Unlocks, Phoenix          uint32
+	Energy                    uint32
+	Tile, Position            uint32
+	WalkInRAM                 bool
+	PatchedSwim               bool
 }
 
 var (
-	// ps1 is MR2 as the PlayStation version keeps it, vanilla and hard mode, with its English names.
 	ps1 = Layout{
 		Genus: 0x97A18, SubGenus: 0x97A1C, Age: 0x97A14,
 		Stats: [monster.StatCount]uint32{
@@ -88,10 +77,12 @@ var (
 		Name: Text{Addr: 0x97B78, Len: 12},
 
 		Money: 0x98FBC, Items: 0x9923C, NextSale: 0x992DE, ErrantryCD: 0x992E9, Input: 0x938AE,
-		Record: 0x97A66, // the Steam address and 8, as every field of the monster before its name is
+		Record: 0x97A66,
+		Date:   0x99228, Tournament: 0x99080, Grade: 0x98FC0, House: 0x98FC1, Barn: 0x98FC2, Altar: 0x99050,
+		Unlocks: 0x99386, Phoenix: 0x993CE,
+		Energy: 0x0D55BC, Tile: 0x0D55B6, Position: 0x0D55C0, WalkInRAM: true,
 	}
 
-	// steam is MR2 inside the English release of Monster Rancher 1&2 DX.
 	steam = Layout{
 		Genus: 0x97A10, SubGenus: 0x97A14, Age: 0x97A0C,
 		Stats: [monster.StatCount]uint32{
@@ -111,7 +102,7 @@ var (
 		Breeder: Text{Addr: 0x9A54A, Len: 24, Steam: true},
 		Record:  0x97A5E,
 		Date:    0x9A7D8, Tournament: 0x9A62C, Grade: 0x9A56C, House: 0x9A56D, Barn: 0x9A56E, Altar: 0x9A5FC,
-		Unlocks: 0x9A936, Energy: 0x1DE8B84, Tile: 0x1DE8B7E, Steps: 0x1DE8B8A,
+		Unlocks: 0x9A936, Energy: 0x1DE8B84, Tile: 0x1DE8B7E, Position: 0x1DE8B88,
 		PatchedSwim: true,
 	}
 )

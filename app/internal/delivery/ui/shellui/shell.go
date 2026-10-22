@@ -1,8 +1,3 @@
-// Package shellui is the one screen of the viewer: the monster's header on top, and under it from one to three
-// columns. Each column shows one page, which it is told to by its choice, from the vitals, the moves, the training, the
-// errantry, the ranch, the route and the items; a button adds a column, and another takes one away, and the window grows and shrinks
-// by the width of the column, to be small enough to sit beside the game. In the demo, a check box in the header shows
-// the panel that sets the monster by hand.
 package shellui
 
 import (
@@ -27,10 +22,9 @@ import (
 
 const (
 	maxColumns  = 3
-	drawerWidth = 340 // the demo panel's, which scrolls and so would otherwise ask for nothing
+	drawerWidth = 340
 )
 
-// Parts are the pages the shell puts on its screen.
 type Parts struct {
 	Dashboard *profileui.Dashboard
 	Training  *trainingui.Screen
@@ -38,22 +32,19 @@ type Parts struct {
 	Items     *itemui.Screen
 	Route     *routeui.Screen
 	Errantry  *errantryui.Screen
-	Demo      *demoui.Panel // nil when a game is read, because nobody sets that monster by hand
+	Demo      *demoui.Panel
 }
 
-// An option is a page that a column can show, by the name that it is chosen by.
 type option struct {
 	name   string
 	object fyne.CanvasObject
 }
 
-// A column shows one option, which its choice picks; its buttons add a column after it, when it is the last, and take
-// it away, when it is not the only one.
 type column struct {
 	choice *widget.Select
 	remove *widget.Button
 	add    *widget.Button
-	body   *fyne.Container // holds what is shown
+	body   *fyne.Container
 	box    fyne.CanvasObject
 	shown  *option
 }
@@ -64,31 +55,26 @@ func (c *column) show(o *option) {
 	c.body.Refresh()
 }
 
-// Shell is the content of the window.
 type Shell struct {
-	win     fyne.Window
-	dash    *profileui.Dashboard
-	options []*option
-	columns []*column
-	row     *fyne.Container // the columns, side by side and as wide as each other
-	// taken is how much narrower the window got for each column that was taken away, last first to be given back. It is
-	// less than the width of the column when the window would not get any narrower, and giving back the width of the
-	// column would make the window wider each time.
+	win        fyne.Window
+	dash       *profileui.Dashboard
+	options    []*option
+	columns    []*column
+	row        *fyne.Container
 	taken      []float32
-	demoToggle *widget.Check     // shows and hides the demo drawer; nil without a panel
-	demo       fyne.CanvasObject // the drawer for the demo panel, hidden until asked for; nil without a panel
+	demoToggle *widget.Check
+	demo       fyne.CanvasObject
 	content    fyne.CanvasObject
 }
 
-// New puts the pages on a screen for the window to show, which is the one that grows and shrinks with its columns.
 func New(win fyne.Window, p Parts) *Shell {
 	s := &Shell{win: win, dash: p.Dashboard, row: container.New(layout.NewGridLayoutWithColumns(1))}
 	scrolled := func(o fyne.CanvasObject) fyne.CanvasObject { return container.NewVScroll(o) }
 	s.options = []*option{
-		{"Vitals", p.Dashboard.Vitals()}, // these two scroll already
+		{"Vitals", p.Dashboard.Vitals()},
 		{"Moves", p.Moves.Content()},
 		{"Training", scrolled(p.Training.Content())},
-		{"Errantry", scrolled(p.Errantry.Content())},
+		{"Errantry", p.Errantry.Content()},
 		{"Ranch", scrolled(p.Dashboard.Ranch())},
 		{"Route", scrolled(p.Route.Content())},
 		{"Items", scrolled(p.Items.Content())},
@@ -115,8 +101,6 @@ func (s *Shell) newColumn(o *option) *column {
 	c := &column{body: container.NewStack()}
 	c.choice = widget.NewSelect(nil, func(name string) { s.choose(c, name) })
 	c.remove = widget.NewButtonWithIcon("", theme.CancelIcon(), func() { s.removeColumn(c) })
-	// The add button says what it does, without a fill that would draw the eye from the page: a bare + was not seen to add
-	// a column, so nobody found the others.
 	c.add = widget.NewButtonWithIcon("Col", theme.ContentAddIcon(), s.addColumn)
 	c.add.Importance = widget.LowImportance
 	bar := container.NewBorder(nil, nil, nil, container.NewHBox(c.add, c.remove), c.choice)
@@ -125,7 +109,6 @@ func (s *Shell) newColumn(o *option) *column {
 	return c
 }
 
-// offered are the names that a column may choose from: the pages that no other column shows, and its own.
 func (s *Shell) offered(c *column) []string {
 	var names []string
 	for _, o := range s.options {
@@ -145,8 +128,6 @@ func (s *Shell) choose(c *column, name string) {
 	s.sync()
 }
 
-// sync makes everything that depends on the columns agree with them: what each offers and has buttons for, how they are
-// laid out, and how the header is: on more lines, to be narrow, for one column.
 func (s *Shell) sync() {
 	n := len(s.columns)
 	boxes := make([]fyne.CanvasObject, n)
@@ -166,8 +147,6 @@ func (s *Shell) sync() {
 	}
 }
 
-// addColumn shows the first page that no column shows, in a new column, and widens the window by one: by what it was
-// narrowed by, when a column was taken away, and by as much as a column now is, when not.
 func (s *Shell) addColumn() {
 	n := len(s.columns)
 	if n >= maxColumns {
@@ -175,7 +154,7 @@ func (s *Shell) addColumn() {
 	}
 	for _, o := range s.options {
 		if !slices.ContainsFunc(s.columns, func(c *column) bool { return c.shown == o }) {
-			room := (s.row.Size().Width + theme.Padding()) / float32(n) // a column and the gap beside it
+			room := (s.row.Size().Width + theme.Padding()) / float32(n)
 			if k := len(s.taken); k > 0 {
 				room, s.taken = s.taken[k-1], s.taken[:k-1]
 			}
@@ -197,8 +176,6 @@ func (s *Shell) removeColumn(c *column) {
 	s.taken = append(s.taken, -s.grow(-room))
 }
 
-// grow makes the window wider by dw, or narrower when it is below zero, and says by how much it did change, which is
-// less than asked when the window would not get as narrow as that.
 func (s *Shell) grow(dw float32) float32 {
 	before := s.win.Canvas().Size()
 	s.win.Resize(fyne.NewSize(before.Width+dw, before.Height))
@@ -213,7 +190,6 @@ func setVisible(o fyne.CanvasObject, on bool) {
 	}
 }
 
-// Content is what to put in the window.
 func (s *Shell) Content() fyne.CanvasObject { return s.content }
 
 func (s *Shell) showDemo(on bool) {

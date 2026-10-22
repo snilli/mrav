@@ -24,7 +24,6 @@ import (
 	mockprofile "app/mock/core/profile"
 )
 
-// labelTexts are the words of every label inside an object, including those of the boxes in containers.
 func labelTexts(o fyne.CanvasObject) []string {
 	switch o := o.(type) {
 	case *widget.Label:
@@ -59,7 +58,6 @@ func pixieProfile() domain.Profile {
 	}
 }
 
-// within is whether an object is somewhere inside another one, in the containers and scrolls that hold it.
 func within(root, target fyne.CanvasObject) bool {
 	if root == target {
 		return true
@@ -166,7 +164,6 @@ var _ = Describe("Dashboard", func() {
 	})
 
 	Describe("the ranch", func() {
-		// ranchProfile is the Pixie with a ranch of a game that keeps one, its gold and grade one short of a step.
 		ranchProfile := func() domain.Profile {
 			p := pixieProfile()
 			p.Player.Ranch = player.Ranch{Known: true, Date: 191, Grade: 6, House: 2, Barn: 1, Altar: 3}
@@ -251,7 +248,6 @@ var _ = Describe("Dashboard", func() {
 	})
 
 	Describe("the expeditions", func() {
-		// fit is the profile of a monster that is fit for every trip.
 		fit := func(p domain.Profile) domain.Profile {
 			p.Monster.Stats[monster.Life], p.Monster.Fame, p.Monster.Rank = 300, 60, 4
 			return p
@@ -274,7 +270,7 @@ var _ = Describe("Dashboard", func() {
 		})
 
 		It("shows only the trips that the monster is fit for, and says so where there are none", func() {
-			d.apply(dated(), nil) // the Pixie: life 111, fame 50, grade E, which is enough for none
+			d.apply(dated(), nil)
 			for _, row := range d.trips {
 				Expect(row.object.Visible()).To(BeFalse())
 			}
@@ -282,7 +278,7 @@ var _ = Describe("Dashboard", func() {
 			Expect(d.noTrips.Text).To(Equal("No expedition is open to this monster yet"))
 
 			p := dated()
-			p.Monster.Stats[monster.Life], p.Monster.Fame, p.Monster.Rank = 150, 40, 2 // enough for Parepare, but not Torles or Kawrea
+			p.Monster.Stats[monster.Life], p.Monster.Fame, p.Monster.Rank = 150, 40, 2
 			d.apply(p, nil)
 			Expect(d.trips[0].name.Text).To(Equal("Parepare Jungle (Kavaro)"))
 			Expect(d.trips[0].object.Visible()).To(BeTrue())
@@ -292,7 +288,7 @@ var _ = Describe("Dashboard", func() {
 
 		It("says nothing of the energy, the place on the map or what a step costs, which the Route page says", func() {
 			p := fit(dated())
-			p.Player.Ranch.Tile, p.Player.Ranch.Steps, p.Player.Ranch.WalkKnown = 911, 2, true
+			p.Player.Ranch.Tile, p.Player.Ranch.WalkKnown = 911, true
 			d.apply(p, nil)
 			for _, text := range labelTexts(d.ranchBox) {
 				Expect(text).NotTo(ContainSubstring("nergy"))
@@ -306,6 +302,37 @@ var _ = Describe("Dashboard", func() {
 			Expect(d.expeditionsBody.Visible()).To(BeTrue())
 			Expect(d.trips[0].name.Text).To(Equal("Torles Mountains (Rovest)"))
 			Expect(d.trips[0].when.Text).To(Equal("Feb wk 1"))
+		})
+
+		It("shows only the first expedition, and a line that the others come after it, until it was made", func() {
+			p := fit(dated())
+			p.Player.Ranch.PhoenixKnown = true
+			d.apply(p, nil)
+			Expect(d.trips[0].name.Text).To(Equal("Phoenix Volcano Adventure"))
+			Expect(d.trips[0].object.Visible()).To(BeTrue())
+			Expect(d.trips[1].object.Visible()).To(BeFalse())
+			Expect(d.trips[2].object.Visible()).To(BeFalse())
+			Expect(d.tripNote.Visible()).To(BeTrue())
+			Expect(d.tripNote.Text).To(Equal("The other expeditions open after this one"))
+		})
+
+		It("shows the three, each with its conditions marked as met or not, once the first was made", func() {
+			p := dated()
+			p.Monster.Stats[monster.Life], p.Monster.Fame, p.Monster.Rank = 220, 50, 2
+			p.Player.Ranch.PhoenixKnown, p.Player.Ranch.PhoenixDone = true, true
+			d.apply(p, nil)
+			Expect(d.trips[0].name.Text).To(Equal("Kawrea Volcano (Dr. Talico)"))
+			for _, row := range d.trips {
+				Expect(row.object.Visible()).To(BeTrue())
+			}
+			needs := d.trips[0].needs
+			Expect(needs[0].label.Text).To(Equal("LIF ≥ 280 (220)"))
+			Expect(needs[0].mark.Text).To(Equal("✗"))
+			Expect(needs[1].label.Text).To(Equal("Fame ≥ 50 (50)"))
+			Expect(needs[1].mark.Text).To(Equal("✓"))
+			Expect(needs[2].mark.Text).To(Equal("✗"))
+			Expect(d.tripNote.Visible()).To(BeFalse())
+			Expect(d.noTrips.Visible()).To(BeFalse())
 		})
 
 		It("is not shown when there is nothing to show", func() {
@@ -407,7 +434,6 @@ var _ = Describe("Dashboard", func() {
 		Expect(png.Encode(f, software.Render(d.ranchBox, theme.DefaultTheme()))).To(Succeed())
 	})
 
-	// A screenshot of the real thing, for looking at: SCREENSHOT_DIR=/some/dir ginkgo run --label-filter=screenshot
 	It("renders the dashboard to a PNG", Label("screenshot"), func() {
 		dir := os.Getenv("SCREENSHOT_DIR")
 		if dir == "" {
@@ -418,7 +444,6 @@ var _ = Describe("Dashboard", func() {
 		f, err := os.Create(filepath.Join(dir, "dashboard.png"))
 		Expect(err).NotTo(HaveOccurred())
 		DeferCleanup(f.Close)
-		// The parts are scrolls, whose smallest size is a few pixels, so draw what they hold at its own size.
 		Expect(png.Encode(f, software.Render(container.NewVBox(d.status, d.headerBody, d.vitalsBody), theme.DefaultTheme()))).To(Succeed())
 	})
 })

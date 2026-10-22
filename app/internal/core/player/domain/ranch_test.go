@@ -97,6 +97,16 @@ var _ = Describe("Ranch", func() {
 		Entry("the corner", 0, -15, 30),
 	)
 
+	DescribeTable("says whether the words beside the tile are those of a trip that began at a column and a row, which tells a trip from another that shares the tiles",
+		func(r domain.Ranch, want bool) { Expect(r.OnTrip(8, 14)).To(Equal(want)) },
+		Entry("tile 327 is column 7 of row 10, 1 left and 4 up of column 8, row 14, as the words say",
+			domain.Ranch{Tile: 327, WalkKnown: true, OffsetX: -1, OffsetY: 4, OffsetKnown: true}, true),
+		Entry("the words are those of a trip from another start",
+			domain.Ranch{Tile: 327, WalkKnown: true, OffsetX: -8, OffsetY: 20, OffsetKnown: true}, false),
+		Entry("the words were not read", domain.Ranch{Tile: 327, WalkKnown: true}, false),
+		Entry("the tile was not read", domain.Ranch{Tile: 327, OffsetX: -1, OffsetY: 4, OffsetKnown: true}, false),
+	)
+
 	DescribeTable("says what a facility's next upgrade is, or that there is none",
 		func(r domain.Ranch, f domain.Facility, want domain.Upgrade, ok bool) {
 			got, found := r.Next(f)

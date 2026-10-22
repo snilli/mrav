@@ -9,55 +9,44 @@ import (
 	player "app/internal/core/player/domain"
 )
 
-// Terrain is what a tile of an expedition's map is to walk on.
 type Terrain int
 
 const (
-	Floor    Terrain = iota
-	Wall             // cannot be walked
-	Rock             // an obstacle: each attempt to break it costs ObstacleCost, and can fail
-	Gate             // a hidden way that a monster with enough intelligence can find: see ExpeditionMap.Locks
-	Teleport         // leads to another tile of the map at random, so a route does not use it
+	Floor Terrain = iota
+	Wall
+	Rock
+	Gate
+	Teleport
 )
 
-// Point is a tile of a map, from the top left corner.
 type Point struct{ X, Y int }
 
-// Lock is what a Gate tile of a map wants: the intelligence that finding the way through it takes.
 type Lock struct {
 	At     Point
 	MinINT int
 }
 
-// Spot is a place where the monster can search, in the building that it is, and what a search there is worth to it on
-// average, in gold: what the data says it turns up, for the monster that is to go.
 type Spot struct {
 	Name     string
 	At       Point
 	Building string
-	BySkill  bool     // the building is searched by the skill of the monster, not its intelligence
-	Chances  []Chance // every table of the place, for any monster: Searched picks the one that a monster has
+	BySkill  bool
+	Chances  []Chance
 	Value    float64
-	Loot     []Drop // what a search may turn up, the likeliest first
+	Loot     []Drop
 }
 
-// Drop is what a search of a place may turn up, and the chance in percent that it does, for the monster that is to go.
-// Price is what the item sells for, 0 where it is not sold.
 type Drop struct {
 	Item  string
 	Pct   float64
 	Price int
 }
 
-// Searcher is what decides what a search turns up for a monster: the intelligence and the skill that a building is
-// searched by, and whether its nature is good, which the game takes it to be above 0.
 type Searcher struct {
 	Intelligence, Skill int
 	GoodNature          bool
 }
 
-// ExpeditionMap is the map of an expedition: the tiles row by row, where the monster starts, its places, and the
-// locks that the gates have.
 type ExpeditionMap struct {
 	Name          string
 	Width, Height int
@@ -68,17 +57,12 @@ type ExpeditionMap struct {
 	Portals       []Portal
 }
 
-// Portal is a teleport of a map (T1, T2, ...) or a place where a teleport lands (E1, E2, ...), as the guide labels them. A
-// teleport leads, at random, to one of the labels in To: a place to land, or another teleport. A place to land has no To.
 type Portal struct {
 	Label string
 	At    Point
 	To    []string
 }
 
-// Walker is a monster on an expedition, as far as a route goes: the energy it has, the chance that an attempt on a
-// rock breaks it, and the intelligence that finds the way through a gate. At is the tile it stands on, or nil when it
-// is at the start; the route ends at the start either way.
 type Walker struct {
 	Energy       int
 	BreakChance  float64
@@ -86,8 +70,6 @@ type Walker struct {
 	At           *Point
 }
 
-// Route is the places to search, in the order to go, and the walk that takes the monster to them and back to the
-// start, which the expedition has to end on. Cost is the energy that it takes on average.
 type Route struct {
 	Spots []Spot
 	Path  []Point
@@ -95,15 +77,8 @@ type Route struct {
 	Value float64
 }
 
-// maxSpots is how many places a map can have for PlanRoute: it weighs every set of them.
 const maxSpots = 16
 
-// PlanRoute finds the route that is worth most in what its places are worth, and for as little of the energy as
-// that takes, among those that cost no more than the walker's energy.
-//
-// shortcut: a rock costs what it takes on average to break it every time it is crossed, because the game's
-// rocks come back and when is not known; lower that if one stays broken for the trip. Likewise a gate costs what
-// finding it takes on average each time, though the game keeps a way that has been found.
 func PlanRoute(m ExpeditionMap, w Walker) (Route, error) {
 	if err := m.check(); err != nil {
 		return Route{}, err
@@ -117,11 +92,10 @@ func PlanRoute(m ExpeditionMap, w Walker) (Route, error) {
 	if w.At != nil {
 		origin = *w.At
 	}
-	// the point where the walk begins, then the places, then the start, which the trip has to end at
 	points := append(append([]Point{origin}, spotPoints(m.Spots)...), m.Start)
 	base := n + 1
-	dist := make([][]float64, len(points)) // dist[i][j] is the cost from point i to point j, without a search
-	prev := make([][]int, len(points))     // prev[i] is, for each tile, the tile it is reached from when leaving point i
+	dist := make([][]float64, len(points))
+	prev := make([][]int, len(points))
 	for i, p := range points {
 		d, from := m.walk(p, steps)
 		dist[i], prev[i] = make([]float64, len(points)), from
@@ -130,7 +104,6 @@ func PlanRoute(m ExpeditionMap, w Walker) (Route, error) {
 		}
 	}
 
-	// cost[mask*n+last] is the least the walk costs from the start to search every place of mask, the last at last.
 	cost := make([]float64, (1<<n)*n)
 	from := make([]int8, (1<<n)*n)
 	for i := range cost {
@@ -151,7 +124,7 @@ func PlanRoute(m ExpeditionMap, w Walker) (Route, error) {
 				value[mask] += m.Spots[i].Value
 			}
 		}
-		for last := n - 1; last >= 0; last-- { // from the last place of the map, so that a tie keeps the map's order
+		for last := n - 1; last >= 0; last-- {
 			c := cost[mask*n+last]
 			if mask&(1<<last) == 0 || math.IsInf(c, 1) {
 				continue
@@ -179,11 +152,10 @@ func PlanRoute(m ExpeditionMap, w Walker) (Route, error) {
 		return Route{}, nil
 	}
 
-	// The places in the order to go, read back from the last, and the walk between them.
 	order := make([]int, 0, n)
 	for mask, last := best.mask, best.last; ; {
 		order = append(order, last)
-		if mask&(mask-1) == 0 { // the first place has none before it
+		if mask&(mask-1) == 0 {
 			break
 		}
 		mask, last = mask&^(1<<last), int(from[mask*n+last])
@@ -207,13 +179,6 @@ func spotPoints(spots []Spot) []Point {
 	return out
 }
 
-// Here says whether the monster can be on the trip of this map: the week that the trip comes round has come, and the
-// tile that the monster last stood on is a tile of the map that can be walked. The game keeps that tile after a trip
-// as well, so this is the week that decides when it is not on one; where the week or the tile is not known, it is
-// false.
-//
-// shortcut: whether the date holds still while a trip is made is not known; if it does not, the map goes away in
-// the middle of the trip, and the tile of the monster would have to be what decides.
 func (m ExpeditionMap) Here(r player.Ranch) bool {
 	if _, ok := m.Stand(r); !ok {
 		return false
@@ -223,8 +188,10 @@ func (m ExpeditionMap) Here(r player.Ranch) bool {
 	return ok && e.Month == now.Month && e.Week == now.Week
 }
 
-// Trip is the expedition that the map is of, found by its name.
 func (m ExpeditionMap) Trip() (Expedition, bool) {
+	if m.Name == Phoenix.Name {
+		return Phoenix, true
+	}
 	for _, e := range Expeditions {
 		if e.Name == m.Name {
 			return e, true
@@ -233,31 +200,47 @@ func (m ExpeditionMap) Trip() (Expedition, bool) {
 	return Expedition{}, false
 }
 
-// Open says whether the trip of this map is on offer to the monster now: the week that the trip comes round has come,
-// and the monster is fit for it. It does not ask where the monster stands: before the trip starts it stands nowhere on the
-// map. It is false where the date is not known.
 func (m ExpeditionMap) Open(r player.Ranch, mon monster.Monster) bool {
 	e, ok := m.Trip()
 	if !ok || !r.Known {
+		return false
+	}
+	if (e.Name == Phoenix.Name) != PhoenixPending(r) {
 		return false
 	}
 	now := r.Calendar()
 	return e.Month == now.Month && e.Week == now.Week && e.Fit(mon)
 }
 
-// Stand is the tile of the map that the monster last stood on, as far from the start of the map as it is from the
-// start of the trip, and whether that is a tile of the map that can be walked. It is not where the place of the
-// monster is not known.
+func PhoenixPending(r player.Ranch) bool {
+	if !r.PhoenixKnown {
+		return false
+	}
+	now := r.Calendar()
+	return !r.PhoenixDone || now.Month == Phoenix.Month && now.Week == Phoenix.Week && r.OnTrip(Phoenix.Origin.X, Phoenix.Origin.Y)
+}
+
 func (m ExpeditionMap) Stand(r player.Ranch) (Point, bool) {
 	if !r.Known || !r.WalkKnown {
 		return Point{}, false
 	}
-	right, up := r.Walked()
+	right, up := m.Walked(r)
 	at := Point{X: m.Start.X + right, Y: m.Start.Y - up}
 	if !m.inside(at) || m.Tiles[m.index(at)] == Wall {
 		return Point{}, false
 	}
 	return at, true
+}
+
+func (m ExpeditionMap) Walked(r player.Ranch) (right, up int) {
+	if r.OffsetKnown {
+		return r.OffsetX, r.OffsetY
+	}
+	e, ok := m.Trip()
+	if !ok || e.Origin == (Point{}) {
+		return r.Walked()
+	}
+	return r.Tile%player.MapWidth - e.Origin.X, e.Origin.Y - r.Tile/player.MapWidth
 }
 
 func (m ExpeditionMap) index(p Point) int { return p.Y*m.Width + p.X }
@@ -266,7 +249,6 @@ func (m ExpeditionMap) inside(p Point) bool {
 	return p.X >= 0 && p.X < m.Width && p.Y >= 0 && p.Y < m.Height
 }
 
-// check says whether the map is what it claims to be.
 func (m ExpeditionMap) check() error {
 	switch {
 	case m.Width <= 0 || m.Height <= 0 || len(m.Tiles) != m.Width*m.Height:
@@ -296,8 +278,6 @@ func (m ExpeditionMap) check() error {
 	return nil
 }
 
-// stepCosts is what it costs the walker to step onto each tile: the step, and for a rock what it takes on average
-// to break it, and for a gate what finding the way takes on average, or nothing at all where the walker cannot.
 func (m ExpeditionMap) stepCosts(w Walker) []float64 {
 	need := make(map[Point]int, len(m.Locks))
 	for _, l := range m.Locks {
@@ -321,8 +301,6 @@ func (m ExpeditionMap) stepCosts(w Walker) []float64 {
 	return costs
 }
 
-// walk is the cheapest way from a point to every tile of the map, by what it costs to step onto each: what it costs,
-// and the tile each is reached from.
 func (m ExpeditionMap) walk(start Point, steps []float64) (dist []float64, from []int) {
 	dist, from = make([]float64, len(m.Tiles)), make([]int, len(m.Tiles))
 	for i := range dist {
@@ -347,8 +325,6 @@ func (m ExpeditionMap) walk(start Point, steps []float64) (dist []float64, from 
 	return dist, from
 }
 
-// trail is the tiles walked from one point to another, leaving out the one it starts on; from is what walk gave
-// for the first.
 func (m ExpeditionMap) trail(from []int, a, b Point) []Point {
 	var rev []Point
 	for t := m.index(b); t != m.index(a); t = from[t] {

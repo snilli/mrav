@@ -41,16 +41,16 @@ var _ = Describe("randomize", func() {
 				Expect(v).To(BeNumerically("<=", 999), "stat %d", stat)
 				Expect(m.Growth[stat]).To(BeNumerically("<=", 4))
 			}
-			Expect(m.GutsRate).To(BeNumerically(">=", 5)) // nothing less, or the game shows no monster
+			Expect(m.GutsRate).To(BeNumerically(">=", 5))
 			Expect(m.Lifespan).To(BeNumerically(">=", 1))
 			Expect(m.Lifespan).To(BeNumerically("<=", m.InitialLifespan))
-			Expect(m.Specials).To(BeNumerically("<", 1<<10)) // the ordinary specials, none that a breed cannot have
+			Expect(m.Specials).To(BeNumerically("<", 1<<10))
 			Expect(m.ItemLike).To(BeNumerically("<", 178))
 			Expect(m.ItemDislike).To(BeNumerically("<", 178))
 			for _, percent := range m.Motivation {
 				Expect(percent).To(BeNumerically("<=", 100))
 			}
-			for c, slot := range m.Active { // each column's active move is in the column, or there is none
+			for c, slot := range m.Active {
 				Expect(slot == monster.NoActiveMove || slot >= c*domain.Rows && slot < (c+1)*domain.Rows).To(BeTrue(), "column %d", c)
 			}
 			for _, id := range p.Items {
@@ -58,14 +58,12 @@ var _ = Describe("randomize", func() {
 			}
 			Expect(p.Breeder).NotTo(BeEmpty())
 			Expect(m.Name).NotTo(BeEmpty())
-			// a ranch that the game could have: levels within what each facility goes to, a grade from Beginner to Master
 			Expect(p.Ranch.Known).To(BeTrue())
 			Expect(p.Ranch.House).To(BeNumerically("<=", player.MaxLevel(player.House)))
 			Expect(p.Ranch.Barn).To(BeNumerically("<=", player.MaxLevel(player.Barn)))
 			Expect(p.Ranch.Altar).To(BeNumerically("<=", player.MaxLevel(player.Altar)))
 			Expect(p.Ranch.Grade).To(BeNumerically("<=", 10))
 			Expect(p.Ranch.Date).To(BeNumerically(">=", 0))
-			// on the start of a trip, which is a tile of every map, so that the page of a trip has the monster to show
 			x, y := p.Ranch.Walked()
 			Expect([]int{x, y}).To(Equal([]int{0, 0}))
 			Expect(p.Ranch.WalkKnown).To(BeTrue())

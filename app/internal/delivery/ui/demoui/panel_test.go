@@ -68,7 +68,7 @@ var _ = Describe("Panel", func() {
 	})
 
 	It("moves the date of the ranch to the month and the week selected, in the year that it is in, and makes the ranch known", func() {
-		players.Update(func(pl *player.Player) { pl.Ranch = player.Ranch{Known: true, Date: 191} }) // Y1004 Mar wk 4
+		players.Update(func(pl *player.Player) { pl.Ranch = player.Ranch{Known: true, Date: 191} })
 		p.month.SetSelected("Feb")
 		pl, _ := players.Player(context.Background())
 		Expect(pl.Ranch.Calendar()).To(Equal(player.Date{Year: 1004, Month: 2, Week: 4}), "the week is left as it was")
@@ -82,26 +82,23 @@ var _ = Describe("Panel", func() {
 		Expect(pl.Ranch.Known).To(BeTrue())
 	})
 
-	It("puts the monster on the map of a trip as far right and up of the start as typed, and sets its steps and its energy left", func() {
+	It("puts the monster on the map of a trip as far right and up of the start as typed, and sets its energy left", func() {
 		test.Type(p.tripX, "-3")
 		test.Type(p.tripY, "12")
-		test.Type(p.steps, "7")
 		test.Type(p.energy, "-5")
 		pl, _ := players.Player(context.Background())
 		x, y := pl.Ranch.Walked()
 		Expect([]int{x, y}).To(Equal([]int{-3, 12}))
 		Expect(pl.Ranch.WalkKnown).To(BeTrue())
-		Expect(pl.Ranch.Steps).To(Equal(7))
 		Expect(pl.Ranch.Energy).To(Equal(-5), "which the game can take below nothing")
 		Expect(pl.Ranch.EnergyKnown).To(BeTrue())
 	})
 
-	It("shows where a random monster is on the map, with its steps and its energy, in the boxes", func() {
+	It("shows where a random monster is on the map, with its energy, in the boxes", func() {
 		p.Randomize()
 		pl, _ := players.Player(context.Background())
 		Expect(p.tripX.Text).To(Equal("0"))
 		Expect(p.tripY.Text).To(Equal("0"))
-		Expect(p.steps.Text).To(Equal(strconv.Itoa(pl.Ranch.Steps)))
 		Expect(p.energy.Text).To(Equal(strconv.Itoa(pl.Ranch.Energy)))
 	})
 

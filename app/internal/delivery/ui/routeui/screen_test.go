@@ -67,9 +67,9 @@ var _ = Describe("Screen", func() {
 	})
 
 	It("draws a map on a table as big as the biggest of all the maps, the smaller in the middle of it, with tiles of one size", func() {
-		big := trip("Torles Mountains") // not of this week: it is only the biggest
+		big := trip("Torles Mountains")
 		big.Width, big.Height, big.Tiles = 8, 3, make([]domain.Terrain, 24)
-		s.apply([]domain.ExpeditionMap{aisle(), big}, monsterOf(140, 350), nil) // the aisle is 4 tiles by 1
+		s.apply([]domain.ExpeditionMap{aisle(), big}, monsterOf(140, 350), nil)
 		Expect(s.boxes).To(HaveLen(1))
 		b := s.boxes[0]
 		b.table.Resize(b.table.MinSize())
@@ -150,7 +150,7 @@ var _ = Describe("Screen", func() {
 		s.apply(maps(), monsterOf(140, 350), nil)
 		Expect(s.boxes[0].object).To(BeIdenticalTo(object))
 
-		s.apply(maps(), monsterOf(700, 350), nil) // more life: the route is another
+		s.apply(maps(), monsterOf(700, 350), nil)
 		Expect(s.boxes[0].object).NotTo(BeIdenticalTo(object))
 	})
 
@@ -163,7 +163,7 @@ var _ = Describe("Screen", func() {
 		s.apply(maps(), monsterOf(140, 350), nil)
 		off := s.boxes[0].object
 
-		s.apply(maps(), at(976), nil) // on the tile after the start, with no step made: the plan is from the start still
+		s.apply(maps(), at(976), nil)
 		Expect(s.boxes[0].object).NotTo(BeIdenticalTo(off))
 		Expect(s.boxes[0].standing).NotTo(BeEmpty())
 		here := s.boxes[0].object
@@ -200,14 +200,13 @@ var _ = Describe("Screen", func() {
 	})
 
 	Describe("with the teleports of a map", func() {
-		// a start, a floor that the route crosses, a place, a teleport, and a floor that it does not cross
 		teleporting := func() domain.ExpeditionMap {
 			m := aisle()
 			m.Width = 6
 			m.Tiles = []domain.Terrain{domain.Floor, domain.Floor, domain.Floor, domain.Teleport, domain.Floor, domain.Wall}
 			m.Portals = []domain.Portal{
 				{Label: "T1", At: domain.Point{X: 3}, To: []string{"E1", "E2"}},
-				{Label: "E1", At: domain.Point{X: 1}}, // on the route, between the start and the place
+				{Label: "E1", At: domain.Point{X: 1}},
 				{Label: "E2", At: domain.Point{X: 4}},
 			}
 			return m
@@ -242,7 +241,6 @@ var _ = Describe("Screen", func() {
 	})
 
 	Describe("the key to the map", func() {
-		// words are the few words beside each tile of the key, in order
 		words := func(b *box) []string {
 			var out []string
 			for _, k := range b.key {
@@ -292,7 +290,7 @@ var _ = Describe("Screen", func() {
 			m := aisle()
 			m.Width = 6
 			m.Tiles = []domain.Terrain{domain.Floor, domain.Rock, domain.Floor, domain.Wall, domain.Rock, domain.Wall}
-			s.apply([]domain.ExpeditionMap{m}, monsterOf(700, 500), nil) // the rock between the start and the place is on the route
+			s.apply([]domain.ExpeditionMap{m}, monsterOf(700, 500), nil)
 			b := s.boxes[0]
 			Expect(words(b)).To(ContainElements("Rock", "Rock the route breaks"))
 			Expect(swatch(b, "Rock").bg.FillColor).To(Equal(rockFill))
@@ -347,13 +345,13 @@ var _ = Describe("Screen", func() {
 	})
 
 	It("centres a map in a panel that is wider than it", func() {
-		s.apply(maps(), monsterOf(140, 350), nil) // the aisle, 4 tiles of 17 and 1 between: 71 wide
+		s.apply(maps(), monsterOf(140, 350), nil)
 		b := s.boxes[0]
 		b.table.Resize(fyne.NewSize(300, 20))
 		Expect(b.cells[0].object.Position().X).To(BeNumerically("~", (300-71)/2, 0.5))
 		Expect(b.cells[1].object.Position().X).To(BeNumerically("~", (300-71)/2+18, 0.5))
 
-		b.table.Resize(fyne.NewSize(50, 20)) // and not left of its own edge when the panel is narrower
+		b.table.Resize(fyne.NewSize(50, 20))
 		Expect(b.cells[0].object.Position().X).To(BeNumerically(">=", 0))
 	})
 
@@ -365,11 +363,9 @@ var _ = Describe("Screen", func() {
 	})
 
 	Describe("when the monster is on a trip", func() {
-		// onTrip is a monster that last stood on the tile given, at the date given of the game's count: 40 is February,
-		// week 1, when the trip of Torles comes round, and the tile 975 is the start of every trip.
 		onTrip := func(date, tile int) domain.Profile {
 			p := monsterWith(420, 400, 600, 300, 0)
-			p.Player.Ranch = player.Ranch{Known: true, Date: date, Tile: tile, Steps: 2, WalkKnown: true}
+			p.Player.Ranch = player.Ranch{Known: true, Date: date, Tile: tile, WalkKnown: true}
 			return p
 		}
 		real := []domain.ExpeditionMap{trip("Parepare Jungle"), trip("Torles Mountains"), trip("Kawrea Volcano")}
@@ -379,7 +375,7 @@ var _ = Describe("Screen", func() {
 			Expect(s.Content().Visible()).To(BeTrue())
 			Expect(s.boxes).To(HaveLen(1))
 			Expect(s.boxes[0].title.Text).To(HavePrefix("Route · Torles Mountains: "))
-			Expect(s.boxes[0].cells[5].text.Text).To(Equal("★")) // on the start, at the bottom of the corridor
+			Expect(s.boxes[0].cells[5].text.Text).To(Equal("★"))
 		})
 
 		It("draws the map of the trip as big as the biggest of all the maps, as it does when every map is shown", func() {
@@ -396,15 +392,15 @@ var _ = Describe("Screen", func() {
 
 		It("finds the trip of a monster that is three steps up from the start in June, as the game showed it at X 0, Y 3", func() {
 			p := monsterWith(537, 918, 463, 690, 100)
-			p.Player.Ranch = player.Ranch{Known: true, Date: 872, Tile: 27*32 + 15, Steps: 3, WalkKnown: true, Energy: 487, EnergyKnown: true}
+			p.Player.Ranch = player.Ranch{Known: true, Date: 872, Tile: 27*32 + 15, WalkKnown: true, Energy: 487, EnergyKnown: true}
 			s.apply(real, p, nil)
 			Expect(s.boxes).To(HaveLen(1))
 			Expect(s.boxes[0].title.Text).To(HavePrefix("Route · Kawrea Volcano: "))
 			Expect(s.boxes[0].summary.Text).To(HavePrefix("Rocks break 100%"), "its energy and where it is are in the boxes above")
-			here := s.boxes[0].cells[2] // three tiles up from the start of the corridor, which is its tile 5
+			here := s.boxes[0].cells[2]
 			Expect(here.text.Text).To(Equal("★"))
 			Expect(here.bg.FillColor).To(Equal(markerFill))
-			Expect(s.boxes[0].standing).To(HaveLen(3)) // the energy, the place and the steps, in boxes above the map
+			Expect(s.boxes[0].standing).To(HaveLen(2))
 			Expect(s.boxes[0].places).NotTo(BeEmpty())
 
 			if dir := os.Getenv("SCREENSHOT_DIR"); dir != "" {
@@ -443,7 +439,7 @@ var _ = Describe("Screen", func() {
 
 		It("shows nothing of the trip of the week to a monster that is not fit for it", func() {
 			weak := onTrip(40, 975)
-			weak.Monster.Stats[monster.Life] = 209 // Torles asks for 210
+			weak.Monster.Stats[monster.Life] = 209
 			s.apply(real, weak, nil)
 			Expect(s.boxes).To(BeEmpty())
 			Expect(s.Content().Visible()).To(BeFalse())

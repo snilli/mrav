@@ -13,8 +13,6 @@ import (
 	"app/internal/core/profile/domain"
 )
 
-// chart reads a map from rows of text: # is a wall, o a rock, . a floor, S the start, and a letter a place, worth
-// what values says. Every map here is made up for the test.
 func chart(values map[rune]float64, rows ...string) domain.ExpeditionMap {
 	m := domain.ExpeditionMap{Width: len(rows[0]), Height: len(rows)}
 	for y, row := range rows {
@@ -41,8 +39,6 @@ func chart(values map[rune]float64, rows ...string) domain.ExpeditionMap {
 	return m
 }
 
-// plan is PlanRoute for a walker with the energy and the chance of breaking a rock given, and so much intelligence that
-// no gate is shut to it.
 func plan(m domain.ExpeditionMap, energy int, chance float64) (domain.Route, error) {
 	return domain.PlanRoute(m, domain.Walker{Energy: energy, BreakChance: chance, Intelligence: 999})
 }
@@ -68,7 +64,7 @@ var _ = Describe("PlanRoute", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(names(r)).To(ConsistOf("A", "B"))
 		Expect(r.Value).To(BeNumerically("==", 7))
-		Expect(r.Cost).To(BeNumerically("==", 28)) // 8 steps and 2 searches of 10
+		Expect(r.Cost).To(BeNumerically("==", 28))
 		Expect(r.Path).To(HaveLen(9))
 		Expect(r.Path[0]).To(Equal(open.Start))
 		Expect(r.Path[len(r.Path)-1]).To(Equal(open.Start))
@@ -84,7 +80,7 @@ var _ = Describe("PlanRoute", func() {
 		func(energy int, want []string, cost float64) {
 			r, err := plan(open, energy, 1)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(names(r)).To(ConsistOf(want)) // either order of the two costs the same
+			Expect(names(r)).To(ConsistOf(want))
 			Expect(r.Cost).To(BeNumerically("==", cost))
 		},
 		Entry("both, with the last unit of it", 28, []string{"A", "B"}, 28.0),
@@ -107,7 +103,7 @@ var _ = Describe("PlanRoute", func() {
 		), 22, 1)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(names(r)).To(Equal([]string{"A"}))
-		Expect(r.Cost).To(BeNumerically("==", 22)) // 6 steps each way and a search
+		Expect(r.Cost).To(BeNumerically("==", 22))
 	})
 
 	It("leaves out a place that cannot be reached", func() {
@@ -122,7 +118,7 @@ var _ = Describe("PlanRoute", func() {
 			r, err := plan(chart(value, "SoA"), 100, chance)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(names(r)).To(Equal([]string{"A"}))
-			Expect(r.Cost).To(BeNumerically("~", cost, 1e-9)) // 4 steps, a search, and the rock twice
+			Expect(r.Cost).To(BeNumerically("~", cost, 1e-9))
 		},
 		Entry("when it always breaks: 5 a time", 1.0, 24.0),
 		Entry("when it breaks half the time: 10 a time", 0.5, 34.0),
@@ -135,7 +131,7 @@ var _ = Describe("PlanRoute", func() {
 			"...",
 		), 100, 1)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(r.Cost).To(BeNumerically("==", 18)) // 4 steps each way, round it, and a search
+		Expect(r.Cost).To(BeNumerically("==", 18))
 	})
 
 	Describe("a gate that wants intelligence", func() {
@@ -149,8 +145,6 @@ var _ = Describe("PlanRoute", func() {
 			r, err := domain.PlanRoute(shortcut(), domain.Walker{Energy: 100, BreakChance: 1, Intelligence: 300})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(names(r)).To(Equal([]string{"A"}))
-			// 35% to find it in a search of 10: 1 + 10/0.35 to cross, twice, then the 2 steps onto the place and
-			// the start, and a search
 			Expect(r.Cost).To(BeNumerically("~", 2*(1+10/0.35)+2+10, 1e-9))
 		})
 
@@ -168,7 +162,7 @@ var _ = Describe("PlanRoute", func() {
 			m.Locks = []domain.Lock{{At: domain.Point{X: 1}, MinINT: 300}}
 			r, err := domain.PlanRoute(m, domain.Walker{Energy: 100, BreakChance: 1, Intelligence: 300})
 			Expect(err).NotTo(HaveOccurred())
-			Expect(r.Cost).To(BeNumerically("==", 4+4+10)) // 4 steps each way, round it
+			Expect(r.Cost).To(BeNumerically("==", 4+4+10))
 		})
 
 		It("has to be given its intelligence, or the map is not one", func() {
@@ -179,21 +173,20 @@ var _ = Describe("PlanRoute", func() {
 	})
 
 	Describe("from where the walker stands", func() {
-		// S . . A . B: the start, then the place A three tiles on, and the place B five.
 		line := func() domain.ExpeditionMap { return chart(value, "S..A.B") }
 
 		It("plans from the tile that the walker is on, and still ends at the start", func() {
 			at := domain.Point{X: 4}
 			r, err := domain.PlanRoute(line(), domain.Walker{Energy: 16, BreakChance: 1, At: &at})
 			Expect(err).NotTo(HaveOccurred())
-			Expect(names(r)).To(Equal([]string{"B"})) // 1 step to B, a search, and 5 steps back to the start
+			Expect(names(r)).To(Equal([]string{"B"}))
 			Expect(r.Cost).To(BeNumerically("==", 16))
 			Expect(r.Path[0]).To(Equal(at))
 			Expect(r.Path[len(r.Path)-1]).To(Equal(domain.Point{X: 0}))
 
 			r, err = domain.PlanRoute(line(), domain.Walker{Energy: 16, BreakChance: 1})
 			Expect(err).NotTo(HaveOccurred())
-			Expect(names(r)).To(Equal([]string{"A"})) // from the start, B is 5 steps and a search and 5 back: 20
+			Expect(names(r)).To(Equal([]string{"A"}))
 		})
 
 		It("is not for a tile that is not on the map", func() {
@@ -204,9 +197,6 @@ var _ = Describe("PlanRoute", func() {
 	})
 
 	Describe("Here", func() {
-		// The trip of Parepare comes round in October, week 1: the date 24 of the game's count. Every trip starts on the
-		// tile 975 of the game's count, and one step right of it is the tile 976, which is one step right of the start
-		// of the map.
 		trip := func(rows ...string) domain.ExpeditionMap {
 			m := chart(value, rows...)
 			m.Name = "Parepare Jungle"
@@ -242,14 +232,54 @@ var _ = Describe("PlanRoute", func() {
 
 			up := chart(value, ".", ".", "S")
 			up.Name = "Parepare Jungle"
-			at1, ok := up.Stand(at(24, 943)) // a step up of the start
+			at1, ok := up.Stand(at(24, 943))
 			Expect(ok).To(BeTrue())
 			Expect(at1).To(Equal(domain.Point{X: 0, Y: 1}))
+		})
+
+		It("counts from the start tile of its own trip, which for the first expedition is row 14, column 8", func() {
+			phoenix := chart(value, ".", ".", "S")
+			phoenix.Name = "Phoenix Volcano Adventure"
+			one := player.Ranch{Known: true, Date: 8, Tile: 13*32 + 8, WalkKnown: true}
+			right, up := phoenix.Walked(one)
+			Expect([]int{right, up}).To(Equal([]int{0, 1}))
+			Expect(phoenix.Here(one)).To(BeTrue())
+			at1, ok := phoenix.Stand(one)
+			Expect(ok).To(BeTrue())
+			Expect(at1).To(Equal(domain.Point{X: 0, Y: 1}))
+
+			right, up = trip("S.A").Walked(player.Ranch{Tile: 976})
+			Expect([]int{right, up}).To(Equal([]int{1, 0}), "the other trips start at row 30, column 15")
+		})
+
+		It("counts from the game's own words for how far right and up of the start the monster is, whatever tile the trip started on", func() {
+			m := trip("...", "...", "S..")
+			begun := player.Ranch{Known: true, Date: 24, Tile: 22*32 + 11, WalkKnown: true, OffsetKnown: true}
+			right, up := m.Walked(begun)
+			Expect([]int{right, up}).To(Equal([]int{0, 0}), "Parepare starts on row 22, column 11, not where Kawrea does")
+			at0, ok := m.Stand(begun)
+			Expect(ok).To(BeTrue())
+			Expect(at0).To(Equal(domain.Point{X: 0, Y: 2}))
+
+			moved := begun
+			moved.Tile, moved.OffsetX, moved.OffsetY = 21*32+13, 2, 1
+			right, up = m.Walked(moved)
+			Expect([]int{right, up}).To(Equal([]int{2, 1}))
+			at1, ok := m.Stand(moved)
+			Expect(ok).To(BeTrue())
+			Expect(at1).To(Equal(domain.Point{X: 2, Y: 1}))
+		})
+
+		It("does not stand the monster on the map with the words that a trip leaves behind", func() {
+			left := player.Ranch{Known: true, Date: 24, Tile: 35906, WalkKnown: true, OffsetX: 8, OffsetY: 992, OffsetKnown: true}
+			m := trip("...", "...", "S..")
+			_, ok := m.Stand(left)
+			Expect(ok).To(BeFalse())
+			Expect(m.Here(left)).To(BeFalse())
 		})
 	})
 
 	Describe("Open", func() {
-		// The trip of Parepare comes round in October, week 1, the date 24, and asks for life 140, fame 40 and the grade C.
 		parepare := func() domain.ExpeditionMap {
 			m := chart(value, "S.A")
 			m.Name = "Parepare Jungle"
@@ -282,6 +312,64 @@ var _ = Describe("PlanRoute", func() {
 			Entry("where the date is not known", parepare(), player.Ranch{}, fit(300, 60, 4)),
 			Entry("for a map that no trip is of", func() domain.ExpeditionMap { m := parepare(); m.Name = "Nowhere"; return m }(), week(24), fit(300, 60, 4)),
 		)
+
+		Describe("with the first expedition", func() {
+			named := func(name string) domain.ExpeditionMap {
+				m := chart(value, "S.A")
+				m.Name = name
+				return m
+			}
+			june := func(known, done bool) player.Ranch {
+				return player.Ranch{Known: true, Date: 8, PhoenixKnown: known, PhoenixDone: done}
+			}
+
+			It("opens it in its week for a fit monster while the game says it was not made", func() {
+				Expect(named("Phoenix Volcano Adventure").Open(june(true, false), fit(140, 40, 1))).To(BeTrue())
+				Expect(named("Phoenix Volcano Adventure").Open(june(true, false), fit(139, 40, 1))).To(BeFalse())
+			})
+
+			It("does not open it once it was made, or where the game does not say", func() {
+				Expect(named("Phoenix Volcano Adventure").Open(june(true, true), fit(300, 60, 4))).To(BeFalse())
+				Expect(named("Phoenix Volcano Adventure").Open(june(false, false), fit(300, 60, 4))).To(BeFalse())
+			})
+
+			It("shuts the other trips until it was made, and leaves them as they were where the game does not say", func() {
+				kawrea := named("Kawrea Volcano")
+				Expect(kawrea.Open(june(true, false), fit(300, 60, 4))).To(BeFalse())
+				Expect(kawrea.Open(june(true, true), fit(300, 60, 4))).To(BeTrue())
+				Expect(kawrea.Open(june(false, false), fit(300, 60, 4))).To(BeTrue())
+			})
+
+			Describe("while the monster is still on its trip, which the game marks made as soon as the monster enters the cave", func() {
+				onTrip := func(x, y, tile int) player.Ranch {
+					r := june(true, true)
+					r.Tile, r.WalkKnown = tile, true
+					r.OffsetX, r.OffsetY, r.OffsetKnown = x, y, true
+					return r
+				}
+
+				It("keeps it open and the others shut while the words of the position are those of its trip", func() {
+					r := onTrip(-1, 4, 327)
+					Expect(domain.PhoenixPending(r)).To(BeTrue())
+					Expect(named("Phoenix Volcano Adventure").Open(r, fit(300, 60, 4))).To(BeTrue())
+					Expect(named("Kawrea Volcano").Open(r, fit(300, 60, 4))).To(BeFalse())
+				})
+
+				It("lets it go when the words are those the last trip left, or of another trip", func() {
+					for _, r := range []player.Ranch{onTrip(5, 4, 327), onTrip(-11, 2, 900)} {
+						Expect(domain.PhoenixPending(r)).To(BeFalse())
+						Expect(named("Phoenix Volcano Adventure").Open(r, fit(300, 60, 4))).To(BeFalse())
+						Expect(named("Kawrea Volcano").Open(r, fit(300, 60, 4))).To(BeTrue())
+					}
+				})
+
+				It("lets it go outside its week", func() {
+					r := onTrip(-1, 4, 327)
+					r.Date++
+					Expect(domain.PhoenixPending(r)).To(BeFalse())
+				})
+			})
+		})
 	})
 
 	It("does not walk through a teleport, which leads somewhere at random", func() {

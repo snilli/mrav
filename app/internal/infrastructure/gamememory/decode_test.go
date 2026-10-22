@@ -12,8 +12,6 @@ import (
 	player "app/internal/core/player/domain"
 )
 
-// addresses is where MR2AV looks for each field, typed out here from its source (Timer1_Tick, CollateMonMoves,
-// ListItems, MonReadMoney and the rest) and not from the layouts, so that a slip in a layout shows as a failing test.
 type addresses struct {
 	age, genus, sub                                                    uint32
 	life, pow, def, skill, speed, intel                                uint32
@@ -25,17 +23,13 @@ type addresses struct {
 	moves, active, arena, guts, specials, prize                        uint32
 	name, breeder                                                      uint32
 	money, items, nextSale, errantry, input                            uint32
-	// From a Cheat Engine table for MR2DX, which MR2AV does not read. record is where wins are, with losses and
-	// knock-outs after it, then a gap, then injuries, runaways, sicknesses and resistance, two bytes each. The
-	// ranch's are known for Steam only.
-	record                                      uint32
-	date, tournament, grade, house, barn, altar uint32
-	unlocks                                     uint32 // a byte for each main breed, by its code: 1 when it is unlocked
-	energy, tile, steps                         uint32 // where the expedition's energy, tile and steps are, counted from the exe, not the RAM
+	record                                                             uint32
+	date, tournament, grade, house, barn, altar                        uint32
+	unlocks, phoenix                                                   uint32
+	energy, tile, position                                             uint32
 }
 
 var (
-	// MR2 on the PlayStation, vanilla and hard mode.
 	ps1MR2AV = addresses{
 		age: 0x97A14, genus: 0x97A18, sub: 0x97A1C,
 		life: 0x97A20, pow: 0x97A22, def: 0x97A24, skill: 0x97A26, speed: 0x97A28, intel: 0x97A2A,
@@ -48,9 +42,11 @@ var (
 		moves: 0x97B9A, active: 0x97BD0, arena: 0x97BD6, guts: 0x97BD7, specials: 0x97BD8, prize: 0x97A5C,
 		name: 0x97B78, breeder: 0,
 		money: 0x98FBC, items: 0x9923C, nextSale: 0x992DE, errantry: 0x992E9, input: 0x938AE,
-		record: 0x97A66, // the Steam one and 8, as every field of the monster before its name is
+		record: 0x97A66,
+		date:   0x99228, tournament: 0x99080, grade: 0x98FC0, house: 0x98FC1, barn: 0x98FC2, altar: 0x99050,
+		unlocks: 0x99386, phoenix: 0x993CE,
+		energy: 0x0D55BC, tile: 0x0D55B6, position: 0x0D55C0,
 	}
-	// MR2DX on Steam, English release.
 	steamMR2AV = addresses{
 		age: 0x97A0C, genus: 0x97A10, sub: 0x97A14,
 		life: 0x97A18, pow: 0x97A1A, def: 0x97A1C, skill: 0x97A1E, speed: 0x97A20, intel: 0x97A22,
@@ -66,14 +62,12 @@ var (
 		record: 0x97A5E,
 		date:   0x9A7D8, tournament: 0x9A62C, grade: 0x9A56C, house: 0x9A56D, barn: 0x9A56E, altar: 0x9A5FC,
 		unlocks: 0x9A936,
-		energy:  0x1DE8B84, tile: 0x1DE8B7E, steps: 0x1DE8B8A,
+		energy:  0x1DE8B84, tile: 0x1DE8B7E, position: 0x1DE8B88,
 	}
 )
 
-const ramSize = 0x200000 // the PlayStation's 2 MB
+const ramSize = 0x200000
 
-// image is a game's RAM, which can be made to fail, and which counts how often it is let go of. It also has the little
-// that a game keeps in its exe, outside the RAM, which can be made to fail by itself.
 type image struct {
 	ram        []byte
 	fail       error
@@ -82,7 +76,6 @@ type image struct {
 	moduleFail error
 }
 
-// ReadModule reads from the exe: what was put there with i16module, and nothing for the rest.
 func (i *image) ReadModule(offset uint32, p []byte) error {
 	if i.moduleFail != nil {
 		return i.moduleFail
@@ -124,15 +117,12 @@ func (i *image) i32(addr uint32, v int32) {
 	binary.LittleEndian.PutUint32(i.ram[addr:], uint32(v))
 }
 
-// The names the images spell, in each game's own codes: "Aa 1", and for the Steam breeder "Bob".
 var (
 	ps1Name     = []byte{11, 37, 0, 2, 255}
 	steamName   = []byte{0xB0, 0x00, 0xB0, 0x1A, 0x00, 0xA3, 0xFF}
 	steamBreeds = []byte{0xB0, 0x01, 0xB0, 0x28, 0xB0, 0x1B, 0xFF}
 )
 
-// monsterImage is a Genus 12 / Sub 3 monster whose every field has a value of its own, in the form the game
-// keeps it, and a player with a value in every field too.
 func monsterImage(a addresses, name, breeder []byte) *image {
 	img := newImage()
 	img.u8(a.genus, 12)
@@ -146,15 +136,15 @@ func monsterImage(a addresses, name, breeder []byte) *image {
 	img.i16(a.intel, 666)
 	img.i16(a.lifespan, 250)
 	img.i16(a.initial, 300)
-	img.i16(a.nature, 1024) // sin(pi/2) * 100 = 100
+	img.i16(a.nature, 1024)
 	img.u8(a.natureBase, 30)
 	img.u8(a.fatigue, 40)
 	img.u8(a.fame, 50)
 	img.u8(a.stress, 60)
 	img.u8(a.spoil, 70)
 	img.u8(a.fear, 80)
-	img.u8(a.form, 0xF6)                // -10
-	img.put(a.growth, 1, 2, 3, 4, 0, 2) // Power, Intelligence, Life, Skill, Speed, Defence
+	img.u8(a.form, 0xF6)
+	img.put(a.growth, 1, 2, 3, 4, 0, 2)
 	img.i16(a.trainBoost, 0x0405)
 	img.u8(a.cupJellies, 31)
 	img.u8(a.gold, 1)
@@ -178,14 +168,14 @@ func monsterImage(a addresses, name, breeder []byte) *image {
 	}
 	img.put(a.active, 0, 6, 12, 255)
 	img.put(a.name, name...)
-	img.i16(a.record, 12)   // wins
-	img.i16(a.record+2, 3)  // losses
-	img.i16(a.record+4, 5)  // knock-outs
-	img.i16(a.record+6, -1) // not a count, and not read
-	img.i16(a.record+8, 4)  // injuries
-	img.i16(a.record+10, 6) // runaways
-	img.i16(a.record+12, 7) // sicknesses
-	img.i16(a.record+14, 8) // resistance
+	img.i16(a.record, 12)
+	img.i16(a.record+2, 3)
+	img.i16(a.record+4, 5)
+	img.i16(a.record+6, -1)
+	img.i16(a.record+8, 4)
+	img.i16(a.record+10, 6)
+	img.i16(a.record+12, 7)
+	img.i16(a.record+14, 8)
 
 	img.i32(a.money, 987654)
 	for slot := range uint32(player.ItemSlots) {
@@ -203,18 +193,26 @@ func monsterImage(a addresses, name, breeder []byte) *image {
 		img.u8(a.house, 2)
 		img.u8(a.barn, 1)
 		img.u8(a.altar, 3)
-		// Pixie and Dragon unlocked, Henger not, Worm (36) unlocked with any value but 0, Naga (37) not.
 		img.put(a.unlocks, 1, 1, 0, 0, 0, 0)
 		img.u8(a.unlocks+36, 2)
-		img.i16module(a.energy, -5) // below nothing, as the energy of an expedition can go
-		img.i16module(a.tile, 911)  // column 15 of row 28, on a map 32 tiles wide
-		img.i16module(a.steps, 2)
+		if a.phoenix != 0 {
+			img.i16(a.phoenix, 1)
+		}
+		img.i16module(a.energy, -5)
+		img.i16module(a.tile, 911)
+		img.i16module(a.position, -3)
+		img.i16module(a.position+2, 2)
 	}
-	img.i16(a.input, 48) // Circle and Cross
+	if a.energy != 0 && a.energy < ramSize {
+		img.i16(a.energy, 485)
+		img.i16(a.tile, 420)
+		img.i16(a.position, -4)
+		img.i16(a.position+2, 1)
+	}
+	img.i16(a.input, 48)
 	return img
 }
 
-// ramOnly is a Memory that is the RAM and nothing else: it cannot read the exe, as the PlayStation's cannot.
 type ramOnly struct{ image *image }
 
 func (r *ramOnly) Read(addr uint32, p []byte) error { return r.image.Read(addr, p) }
@@ -235,13 +233,13 @@ var _ = Describe("decode", func() {
 
 			want := monster.Monster{
 				Genus: 12, SubGenus: 3,
-				Stats:  [monster.StatCount]int{111, 222, 666, 444, 555, 333}, // Life, Pow, Int, Skill, Speed, Defense
+				Stats:  [monster.StatCount]int{111, 222, 666, 444, 555, 333},
 				Nature: 130, NatureBase: 30,
 				Active: [monster.ActiveGroups]int{0, 6, 12, monster.NoActiveMove},
 				Name:   wantName,
 				Age:    100, Lifespan: 250, InitialLifespan: 300,
 				Fatigue: 40, Fame: 50, Stress: 60, Form: -10, Spoil: 70, Fear: 80,
-				Growth:     [monster.StatCount]int{3, 1, 2, 4, 0, 2}, // by stat, not in the order the game keeps them
+				Growth:     [monster.StatCount]int{3, 1, 2, 4, 0, 2},
 				TrainBoost: 0x0405,
 				CupJellies: 31, GoldPeach: true, ItemUsed: true,
 				Motivation: [monster.DrillCount]int{10, 20, 30, 40, 50, 60, 70, 80, 90, 100},
@@ -250,7 +248,7 @@ var _ = Describe("decode", func() {
 				Specials: 0x0403, PrizeMoney: 12345, PatchedSwim: patchedSwim,
 				Record: monster.Record{Wins: 12, Losses: 3, KOs: 5, Injuries: 4, Runaways: 6, Sicknesses: 7, Resistance: 8},
 			}
-			want.Learned[3], want.Learned[23] = true, true // only a flag of exactly 1 is learned
+			want.Learned[3], want.Learned[23] = true, true
 			want.Used[3], want.Used[5], want.Used[7], want.Used[23] = 77, 12, 9, 255
 			Expect(got).To(Equal(want))
 		},
@@ -269,14 +267,48 @@ var _ = Describe("decode", func() {
 			}
 			Expect(got).To(Equal(want))
 		},
-		Entry("MR2 on the PlayStation, which has no breeder name or ranch to read", ps1, ps1MR2AV, "", player.Ranch{}),
+		Entry("MR2 on the PlayStation, which keeps the expedition in its RAM and has no breeder name", ps1, ps1MR2AV, "",
+			player.Ranch{
+				Known: true, Date: 155, Tournament: 1003, Grade: 6, House: 2, Barn: 1, Altar: 3,
+				Unlocked: [player.BreedCount]bool{0: true, 1: true, 36: true},
+				Energy:   485, EnergyKnown: true, Tile: 420, WalkKnown: true,
+				OffsetX: -4, OffsetY: 1, OffsetKnown: true,
+				PhoenixKnown: true, PhoenixDone: true,
+			}),
 		Entry("MR2DX on Steam", steam, steamMR2AV, "Bob",
 			player.Ranch{
 				Known: true, Date: 155, Tournament: 1003, Grade: 6, House: 2, Barn: 1, Altar: 3,
 				Unlocked: [player.BreedCount]bool{0: true, 1: true, 36: true}, Energy: -5, EnergyKnown: true,
-				Tile: 911, Steps: 2, WalkKnown: true,
+				Tile: 911, WalkKnown: true, OffsetX: -3, OffsetY: 2, OffsetKnown: true,
 			}),
 	)
+
+	DescribeTable("reads the year of the first IMa vs FIMBA from its low half, and a year the game has not set as none",
+		func(raw []byte, want int) {
+			img := monsterImage(ps1MR2AV, ps1Name, nil)
+			img.put(ps1MR2AV.tournament, raw...)
+			got, err := decodePlayer(ps1, img)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(got.Ranch.Tournament).To(Equal(want))
+		},
+		Entry("a new game holds all ones", []byte{0xFF, 0xFF, 0xFF, 0xFF}, 0),
+		Entry("a year set through the low half only, as the cheat code does it", []byte{0xEB, 0x03, 0xFF, 0xFF}, 1003),
+		Entry("a year set as a whole word", []byte{0xEB, 0x03, 0x00, 0x00}, 1003),
+	)
+
+	It("says the Phoenix adventure is not done when its word is 0, and that it is not known where the game has no such word", func() {
+		img := monsterImage(ps1MR2AV, ps1Name, nil)
+		img.i16(ps1MR2AV.phoenix, 0)
+		got, err := decodePlayer(ps1, img)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(got.Ranch.PhoenixKnown).To(BeTrue())
+		Expect(got.Ranch.PhoenixDone).To(BeFalse())
+
+		got, err = decodePlayer(steam, monsterImage(steamMR2AV, steamName, steamBreeds))
+		Expect(err).NotTo(HaveOccurred())
+		Expect(got.Ranch.PhoenixKnown).To(BeFalse())
+		Expect(got.Ranch.PhoenixDone).To(BeFalse())
+	})
 
 	It("still reads the ranch when the exe cannot be read, and says the energy is not known", func() {
 		img := monsterImage(steamMR2AV, steamName, steamBreeds)
@@ -289,6 +321,15 @@ var _ = Describe("decode", func() {
 		Expect(got.Ranch.EnergyKnown).To(BeFalse())
 		Expect(got.Ranch.Energy).To(BeZero())
 		Expect(got.Ranch.WalkKnown).To(BeFalse())
+	})
+
+	It("reads the expedition of a game that keeps it in its RAM even when there is no exe to read", func() {
+		got, err := decodePlayer(ps1, &ramOnly{image: monsterImage(ps1MR2AV, ps1Name, nil)})
+		Expect(err).NotTo(HaveOccurred())
+		Expect(got.Ranch.EnergyKnown).To(BeTrue())
+		Expect(got.Ranch.Energy).To(Equal(485))
+		Expect(got.Ranch.WalkKnown).To(BeTrue())
+		Expect(got.Ranch.Tile).To(Equal(420))
 	})
 
 	It("does not look for the energy in a memory that has no exe to read", func() {
@@ -316,7 +357,6 @@ var _ = Describe("decode", func() {
 		Entry("a fraction is rounded, not dropped: 70.7 is 71", int16(512), byte(0), 71),
 		Entry("and away from zero for a negative one: -70.7 is -71", int16(-512), byte(0), -71),
 		Entry("a base of 255 is -1", int16(0), byte(0xFF), -1),
-		// What a breeder saw in the game where the sine alone, cut toward zero, said -1, 0, 13 and 99.
 		Entry("a nature of -10 is -2", int16(-10), byte(0), -2),
 		Entry("a nature of -6 is -1", int16(-6), byte(0), -1),
 		Entry("a nature of 89 is 14", int16(89), byte(0), 14),
@@ -344,7 +384,7 @@ var _ = Describe("decode", func() {
 		func(main, sub, guts byte, zeroGrowth, none bool) {
 			a := ps1MR2AV
 			img := monsterImage(a, ps1Name, nil)
-			img.put(a.growth, 1, 1, 1, 1, 1, 1) // real growth rates, unless the case says one is nothing
+			img.put(a.growth, 1, 1, 1, 1, 1, 1)
 			img.u8(a.genus, main)
 			img.u8(a.sub, sub)
 			img.u8(a.guts, guts)

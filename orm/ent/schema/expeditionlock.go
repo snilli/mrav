@@ -7,8 +7,6 @@ import (
 	"entgo.io/ent/schema/index"
 )
 
-// ExpeditionLock is what a gate tile of an expedition's map wants: the intelligence that finding the way through
-// it takes.
 type ExpeditionLock struct{ ent.Schema }
 
 func (ExpeditionLock) Fields() []ent.Field {
@@ -27,6 +25,5 @@ func (ExpeditionLock) Edges() []ent.Edge {
 }
 
 func (ExpeditionLock) Indexes() []ent.Index {
-	// the locks of a map are read by the map, in the order of the tiles
 	return []ent.Index{index.Fields("map_id", "x", "y").Unique()}
 }

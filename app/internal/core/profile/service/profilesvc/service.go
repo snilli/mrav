@@ -48,10 +48,9 @@ func (s *Service) Current(ctx context.Context) (domain.Profile, error) {
 	if err != nil {
 		return domain.Profile{}, err
 	}
-	// What a search of each place turns up is how this monster would search it: by its intelligence and skill, and its nature.
 	by := domain.Searcher{Intelligence: m.Stats[monster.Int], Skill: m.Stats[monster.Skill], GoodNature: m.Nature > 0}
 	var maps []domain.ExpeditionMap
-	for _, sm := range shared { // copies, for the maps that the repository gave are shared
+	for _, sm := range shared {
 		maps = append(maps, sm.For(by))
 	}
 

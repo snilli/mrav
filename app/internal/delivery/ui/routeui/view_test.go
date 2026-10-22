@@ -13,11 +13,8 @@ import (
 	"app/internal/delivery/ui/profileui"
 )
 
-// monsterOf is a profile whose monster has the life and the power given, and no intelligence, skill or nature.
 func monsterOf(life, pow int) domain.Profile { return monsterWith(life, pow, 0, 0, 0) }
 
-// monsterWith is a profile whose monster has the stats and the nature given, fame and grade enough for any trip, on a ranch
-// whose date is the week of the trip of Parepare, October week 1: the date 24 of the game's count.
 func monsterWith(life, pow, intelligence, skill, nature int) domain.Profile {
 	m := monster.Monster{Fame: 100, Rank: 5}
 	m.Stats[monster.Life], m.Stats[monster.Pow] = life, pow
@@ -25,8 +22,6 @@ func monsterWith(life, pow, intelligence, skill, nature int) domain.Profile {
 	return domain.Profile{Monster: m, Player: player.Player{Ranch: player.Ranch{Known: true, Date: 24}}}
 }
 
-// aisle is a made-up map of one row: the start, a floor, a place worth 1,000 G, and a wall. It is the map of the trip of
-// Parepare, so that the week of the profiles above finds it.
 func aisle() domain.ExpeditionMap {
 	return domain.ExpeditionMap{
 		Name: "Parepare Jungle", Width: 4, Height: 1,
@@ -35,8 +30,6 @@ func aisle() domain.ExpeditionMap {
 	}
 }
 
-// trip is a made-up map with the name of a trip, so that the week of that trip finds it: a corridor of 6 tiles that
-// goes up from the start, with a place worth 1,000 G at the top.
 func trip(name string) domain.ExpeditionMap {
 	return domain.ExpeditionMap{
 		Name: name, Width: 1, Height: 6, Tiles: make([]domain.Terrain, 6), Start: domain.Point{Y: 5},
@@ -58,6 +51,26 @@ var _ = Describe("NewView", func() {
 		v, err := NewView(monsterOf(700, 500), aisle())
 		Expect(err).NotTo(HaveOccurred())
 		Expect(v.Summary).To(HavePrefix("Starts with 700 energy · rocks break 100%"))
+	})
+
+	It("takes the chance to break a rock from the trip, since the rocks of the first expedition give way at less power", func() {
+		first := aisle()
+		first.Name = "Phoenix Volcano Adventure"
+		v, err := NewView(monsterOf(140, 100), first)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(v.Summary).To(ContainSubstring("rocks break 50%"))
+
+		v, err = NewView(monsterOf(140, 100), aisle())
+		Expect(err).NotTo(HaveOccurred())
+		Expect(v.Summary).To(ContainSubstring("rocks break 5%"))
+	})
+
+	It("counts X and Y from the start tile of the first expedition, as the game shows them", func() {
+		p := monsterOf(700, 350)
+		p.Player.Ranch = player.Ranch{Known: true, Date: 8, Tile: 12*32 + 8, WalkKnown: true, Energy: 600, EnergyKnown: true}
+		v, err := NewView(p, trip("Phoenix Volcano Adventure"))
+		Expect(err).NotTo(HaveOccurred())
+		Expect(v.Standing).To(ContainElement(profileui.Box{Text: "X 0 · Y 2", Tone: profileui.ToneHotPink}))
 	})
 
 	It("says that no place is in reach when the energy cannot get to one and back", func() {
@@ -151,7 +164,7 @@ var _ = Describe("NewView", func() {
 
 	It("marks where the monster stands when it is on the trip of the map, and nowhere otherwise", func() {
 		m := aisle()
-		m.Name = "Parepare Jungle" // its trip comes round in October, week 1: the date 24 of the game's count
+		m.Name = "Parepare Jungle"
 		on := func(date int) domain.Profile {
 			p := monsterOf(140, 350)
 			p.Player.Ranch = player.Ranch{Known: true, Date: date, Tile: 976, WalkKnown: true}
@@ -167,45 +180,42 @@ var _ = Describe("NewView", func() {
 	})
 
 	Describe("on the trip", func() {
-		// The aisle as the map of Parepare, whose trip comes round at the date 24 of the game's count, with the monster
-		// on the tile 976, one step right of the start, which is the one between the start and the place.
 		parepare := func() domain.ExpeditionMap {
 			m := aisle()
 			m.Name = "Parepare Jungle"
 			return m
 		}
-		walking := func(steps, energy int, known bool) domain.Profile {
+		walking := func(energy int, known bool) domain.Profile {
 			p := monsterOf(700, 350)
-			p.Player.Ranch = player.Ranch{Known: true, Date: 24, Tile: 976, WalkKnown: true, Steps: steps, Energy: energy, EnergyKnown: known}
+			p.Player.Ranch = player.Ranch{Known: true, Date: 24, Tile: 976, WalkKnown: true, Energy: energy, EnergyKnown: known}
 			return p
 		}
 
-		It("plans from the tile of the monster with the energy that it has left, once it has made steps", func() {
-			v, err := NewView(walking(3, 20, true), parepare())
+		It("plans from the tile of the monster with the energy that it has left, once it has used some", func() {
+			v, err := NewView(walking(20, true), parepare())
 			Expect(err).NotTo(HaveOccurred())
 			Expect(v.Summary).To(Equal("Rocks break 50% · the route costs about 13 energy"), "the energy it has and where it is are in the boxes")
 			Expect(v.Route.Path[0]).To(Equal(domain.Point{X: 1}))
 		})
 
 		It("says that no place is in reach from where it is, when its energy is too little", func() {
-			v, err := NewView(walking(3, 12, true), parepare())
+			v, err := NewView(walking(12, true), parepare())
 			Expect(err).NotTo(HaveOccurred())
 			Expect(v.Summary).To(Equal("Rocks break 50%"))
 		})
 
-		It("puts what the panel says of the monster in boxes: its energy, where it is as the game counts it, and its steps", func() {
-			v, err := NewView(walking(3, 20, true), parepare())
+		It("puts what the game shows of the monster in boxes: its energy and where it is as the game counts it", func() {
+			v, err := NewView(walking(20, true), parepare())
 			Expect(err).NotTo(HaveOccurred())
 			Expect(v.Standing).To(Equal([]profileui.Box{
 				{Text: "Energy 20", Tone: profileui.ToneOrange},
 				{Text: "X 1 · Y 0", Tone: profileui.ToneHotPink},
-				{Text: "3 steps", Tone: profileui.ToneLightYellow},
 			}))
 		})
 
 		DescribeTable("colours the energy by how near it is to running out",
 			func(energy int, tone profileui.Tone) {
-				v, err := NewView(walking(1, energy, true), parepare())
+				v, err := NewView(walking(energy, true), parepare())
 				Expect(err).NotTo(HaveOccurred())
 				Expect(v.Standing[0].Tone).To(Equal(tone))
 			},
@@ -216,12 +226,11 @@ var _ = Describe("NewView", func() {
 			Entry("below nothing", -5, profileui.ToneOrangeRed),
 		)
 
-		It("leaves out the energy where it is not known, and says one step in the singular", func() {
-			v, err := NewView(walking(1, 20, false), parepare())
+		It("leaves out the energy where the energy is not known", func() {
+			v, err := NewView(walking(20, false), parepare())
 			Expect(err).NotTo(HaveOccurred())
 			Expect(v.Standing).To(Equal([]profileui.Box{
 				{Text: "X 1 · Y 0", Tone: profileui.ToneHotPink},
-				{Text: "1 step", Tone: profileui.ToneLightYellow},
 			}))
 		})
 
@@ -231,16 +240,16 @@ var _ = Describe("NewView", func() {
 			Expect(v.Standing).To(BeEmpty())
 		})
 
-		DescribeTable("plans from the start with the energy it begins with, when it has made no steps or the energy cannot be its own",
+		DescribeTable("plans from the start with the energy it begins with, when it has used none or the energy cannot be its own",
 			func(p domain.Profile) {
 				v, err := NewView(p, parepare())
 				Expect(err).NotTo(HaveOccurred())
 				Expect(v.Summary).To(Equal("Starts with 700 energy · rocks break 50% · the route costs about 14 energy"))
 				Expect(v.Marker).NotTo(BeNil())
 			},
-			Entry("no steps yet", walking(0, 20, true)),
-			Entry("more energy than a monster of this life begins with, which is left from another trip", walking(3, 800, true)),
-			Entry("the energy is not known", walking(3, 20, false)),
+			Entry("no energy used yet", walking(700, true)),
+			Entry("more energy than a monster of this life begins with, which is left from another trip", walking(800, true)),
+			Entry("the energy is not known", walking(20, false)),
 		)
 	})
 
