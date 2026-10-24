@@ -7,8 +7,10 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	"orm/ent"
 	"orm/ent/migrate"
 	entmove "orm/ent/move"
+	"orm/stored"
 
 	"app/internal/testutil"
 )
@@ -72,6 +74,59 @@ var _ = Describe("OpenShipped", Label("integration"), func() {
 		}
 		Expect(missing).To(BeEmpty(), "declared by the schema, not in data/mrav.sqlite")
 		Expect(extra).To(BeEmpty(), "in data/mrav.sqlite, not declared by the schema")
+	})
+
+	DescribeTable("ships the stat sums that each game asks for five moves: POW on the PlayStation and INT on Steam for four of them, and the other way round for Whirlwind",
+		func(version entmove.Version, genus int, name string, stats []int, text string) {
+			ctx := context.Background()
+			client, err := testutil.OpenShipped(ctx)
+			if errors.Is(err, testutil.ErrNoShippedDB) {
+				Skip(err.Error())
+			}
+			Expect(err).NotTo(HaveOccurred())
+			DeferCleanup(client.Close)
+
+			m := client.Move.Query().Where(entmove.VersionEQ(version), entmove.GenusID(genus), entmove.Name(name)).OnlyX(ctx)
+			var got []int
+			for _, c := range m.Unlock {
+				if c.Type == stored.StatSum {
+					got = c.Stats
+				}
+			}
+			Expect(got).To(Equal(stats))
+			Expect(m.Description).To(ContainSubstring(text))
+		},
+		Entry("mr2 Hidden Sting", entmove.VersionMr2, 11, "Hidden Sting", []int{1, 3}, "POW + SKI should total over 650"),
+		Entry("mr2 Javelin", entmove.VersionMr2, 11, "Javelin", []int{1, 4}, "POW + SPD should total over 650"),
+		Entry("mr2 Flying Mask", entmove.VersionMr2, 16, "Flying Mask", []int{1, 4}, "POW + SPD should total over 400"),
+		Entry("mr2 Fist Shot", entmove.VersionMr2, 8, "Fist Shot", []int{1, 4}, "POW + SPD should total over 800"),
+		Entry("mr2 Whirlwind", entmove.VersionMr2, 16, "Whirlwind", []int{2}, "INT should be over 450"),
+		Entry("mr2dx Hidden Sting", entmove.VersionMr2dx, 11, "Hidden Sting", []int{2, 3}, "INT + SKI"),
+		Entry("mr2dx Javelin", entmove.VersionMr2dx, 11, "Javelin", []int{2, 4}, "INT + SPD should total over 650"),
+		Entry("mr2dx Flying Mask", entmove.VersionMr2dx, 16, "Flying Mask", []int{2, 4}, "INT + SPD should total over 400"),
+		Entry("mr2dx Fist Shot", entmove.VersionMr2dx, 8, "Fist Shot", []int{2, 4}, "INT + SPD"),
+		Entry("mr2dx Whirlwind", entmove.VersionMr2dx, 16, "Whirlwind", []int{1}, "POW (not a typo) should be over 450"),
+	)
+
+	It("ships Kato's Oil Fire as a move with no way to learn on the PlayStation, and with the second place on Steam", func() {
+		ctx := context.Background()
+		client, err := testutil.OpenShipped(ctx)
+		if errors.Is(err, testutil.ErrNoShippedDB) {
+			Skip(err.Error())
+		}
+		Expect(err).NotTo(HaveOccurred())
+		DeferCleanup(client.Close)
+
+		fire := func(version entmove.Version) *ent.Move {
+			return client.Move.Query().Where(entmove.VersionEQ(version), entmove.GenusID(17), entmove.Name("Oil Fire")).OnlyX(ctx)
+		}
+		mr2, mr2dx := fire(entmove.VersionMr2), fire(entmove.VersionMr2dx)
+		Expect(mr2.UnlockNever).To(BeTrue())
+		Expect(mr2.Unlock).To(BeEmpty())
+		Expect(mr2.Acquire).To(BeEmpty())
+		Expect(mr2.Description).NotTo(ContainSubstring("should total over"))
+		Expect(mr2dx.UnlockNever).To(BeFalse())
+		Expect(mr2dx.Acquire).NotTo(BeEmpty())
 	})
 
 	It("ships no extra row of a move with a scale of its own, because the game rates the numbers of those rows on the scale of force", func() {
