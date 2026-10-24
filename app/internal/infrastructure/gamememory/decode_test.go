@@ -40,7 +40,7 @@ var (
 		drug: 0x97B0A, drugWeeks: 0x97B0C, itemUsed: 0x97B0E, like: 0x97B1A, dislike: 0x97B1C,
 		rank: 0x97B92, lifeStage: 0x97B93, lifeType: 0x97B94,
 		moves: 0x97B9A, active: 0x97BD0, arena: 0x97BD6, guts: 0x97BD7, specials: 0x97BD8, prize: 0x97A5C,
-		name: 0x97B78, breeder: 0,
+		name: 0x97B78, breeder: 0x98FAA,
 		money: 0x98FBC, items: 0x9923C, nextSale: 0x992DE, errantry: 0x992E9, input: 0x938AE,
 		record: 0x97A66,
 		date:   0x99228, tournament: 0x99080, grade: 0x98FC0, house: 0x98FC1, barn: 0x98FC2, altar: 0x99050,
@@ -121,6 +121,7 @@ var (
 	ps1Name     = []byte{11, 37, 0, 2, 255}
 	steamName   = []byte{0xB0, 0x00, 0xB0, 0x1A, 0x00, 0xA3, 0xFF}
 	steamBreeds = []byte{0xB0, 0x01, 0xB0, 0x28, 0xB0, 0x1B, 0xFF}
+	ps1Breeder  = []byte{11, 11, 9, 9, 9, 9, 9, 9, 255}
 )
 
 func monsterImage(a addresses, name, breeder []byte) *image {
@@ -257,8 +258,8 @@ var _ = Describe("decode", func() {
 	)
 
 	DescribeTable("reads the player's side from where its game keeps it",
-		func(l Layout, a addresses, wantBreeder string, wantRanch player.Ranch) {
-			got, err := decodePlayer(l, monsterImage(a, ps1Name, steamBreeds))
+		func(l Layout, a addresses, breeder []byte, wantBreeder string, wantRanch player.Ranch) {
+			got, err := decodePlayer(l, monsterImage(a, ps1Name, breeder))
 			Expect(err).NotTo(HaveOccurred())
 
 			want := player.Player{Money: 987654, NextSale: 7, ErrantryCD: 255, Breeder: wantBreeder, Input: 48, Ranch: wantRanch}
@@ -267,7 +268,7 @@ var _ = Describe("decode", func() {
 			}
 			Expect(got).To(Equal(want))
 		},
-		Entry("MR2 on the PlayStation, which keeps the expedition in its RAM and has no breeder name", ps1, ps1MR2AV, "",
+		Entry("MR2 on the PlayStation, which keeps the expedition in its RAM and the breeder's name as one byte a letter", ps1, ps1MR2AV, ps1Breeder, "AA888888",
 			player.Ranch{
 				Known: true, Date: 155, Tournament: 1003, Grade: 6, House: 2, Barn: 1, Altar: 3,
 				Unlocked: [player.BreedCount]bool{0: true, 1: true, 36: true},
@@ -275,7 +276,7 @@ var _ = Describe("decode", func() {
 				OffsetX: -4, OffsetY: 1, OffsetKnown: true,
 				PhoenixKnown: true, PhoenixDone: true,
 			}),
-		Entry("MR2DX on Steam", steam, steamMR2AV, "Bob",
+		Entry("MR2DX on Steam", steam, steamMR2AV, steamBreeds, "Bob",
 			player.Ranch{
 				Known: true, Date: 155, Tournament: 1003, Grade: 6, House: 2, Barn: 1, Altar: 3,
 				Unlocked: [player.BreedCount]bool{0: true, 1: true, 36: true}, Energy: -5, EnergyKnown: true,

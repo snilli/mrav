@@ -77,8 +77,9 @@ var (
 		Name: Text{Addr: 0x97B78, Len: 12},
 
 		Money: 0x98FBC, Items: 0x9923C, NextSale: 0x992DE, ErrantryCD: 0x992E9, Input: 0x938AE,
-		Record: 0x97A66,
-		Date:   0x99228, Tournament: 0x99080, Grade: 0x98FC0, House: 0x98FC1, Barn: 0x98FC2, Altar: 0x99050,
+		Breeder: Text{Addr: 0x98FAA, Len: 12},
+		Record:  0x97A66,
+		Date:    0x99228, Tournament: 0x99080, Grade: 0x98FC0, House: 0x98FC1, Barn: 0x98FC2, Altar: 0x99050,
 		Unlocks: 0x99386, Phoenix: 0x993CE,
 		Energy: 0x0D55BC, Tile: 0x0D55B6, Position: 0x0D55C0, WalkInRAM: true,
 	}
