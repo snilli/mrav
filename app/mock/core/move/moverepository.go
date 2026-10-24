@@ -177,8 +177,8 @@ func (_c *MockMoveRepository_ListGenera_Call) RunAndReturn(run func(ctx context.
 }
 
 // ListMoves provides a mock function for the type MockMoveRepository
-func (_mock *MockMoveRepository) ListMoves(ctx context.Context, code domain.Genus) ([]domain0.Move, error) {
-	ret := _mock.Called(ctx, code)
+func (_mock *MockMoveRepository) ListMoves(ctx context.Context, code domain.Genus, version domain.Version) ([]domain0.Move, error) {
+	ret := _mock.Called(ctx, code, version)
 
 	if len(ret) == 0 {
 		panic("no return value specified for ListMoves")
@@ -186,18 +186,18 @@ func (_mock *MockMoveRepository) ListMoves(ctx context.Context, code domain.Genu
 
 	var r0 []domain0.Move
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, domain.Genus) ([]domain0.Move, error)); ok {
-		return returnFunc(ctx, code)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, domain.Genus, domain.Version) ([]domain0.Move, error)); ok {
+		return returnFunc(ctx, code, version)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, domain.Genus) []domain0.Move); ok {
-		r0 = returnFunc(ctx, code)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, domain.Genus, domain.Version) []domain0.Move); ok {
+		r0 = returnFunc(ctx, code, version)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]domain0.Move)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, domain.Genus) error); ok {
-		r1 = returnFunc(ctx, code)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, domain.Genus, domain.Version) error); ok {
+		r1 = returnFunc(ctx, code, version)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -212,11 +212,12 @@ type MockMoveRepository_ListMoves_Call struct {
 // ListMoves is a helper method to define mock.On call
 //   - ctx context.Context
 //   - code domain.Genus
-func (_e *MockMoveRepository_Expecter) ListMoves(ctx any, code any) *MockMoveRepository_ListMoves_Call {
-	return &MockMoveRepository_ListMoves_Call{Call: _e.mock.On("ListMoves", ctx, code)}
+//   - version domain.Version
+func (_e *MockMoveRepository_Expecter) ListMoves(ctx any, code any, version any) *MockMoveRepository_ListMoves_Call {
+	return &MockMoveRepository_ListMoves_Call{Call: _e.mock.On("ListMoves", ctx, code, version)}
 }
 
-func (_c *MockMoveRepository_ListMoves_Call) Run(run func(ctx context.Context, code domain.Genus)) *MockMoveRepository_ListMoves_Call {
+func (_c *MockMoveRepository_ListMoves_Call) Run(run func(ctx context.Context, code domain.Genus, version domain.Version)) *MockMoveRepository_ListMoves_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -226,9 +227,14 @@ func (_c *MockMoveRepository_ListMoves_Call) Run(run func(ctx context.Context, c
 		if args[1] != nil {
 			arg1 = args[1].(domain.Genus)
 		}
+		var arg2 domain.Version
+		if args[2] != nil {
+			arg2 = args[2].(domain.Version)
+		}
 		run(
 			arg0,
 			arg1,
+			arg2,
 		)
 	})
 	return _c
@@ -239,7 +245,7 @@ func (_c *MockMoveRepository_ListMoves_Call) Return(moves []domain0.Move, err er
 	return _c
 }
 
-func (_c *MockMoveRepository_ListMoves_Call) RunAndReturn(run func(ctx context.Context, code domain.Genus) ([]domain0.Move, error)) *MockMoveRepository_ListMoves_Call {
+func (_c *MockMoveRepository_ListMoves_Call) RunAndReturn(run func(ctx context.Context, code domain.Genus, version domain.Version) ([]domain0.Move, error)) *MockMoveRepository_ListMoves_Call {
 	_c.Call.Return(run)
 	return _c
 }

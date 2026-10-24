@@ -16,6 +16,8 @@ const (
 	FieldID = "id"
 	// FieldGenusID holds the string denoting the genus_id field in the database.
 	FieldGenusID = "genus_id"
+	// FieldVersion holds the string denoting the version field in the database.
+	FieldVersion = "version"
 	// FieldMemorySlot holds the string denoting the memory_slot field in the database.
 	FieldMemorySlot = "memory_slot"
 	// FieldCol holds the string denoting the col field in the database.
@@ -65,6 +67,7 @@ const (
 var Columns = []string{
 	FieldID,
 	FieldGenusID,
+	FieldVersion,
 	FieldMemorySlot,
 	FieldCol,
 	FieldRow,
@@ -106,6 +109,29 @@ var (
 	IconValidator func(string) error
 )
 
+// Version defines the type for the "version" enum field.
+type Version string
+
+// Version values.
+const (
+	VersionMr2   Version = "mr2"
+	VersionMr2dx Version = "mr2dx"
+)
+
+func (v Version) String() string {
+	return string(v)
+}
+
+// VersionValidator is a validator for the "version" field enum values. It is called by the builders before save.
+func VersionValidator(v Version) error {
+	switch v {
+	case VersionMr2, VersionMr2dx:
+		return nil
+	default:
+		return fmt.Errorf("move: invalid enum value for version field: %q", v)
+	}
+}
+
 // Kind defines the type for the "kind" enum field.
 type Kind string
 
@@ -141,6 +167,11 @@ func ByID(opts ...sql.OrderTermOption) OrderOption {
 // ByGenusID orders the results by the genus_id field.
 func ByGenusID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldGenusID, opts...).ToFunc()
+}
+
+// ByVersion orders the results by the version field.
+func ByVersion(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldVersion, opts...).ToFunc()
 }
 
 // ByMemorySlot orders the results by the memory_slot field.

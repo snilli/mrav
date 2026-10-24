@@ -9,6 +9,13 @@ const (
 
 type Genus int
 
+type Version string
+
+const (
+	MR2   Version = "mr2"
+	MR2DX Version = "mr2dx"
+)
+
 type Stat int
 
 const (
@@ -22,6 +29,7 @@ const (
 )
 
 type Monster struct {
+	Version  Version
 	Genus    Genus
 	SubGenus Genus
 	Stats    [StatCount]int
@@ -48,7 +56,6 @@ type Monster struct {
 	SilverPeach     bool
 	ItemUsed        bool
 	Motivation      [DrillCount]int
-	PatchedSwim     bool
 	PlayType        int
 	Drug            int
 	DrugWeeks       int

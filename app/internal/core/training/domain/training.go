@@ -41,12 +41,10 @@ var drills = [...]Drill{
 	{Name: "Pull", Heavy: true, Primary: monster.Pow, Secondary: monster.Life, Slot: 6},
 	{Name: "Meditate", Heavy: true, Primary: monster.Int, Secondary: monster.Skill, Slot: 7},
 	{Name: "Leap", Heavy: true, Primary: monster.Speed, Secondary: monster.Int, Slot: 8},
-	{Name: "Swim", Heavy: true, Primary: monster.Life, Secondary: monster.Defense, Slot: swimSlot},
+	{Name: "Swim", Heavy: true, Primary: monster.Defense, Secondary: monster.Life, Slot: swimSlot},
 }
 
 const swimSlot = 9
-
-var patchedSwim = Drill{Name: "Swim", Heavy: true, Primary: monster.Defense, Secondary: monster.Life, Slot: swimSlot}
 
 func Drills() []Drill { return slices.Clone(drills[:]) }
 
@@ -96,9 +94,6 @@ func Build(m monster.Monster, gains Gains) Training {
 		t.Specialties[bit] = m.TrainBoost&(1<<bit) != 0
 	}
 	for _, d := range drills {
-		if d.Slot == swimSlot && m.PatchedSwim {
-			d = patchedSwim
-		}
 		g := DrillGains{Drill: d, Secondary: noGain, Motivation: m.Motivation[d.Slot], Specialty: t.Specialties[d.Slot]}
 		g.Recommended = g.Specialty && g.Motivation >= recommendedMotivation
 		if d.Heavy {

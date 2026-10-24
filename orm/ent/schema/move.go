@@ -14,6 +14,7 @@ type Move struct{ ent.Schema }
 func (Move) Fields() []ent.Field {
 	return []ent.Field{
 		field.Int("genus_id"),
+		field.Enum("version").Values("mr2", "mr2dx"),
 		field.Int("memory_slot").Min(0).Max(23),
 		field.Int("col").Min(1).Max(4),
 		field.Int("row").Min(1).Max(6),
@@ -41,7 +42,7 @@ func (Move) Edges() []ent.Edge {
 
 func (Move) Indexes() []ent.Index {
 	return []ent.Index{
-		index.Fields("genus_id", "memory_slot").Unique(),
-		index.Fields("genus_id", "col", "row").Unique(),
+		index.Fields("version", "genus_id", "memory_slot").Unique(),
+		index.Fields("version", "genus_id", "col", "row").Unique(),
 	}
 }

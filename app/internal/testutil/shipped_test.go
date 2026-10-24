@@ -74,22 +74,30 @@ var _ = Describe("OpenShipped", Label("integration"), func() {
 		Expect(extra).To(BeEmpty(), "in data/mrav.sqlite, not declared by the schema")
 	})
 
-	It("ships what the errantry asks for each move it teaches: 651 entries over 560 moves, from the Errantry calculator", func() {
-		ctx := context.Background()
-		client, err := testutil.OpenShipped(ctx)
-		if errors.Is(err, testutil.ErrNoShippedDB) {
-			Skip(err.Error())
-		}
-		Expect(err).NotTo(HaveOccurred())
-		DeferCleanup(client.Close)
+	DescribeTable("ships every move once for each version of the game, with what the Errantry asks for each move it teaches, from the Errantry calculator",
+		func(version entmove.Version, withAcquire, entries int) {
+			ctx := context.Background()
+			client, err := testutil.OpenShipped(ctx)
+			if errors.Is(err, testutil.ErrNoShippedDB) {
+				Skip(err.Error())
+			}
+			Expect(err).NotTo(HaveOccurred())
+			DeferCleanup(client.Close)
 
-		moves, err := client.Move.Query().Where(entmove.AcquireNotNil()).All(ctx)
-		Expect(err).NotTo(HaveOccurred())
-		entries := 0
-		for _, m := range moves {
-			entries += len(m.Acquire)
-		}
-		Expect(moves).To(HaveLen(560))
-		Expect(entries).To(Equal(651))
-	})
+			all, err := client.Move.Query().Where(entmove.VersionEQ(version)).Count(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(all).To(Equal(637))
+
+			moves, err := client.Move.Query().Where(entmove.VersionEQ(version), entmove.AcquireNotNil()).All(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			got := 0
+			for _, m := range moves {
+				got += len(m.Acquire)
+			}
+			Expect(moves).To(HaveLen(withAcquire))
+			Expect(got).To(Equal(entries))
+		},
+		Entry("the Steam game, mr2dx: 651 entries over 560 moves", entmove.VersionMr2dx, 560, 651),
+		Entry("the PlayStation game, mr2: 650 entries over 559 moves", entmove.VersionMr2, 559, 650),
+	)
 })

@@ -181,7 +181,7 @@ func init() {
 	moveFields := schema.Move{}.Fields()
 	_ = moveFields
 	// moveDescMemorySlot is the schema descriptor for memory_slot field.
-	moveDescMemorySlot := moveFields[1].Descriptor()
+	moveDescMemorySlot := moveFields[2].Descriptor()
 	// move.MemorySlotValidator is a validator for the "memory_slot" field. It is called by the builders before save.
 	move.MemorySlotValidator = func() func(int) error {
 		validators := moveDescMemorySlot.Validators
@@ -199,7 +199,7 @@ func init() {
 		}
 	}()
 	// moveDescCol is the schema descriptor for col field.
-	moveDescCol := moveFields[2].Descriptor()
+	moveDescCol := moveFields[3].Descriptor()
 	// move.ColValidator is a validator for the "col" field. It is called by the builders before save.
 	move.ColValidator = func() func(int) error {
 		validators := moveDescCol.Validators
@@ -217,7 +217,7 @@ func init() {
 		}
 	}()
 	// moveDescRow is the schema descriptor for row field.
-	moveDescRow := moveFields[3].Descriptor()
+	moveDescRow := moveFields[4].Descriptor()
 	// move.RowValidator is a validator for the "row" field. It is called by the builders before save.
 	move.RowValidator = func() func(int) error {
 		validators := moveDescRow.Validators
@@ -235,11 +235,11 @@ func init() {
 		}
 	}()
 	// moveDescName is the schema descriptor for name field.
-	moveDescName := moveFields[4].Descriptor()
+	moveDescName := moveFields[5].Descriptor()
 	// move.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	move.NameValidator = moveDescName.Validators[0].(func(string) error)
 	// moveDescIcon is the schema descriptor for icon field.
-	moveDescIcon := moveFields[16].Descriptor()
+	moveDescIcon := moveFields[17].Descriptor()
 	// move.IconValidator is a validator for the "icon" field. It is called by the builders before save.
 	move.IconValidator = moveDescIcon.Validators[0].(func(string) error)
 	traininggainFields := schema.TrainingGain{}.Fields()

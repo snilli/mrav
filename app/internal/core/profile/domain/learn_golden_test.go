@@ -48,7 +48,7 @@ var _ = Describe("LearnChances against the calculator of legendcup.com", Label("
 		Expect(file.Cases).NotTo(BeEmpty())
 
 		for _, c := range file.Cases {
-			moves, err := repo.ListMoves(ctx, monster.Genus(c.Genus))
+			moves, err := repo.ListMoves(ctx, monster.Genus(c.Genus), monster.MR2DX)
 			Expect(err).NotTo(HaveOccurred(), c.Name)
 			m := monster.Monster{
 				Genus: monster.Genus(c.Genus), SubGenus: monster.Genus(c.Sub),

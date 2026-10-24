@@ -10,5 +10,5 @@ import (
 type MoveRepository interface {
 	ListGenera(ctx context.Context) ([]domain.Genus, error)
 	GetGenus(ctx context.Context, code monster.Genus) (domain.Genus, error)
-	ListMoves(ctx context.Context, code monster.Genus) ([]domain.Move, error)
+	ListMoves(ctx context.Context, code monster.Genus, version monster.Version) ([]domain.Move, error)
 }

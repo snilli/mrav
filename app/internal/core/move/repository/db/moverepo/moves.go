@@ -12,11 +12,11 @@ import (
 	"app/internal/core/move/domain"
 )
 
-func (r *Repository) ListMoves(ctx context.Context, code monster.Genus) ([]domain.Move, error) {
-	return r.moves.Get(code, func() ([]domain.Move, error) { return r.loadMoves(ctx, code) })
+func (r *Repository) ListMoves(ctx context.Context, code monster.Genus, version monster.Version) ([]domain.Move, error) {
+	return r.moves.Get(movesKey{code, version}, func() ([]domain.Move, error) { return r.loadMoves(ctx, code, version) })
 }
 
-func (r *Repository) loadMoves(ctx context.Context, code monster.Genus) ([]domain.Move, error) {
+func (r *Repository) loadMoves(ctx context.Context, code monster.Genus, version monster.Version) ([]domain.Move, error) {
 	id, err := r.client.Genus.Query().Where(entgenus.Code(int(code))).OnlyID(ctx)
 	if ent.IsNotFound(err) {
 		return nil, nil
@@ -25,7 +25,7 @@ func (r *Repository) loadMoves(ctx context.Context, code monster.Genus) ([]domai
 		return nil, err
 	}
 	rows, err := r.client.Move.Query().
-		Where(entmove.GenusID(id)).
+		Where(entmove.VersionEQ(entmove.Version(version)), entmove.GenusID(id)).
 		Order(ent.Asc(entmove.FieldMemorySlot)).
 		All(ctx)
 	if err != nil {

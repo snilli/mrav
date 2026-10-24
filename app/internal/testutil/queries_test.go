@@ -9,6 +9,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"app/internal/core/item/repository/db/itemrepo"
+	monster "app/internal/core/monster/domain"
 	"app/internal/core/move/repository/db/moverepo"
 	"app/internal/core/profile/repository/db/profilerepo"
 	"app/internal/core/training/repository/db/trainingrepo"
@@ -40,8 +41,10 @@ var _ = Describe("the queries of the viewer", Label("integration"), func() {
 			Expect(genera).NotTo(BeEmpty())
 			_, err = moves.GetGenus(ctx, genera[0].Code)
 			Expect(err).NotTo(HaveOccurred())
-			_, err = moves.ListMoves(ctx, genera[0].Code)
-			Expect(err).NotTo(HaveOccurred())
+			for _, version := range []monster.Version{monster.MR2, monster.MR2DX} {
+				_, err = moves.ListMoves(ctx, genera[0].Code, version)
+				Expect(err).NotTo(HaveOccurred())
+			}
 			_, err = items.ListItems(ctx)
 			Expect(err).NotTo(HaveOccurred())
 			_, err = gains.ListGains(ctx)

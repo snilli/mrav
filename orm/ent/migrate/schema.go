@@ -197,6 +197,7 @@ var (
 	// MovesColumns holds the columns for the "moves" table.
 	MovesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "version", Type: field.TypeEnum, Enums: []string{"mr2", "mr2dx"}},
 		{Name: "memory_slot", Type: field.TypeInt},
 		{Name: "col", Type: field.TypeInt},
 		{Name: "row", Type: field.TypeInt},
@@ -223,21 +224,21 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "moves_genus_moves",
-				Columns:    []*schema.Column{MovesColumns[17]},
+				Columns:    []*schema.Column{MovesColumns[18]},
 				RefColumns: []*schema.Column{GenusColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 		},
 		Indexes: []*schema.Index{
 			{
-				Name:    "move_genus_id_memory_slot",
+				Name:    "move_version_genus_id_memory_slot",
 				Unique:  true,
-				Columns: []*schema.Column{MovesColumns[17], MovesColumns[1]},
+				Columns: []*schema.Column{MovesColumns[1], MovesColumns[18], MovesColumns[2]},
 			},
 			{
-				Name:    "move_genus_id_col_row",
+				Name:    "move_version_genus_id_col_row",
 				Unique:  true,
-				Columns: []*schema.Column{MovesColumns[17], MovesColumns[2], MovesColumns[3]},
+				Columns: []*schema.Column{MovesColumns[1], MovesColumns[18], MovesColumns[3], MovesColumns[4]},
 			},
 		},
 	}

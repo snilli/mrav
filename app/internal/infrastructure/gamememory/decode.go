@@ -66,11 +66,11 @@ func decode(l Layout, mem Memory) (monster.Monster, error) {
 	}
 
 	m := monster.Monster{
+		Version:         l.Version,
 		Genus:           monster.Genus(genus),
 		SubGenus:        monster.Genus(sub),
 		Nature:          natureBase + swing,
 		NatureBase:      natureBase,
-		PatchedSwim:     l.PatchedSwim,
 		Age:             r.i16(l.Age),
 		Lifespan:        r.i16(l.Lifespan),
 		InitialLifespan: r.i16(l.InitialLifespan),

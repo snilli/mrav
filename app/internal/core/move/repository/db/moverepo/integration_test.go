@@ -29,6 +29,10 @@ var _ = Describe("moverepo", Label("integration"), func() {
 		Genus: 0, MemorySlot: 0, Col: 1, Row: 1, Name: "Pat", Kind: movedomain.KindPower,
 		Guts: 12, Force: 6, Hit: 10, Description: "Starting basic tech.", Icon: "Pixie_1",
 	}
+	patOnThePlayStation := movedomain.Move{
+		Genus: 0, MemorySlot: 0, Col: 1, Row: 1, Name: "Pat!", Kind: movedomain.KindPower,
+		Guts: 11, Force: 7, Hit: 10, Description: "Starting basic tech.", Icon: "Pixie_1",
+	}
 	refreshment := movedomain.Move{
 		Genus: 0, MemorySlot: 13, Col: 3, Row: 2, Name: "Refreshment", Kind: movedomain.KindIntelligence,
 		Guts: 30, Hit: 1, Description: "d", Icon: "Pixie_12",
@@ -53,15 +57,15 @@ var _ = Describe("moverepo", Label("integration"), func() {
 
 		pixie := client.Genus.Create().SetCode(0).SetName("Pixie").SaveX(ctx)
 		dragon := client.Genus.Create().SetCode(1).SetName("Dragon").SaveX(ctx)
-		seed := func(genusID int, m movedomain.Move) *ent.MoveCreate {
+		seed := func(genusID int, version string, m movedomain.Move) *ent.MoveCreate {
 			return client.Move.Create().
-				SetGenusID(genusID).SetMemorySlot(m.MemorySlot).SetCol(m.Col).SetRow(m.Row).
+				SetGenusID(genusID).SetVersion(entmove.Version(version)).SetMemorySlot(m.MemorySlot).SetCol(m.Col).SetRow(m.Row).
 				SetName(m.Name).SetKind(entmove.Kind(m.Kind)).
 				SetGuts(m.Guts).SetForce(m.Force).SetHit(m.Hit).SetWither(m.Wither).SetCrit(m.Crit).
 				SetDescription(m.Description).SetIcon(m.Icon).
 				SetUnlockNever(m.Unlock.Never).SetUnlock([]stored.Condition{})
 		}
-		seed(pixie.ID, refreshment).
+		seed(pixie.ID, "mr2dx", refreshment).
 			SetUnlock([]stored.Condition{
 				{Type: stored.MoveUsed, Slot: new(12), Min: new(50)},
 				{Type: stored.StatSum, Stats: []int{1, 2}, Min: new(400)},
@@ -70,8 +74,9 @@ var _ = Describe("moverepo", Label("integration"), func() {
 			}).
 			SetExtra(&stored.Extra{Label: "Recovery:", Scale: new(0), Raw: 30}).
 			SaveX(ctx)
-		seed(dragon.ID, never).SaveX(ctx)
-		seed(pixie.ID, pat).SaveX(ctx)
+		seed(dragon.ID, "mr2dx", never).SaveX(ctx)
+		seed(pixie.ID, "mr2dx", pat).SaveX(ctx)
+		seed(pixie.ID, "mr2", patOnThePlayStation).SaveX(ctx)
 		repo = moverepo.New(client)
 	})
 
@@ -91,19 +96,29 @@ var _ = Describe("moverepo", Label("integration"), func() {
 	})
 
 	It("reads the moves of a genus ordered by memory slot, with their unlock rules and extra rows", func() {
-		got, err := repo.ListMoves(ctx, 0)
+		got, err := repo.ListMoves(ctx, 0, monster.MR2DX)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(got).To(Equal([]movedomain.Move{pat, refreshment}))
 	})
 
+	It("reads the moves of the version of the game that it is asked for, because the PlayStation game and the Steam one name and tune some moves differently", func() {
+		got, err := repo.ListMoves(ctx, 0, monster.MR2)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(got).To(Equal([]movedomain.Move{patOnThePlayStation}))
+	})
+
 	It("reads a move the game gives no way to learn", func() {
-		got, err := repo.ListMoves(ctx, 1)
+		got, err := repo.ListMoves(ctx, 1, monster.MR2DX)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(got).To(Equal([]movedomain.Move{never}))
 	})
 
-	It("lists no moves for a genus it does not have, without failing", func() {
-		got, err := repo.ListMoves(ctx, 9)
+	It("lists no moves for a genus or a version it does not have, without failing", func() {
+		got, err := repo.ListMoves(ctx, 9, monster.MR2DX)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(got).To(BeEmpty())
+
+		got, err = repo.ListMoves(ctx, 1, monster.MR2)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(got).To(BeEmpty())
 	})

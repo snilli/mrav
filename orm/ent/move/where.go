@@ -139,6 +139,26 @@ func GenusIDNotIn(vs ...int) predicate.Move {
 	return predicate.Move(sql.FieldNotIn(FieldGenusID, vs...))
 }
 
+// VersionEQ applies the EQ predicate on the "version" field.
+func VersionEQ(v Version) predicate.Move {
+	return predicate.Move(sql.FieldEQ(FieldVersion, v))
+}
+
+// VersionNEQ applies the NEQ predicate on the "version" field.
+func VersionNEQ(v Version) predicate.Move {
+	return predicate.Move(sql.FieldNEQ(FieldVersion, v))
+}
+
+// VersionIn applies the In predicate on the "version" field.
+func VersionIn(vs ...Version) predicate.Move {
+	return predicate.Move(sql.FieldIn(FieldVersion, vs...))
+}
+
+// VersionNotIn applies the NotIn predicate on the "version" field.
+func VersionNotIn(vs ...Version) predicate.Move {
+	return predicate.Move(sql.FieldNotIn(FieldVersion, vs...))
+}
+
 // MemorySlotEQ applies the EQ predicate on the "memory_slot" field.
 func MemorySlotEQ(v int) predicate.Move {
 	return predicate.Move(sql.FieldEQ(FieldMemorySlot, v))

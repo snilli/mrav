@@ -5802,6 +5802,7 @@ type MoveMutation struct {
 	op             Op
 	typ            string
 	id             *int
+	version        *move.Version
 	memory_slot    *int
 	addmemory_slot *int
 	col            *int
@@ -5968,6 +5969,42 @@ func (m *MoveMutation) OldGenusID(ctx context.Context) (v int, err error) {
 // ResetGenusID resets all changes to the "genus_id" field.
 func (m *MoveMutation) ResetGenusID() {
 	m.genus = nil
+}
+
+// SetVersion sets the "version" field.
+func (m *MoveMutation) SetVersion(value move.Version) {
+	m.version = &value
+}
+
+// Version returns the value of the "version" field in the mutation.
+func (m *MoveMutation) Version() (r move.Version, exists bool) {
+	v := m.version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldVersion returns the old "version" field's value of the Move entity.
+// If the Move object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *MoveMutation) OldVersion(ctx context.Context) (v move.Version, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldVersion is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldVersion requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldVersion: %w", err)
+	}
+	return oldValue.Version, nil
+}
+
+// ResetVersion resets all changes to the "version" field.
+func (m *MoveMutation) ResetVersion() {
+	m.version = nil
 }
 
 // SetMemorySlot sets the "memory_slot" field.
@@ -6824,9 +6861,12 @@ func (m *MoveMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *MoveMutation) Fields() []string {
-	fields := make([]string, 0, 17)
+	fields := make([]string, 0, 18)
 	if m.genus != nil {
 		fields = append(fields, move.FieldGenusID)
+	}
+	if m.version != nil {
+		fields = append(fields, move.FieldVersion)
 	}
 	if m.memory_slot != nil {
 		fields = append(fields, move.FieldMemorySlot)
@@ -6886,6 +6926,8 @@ func (m *MoveMutation) Field(name string) (ent.Value, bool) {
 	switch name {
 	case move.FieldGenusID:
 		return m.GenusID()
+	case move.FieldVersion:
+		return m.Version()
 	case move.FieldMemorySlot:
 		return m.MemorySlot()
 	case move.FieldCol:
@@ -6929,6 +6971,8 @@ func (m *MoveMutation) OldField(ctx context.Context, name string) (ent.Value, er
 	switch name {
 	case move.FieldGenusID:
 		return m.OldGenusID(ctx)
+	case move.FieldVersion:
+		return m.OldVersion(ctx)
 	case move.FieldMemorySlot:
 		return m.OldMemorySlot(ctx)
 	case move.FieldCol:
@@ -6976,6 +7020,13 @@ func (m *MoveMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetGenusID(v)
+		return nil
+	case move.FieldVersion:
+		v, ok := value.(move.Version)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetVersion(v)
 		return nil
 	case move.FieldMemorySlot:
 		v, ok := value.(int)
@@ -7254,6 +7305,9 @@ func (m *MoveMutation) ResetField(name string) error {
 	switch name {
 	case move.FieldGenusID:
 		m.ResetGenusID()
+		return nil
+	case move.FieldVersion:
+		m.ResetVersion()
 		return nil
 	case move.FieldMemorySlot:
 		m.ResetMemorySlot()

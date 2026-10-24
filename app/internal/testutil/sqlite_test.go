@@ -33,7 +33,7 @@ var _ = Describe("NewClient", func() {
 
 	newMove := func(genusID, slot, col, row int) *ent.MoveCreate {
 		return client.Move.Create().
-			SetGenusID(genusID).SetMemorySlot(slot).SetCol(col).SetRow(row).
+			SetGenusID(genusID).SetVersion(entmove.VersionMr2dx).SetMemorySlot(slot).SetCol(col).SetRow(row).
 			SetName("Pat").SetKind(entmove.KindPower).
 			SetGuts(12).SetForce(6).SetHit(10).SetWither(0).SetCrit(0).
 			SetDescription("Starting basic tech.").SetUnlockNever(false).

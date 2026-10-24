@@ -6,7 +6,7 @@ Go + Fyne viewer for Monster Rancher 2, ported from MR2AV. It reads the running 
 
 - `go.work` joins `app` (the program) and `orm` (Ent schemas).
 - `app/cmd/mrav` wires everything with fx. `app/internal`: `core/<name>/{domain,service,repository}` (rules live in `domain`), `infrastructure/{gamememory,database,memo}`, `delivery/ui/<name>ui` (Fyne). Mocks are in `app/mock` (`make mock`).
-- `data/mrav.sqlite` is the shipped database. The app never migrates it: a schema change means Ent plus a hand edit of this file, and a test fails if its indexes differ from Ent's. Do not run ANALYZE on it.
+- `data/mrav.sqlite` is the shipped database. The app never migrates it: a schema change means Ent plus a hand edit of this file, and a test fails if its indexes differ from Ent's. Do not run ANALYZE on it. `moves` holds a copy of every move per game version (`mr2` PlayStation, `mr2dx` Steam), picked by `gamememory.Layout.Version` through `Monster.Version`.
 - `docs/` and `dist/` are local only (`.git/info/exclude`). Findings and decisions are in `docs/pages-notes.md`.
 
 ## Commands

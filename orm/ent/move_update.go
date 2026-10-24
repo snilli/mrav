@@ -44,6 +44,20 @@ func (_u *MoveUpdate) SetNillableGenusID(v *int) *MoveUpdate {
 	return _u
 }
 
+// SetVersion sets the "version" field.
+func (_u *MoveUpdate) SetVersion(v move.Version) *MoveUpdate {
+	_u.mutation.SetVersion(v)
+	return _u
+}
+
+// SetNillableVersion sets the "version" field if the given value is not nil.
+func (_u *MoveUpdate) SetNillableVersion(v *move.Version) *MoveUpdate {
+	if v != nil {
+		_u.SetVersion(*v)
+	}
+	return _u
+}
+
 // SetMemorySlot sets the "memory_slot" field.
 func (_u *MoveUpdate) SetMemorySlot(v int) *MoveUpdate {
 	_u.mutation.ResetMemorySlot()
@@ -369,6 +383,11 @@ func (_u *MoveUpdate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *MoveUpdate) check() error {
+	if v, ok := _u.mutation.Version(); ok {
+		if err := move.VersionValidator(v); err != nil {
+			return &ValidationError{Name: "version", err: fmt.Errorf(`ent: validator failed for field "Move.version": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.MemorySlot(); ok {
 		if err := move.MemorySlotValidator(v); err != nil {
 			return &ValidationError{Name: "memory_slot", err: fmt.Errorf(`ent: validator failed for field "Move.memory_slot": %w`, err)}
@@ -416,6 +435,9 @@ func (_u *MoveUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := _u.mutation.Version(); ok {
+		_spec.SetField(move.FieldVersion, field.TypeEnum, value)
 	}
 	if value, ok := _u.mutation.MemorySlot(); ok {
 		_spec.SetField(move.FieldMemorySlot, field.TypeInt, value)
@@ -564,6 +586,20 @@ func (_u *MoveUpdateOne) SetGenusID(v int) *MoveUpdateOne {
 func (_u *MoveUpdateOne) SetNillableGenusID(v *int) *MoveUpdateOne {
 	if v != nil {
 		_u.SetGenusID(*v)
+	}
+	return _u
+}
+
+// SetVersion sets the "version" field.
+func (_u *MoveUpdateOne) SetVersion(v move.Version) *MoveUpdateOne {
+	_u.mutation.SetVersion(v)
+	return _u
+}
+
+// SetNillableVersion sets the "version" field if the given value is not nil.
+func (_u *MoveUpdateOne) SetNillableVersion(v *move.Version) *MoveUpdateOne {
+	if v != nil {
+		_u.SetVersion(*v)
 	}
 	return _u
 }
@@ -906,6 +942,11 @@ func (_u *MoveUpdateOne) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *MoveUpdateOne) check() error {
+	if v, ok := _u.mutation.Version(); ok {
+		if err := move.VersionValidator(v); err != nil {
+			return &ValidationError{Name: "version", err: fmt.Errorf(`ent: validator failed for field "Move.version": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.MemorySlot(); ok {
 		if err := move.MemorySlotValidator(v); err != nil {
 			return &ValidationError{Name: "memory_slot", err: fmt.Errorf(`ent: validator failed for field "Move.memory_slot": %w`, err)}
@@ -970,6 +1011,9 @@ func (_u *MoveUpdateOne) sqlSave(ctx context.Context) (_node *Move, err error) {
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := _u.mutation.Version(); ok {
+		_spec.SetField(move.FieldVersion, field.TypeEnum, value)
 	}
 	if value, ok := _u.mutation.MemorySlot(); ok {
 		_spec.SetField(move.FieldMemorySlot, field.TypeInt, value)

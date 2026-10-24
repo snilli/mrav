@@ -17,7 +17,7 @@ var _ port.MonsterSource = (*Source)(nil)
 
 func New() *Source {
 	none := monster.NoActiveMove
-	return &Source{m: monster.Monster{Active: [monster.ActiveGroups]int{none, none, none, none}}}
+	return &Source{m: monster.Monster{Version: monster.MR2DX, Active: [monster.ActiveGroups]int{none, none, none, none}}}
 }
 
 func (s *Source) Current(_ context.Context) (monster.Monster, error) {

@@ -13,7 +13,12 @@ type Repository struct {
 	client *orm.Client
 	genera memo.Cache[struct{}, []domain.Genus]
 	genus  memo.Cache[monster.Genus, domain.Genus]
-	moves  memo.Cache[monster.Genus, []domain.Move]
+	moves  memo.Cache[movesKey, []domain.Move]
+}
+
+type movesKey struct {
+	genus   monster.Genus
+	version monster.Version
 }
 
 func New(client *orm.Client) move.MoveRepository {

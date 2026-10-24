@@ -57,7 +57,7 @@ type Layout struct {
 	Energy                    uint32
 	Tile, Position            uint32
 	WalkInRAM                 bool
-	PatchedSwim               bool
+	Version                   monster.Version
 }
 
 var (
@@ -82,6 +82,7 @@ var (
 		Date:    0x99228, Tournament: 0x99080, Grade: 0x98FC0, House: 0x98FC1, Barn: 0x98FC2, Altar: 0x99050,
 		Unlocks: 0x99386, Phoenix: 0x993CE,
 		Energy: 0x0D55BC, Tile: 0x0D55B6, Position: 0x0D55C0, WalkInRAM: true,
+		Version: monster.MR2,
 	}
 
 	steam = Layout{
@@ -104,6 +105,6 @@ var (
 		Record:  0x97A5E,
 		Date:    0x9A7D8, Tournament: 0x9A62C, Grade: 0x9A56C, House: 0x9A56D, Barn: 0x9A56E, Altar: 0x9A5FC,
 		Unlocks: 0x9A936, Energy: 0x1DE8B84, Tile: 0x1DE8B7E, Position: 0x1DE8B88,
-		PatchedSwim: true,
+		Version: monster.MR2DX,
 	}
 )

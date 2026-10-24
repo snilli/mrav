@@ -79,24 +79,8 @@ var _ = Describe("Build", func() {
 		Entry("Pull is heavy: Pow a lot and Life a little", "Pull", "s4-g2-k1", "s4-g1-k3"),
 		Entry("Meditate: Int and Skill", "Meditate", "s4-g3-k1", "s4-g4-k3"),
 		Entry("Leap: Speed and Int", "Leap", "s4-g0-k1", "s4-g3-k3"),
-		Entry("Swim, as the vanilla game trains it: Life and Defense", "Swim", "s4-g1-k1", "s4-g2-k3"),
+		Entry("Swim: Defense a lot and Life a little, as the games' own results show", "Swim", "s4-g2-k1", "s4-g1-k3"),
 	)
-
-	It("trains Defense and Life with the swim of a game that is patched, the other way round from the vanilla swim", func() {
-		patched := m
-		patched.PatchedSwim = true
-		var swim domain.DrillGains
-		for _, d := range domain.Build(patched, everyGain()).Drills {
-			if d.Drill.Name == "Swim" {
-				swim = d
-			}
-		}
-		Expect(swim.Drill.Primary).To(Equal(monster.Defense))
-		Expect(swim.Drill.Secondary).To(Equal(monster.Life))
-		Expect(swim.Primary).To(Equal("s4-g2-k1"))
-		Expect(swim.Secondary).To(Equal("s4-g1-k3"))
-		Expect(domain.Build(patched, everyGain()).Drills).To(HaveLen(10))
-	})
 
 	It("reads the motivation of each drill from the monster", func() {
 		s := m

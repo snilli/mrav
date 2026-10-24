@@ -228,12 +228,12 @@ func reason(err error) string {
 
 var _ = Describe("decode", func() {
 	DescribeTable("reads the monster from where its game keeps it",
-		func(l Layout, a addresses, name []byte, wantName string, patchedSwim bool) {
+		func(l Layout, a addresses, name []byte, wantName string, wantVersion monster.Version) {
 			got, err := decode(l, monsterImage(a, name, steamBreeds))
 			Expect(err).NotTo(HaveOccurred())
 
 			want := monster.Monster{
-				Genus: 12, SubGenus: 3,
+				Version: wantVersion, Genus: 12, SubGenus: 3,
 				Stats:  [monster.StatCount]int{111, 222, 666, 444, 555, 333},
 				Nature: 130, NatureBase: 30,
 				Active: [monster.ActiveGroups]int{0, 6, 12, monster.NoActiveMove},
@@ -246,15 +246,15 @@ var _ = Describe("decode", func() {
 				Motivation: [monster.DrillCount]int{10, 20, 30, 40, 50, 60, 70, 80, 90, 100},
 				PlayType:   2, Drug: 38, DrugWeeks: 3, ItemLike: 4, ItemDislike: 130,
 				Rank: 2, LifeStage: 5, LifeType: 3, ArenaSpeed: 4, GutsRate: 5,
-				Specials: 0x0403, PrizeMoney: 12345, PatchedSwim: patchedSwim,
+				Specials: 0x0403, PrizeMoney: 12345,
 				Record: monster.Record{Wins: 12, Losses: 3, KOs: 5, Injuries: 4, Runaways: 6, Sicknesses: 7, Resistance: 8},
 			}
 			want.Learned[3], want.Learned[23] = true, true
 			want.Used[3], want.Used[5], want.Used[7], want.Used[23] = 77, 12, 9, 255
 			Expect(got).To(Equal(want))
 		},
-		Entry("MR2 on the PlayStation, whose swim is the vanilla one", ps1, ps1MR2AV, ps1Name, "Aa 1", false),
-		Entry("MR2DX on Steam, whose swim is the patched one", steam, steamMR2AV, steamName, "Aa 1", true),
+		Entry("MR2 on the PlayStation, whose moves are the mr2 ones", ps1, ps1MR2AV, ps1Name, "Aa 1", monster.MR2),
+		Entry("MR2DX on Steam, whose moves are the mr2dx ones", steam, steamMR2AV, steamName, "Aa 1", monster.MR2DX),
 	)
 
 	DescribeTable("reads the player's side from where its game keeps it",

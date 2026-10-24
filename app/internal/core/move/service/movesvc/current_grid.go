@@ -1,6 +1,7 @@
 package movesvc
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 
@@ -18,7 +19,7 @@ func (s *Service) CurrentGrid(ctx context.Context) (domain.Grid, error) {
 	if err != nil {
 		return domain.Grid{}, err
 	}
-	moves, err := s.repo.ListMoves(ctx, m.Genus)
+	moves, err := s.repo.ListMoves(ctx, m.Genus, cmp.Or(m.Version, monster.MR2DX))
 	if err != nil {
 		return domain.Grid{}, err
 	}

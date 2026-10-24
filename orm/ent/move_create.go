@@ -29,6 +29,12 @@ func (_c *MoveCreate) SetGenusID(v int) *MoveCreate {
 	return _c
 }
 
+// SetVersion sets the "version" field.
+func (_c *MoveCreate) SetVersion(v move.Version) *MoveCreate {
+	_c.mutation.SetVersion(v)
+	return _c
+}
+
 // SetMemorySlot sets the "memory_slot" field.
 func (_c *MoveCreate) SetMemorySlot(v int) *MoveCreate {
 	_c.mutation.SetMemorySlot(v)
@@ -167,6 +173,14 @@ func (_c *MoveCreate) check() error {
 	if _, ok := _c.mutation.GenusID(); !ok {
 		return &ValidationError{Name: "genus_id", err: errors.New(`ent: missing required field "Move.genus_id"`)}
 	}
+	if _, ok := _c.mutation.Version(); !ok {
+		return &ValidationError{Name: "version", err: errors.New(`ent: missing required field "Move.version"`)}
+	}
+	if v, ok := _c.mutation.Version(); ok {
+		if err := move.VersionValidator(v); err != nil {
+			return &ValidationError{Name: "version", err: fmt.Errorf(`ent: validator failed for field "Move.version": %w`, err)}
+		}
+	}
 	if _, ok := _c.mutation.MemorySlot(); !ok {
 		return &ValidationError{Name: "memory_slot", err: errors.New(`ent: missing required field "Move.memory_slot"`)}
 	}
@@ -269,6 +283,10 @@ func (_c *MoveCreate) createSpec() (*Move, *sqlgraph.CreateSpec) {
 		_spec = sqlgraph.NewCreateSpec(move.Table, sqlgraph.NewFieldSpec(move.FieldID, field.TypeInt))
 	)
 	_spec.OnConflict = _c.conflict
+	if value, ok := _c.mutation.Version(); ok {
+		_spec.SetField(move.FieldVersion, field.TypeEnum, value)
+		_node.Version = value
+	}
 	if value, ok := _c.mutation.MemorySlot(); ok {
 		_spec.SetField(move.FieldMemorySlot, field.TypeInt, value)
 		_node.MemorySlot = value
@@ -411,6 +429,18 @@ func (u *MoveUpsert) SetGenusID(v int) *MoveUpsert {
 // UpdateGenusID sets the "genus_id" field to the value that was provided on create.
 func (u *MoveUpsert) UpdateGenusID() *MoveUpsert {
 	u.SetExcluded(move.FieldGenusID)
+	return u
+}
+
+// SetVersion sets the "version" field.
+func (u *MoveUpsert) SetVersion(v move.Version) *MoveUpsert {
+	u.Set(move.FieldVersion, v)
+	return u
+}
+
+// UpdateVersion sets the "version" field to the value that was provided on create.
+func (u *MoveUpsert) UpdateVersion() *MoveUpsert {
+	u.SetExcluded(move.FieldVersion)
 	return u
 }
 
@@ -717,6 +747,20 @@ func (u *MoveUpsertOne) SetGenusID(v int) *MoveUpsertOne {
 func (u *MoveUpsertOne) UpdateGenusID() *MoveUpsertOne {
 	return u.Update(func(s *MoveUpsert) {
 		s.UpdateGenusID()
+	})
+}
+
+// SetVersion sets the "version" field.
+func (u *MoveUpsertOne) SetVersion(v move.Version) *MoveUpsertOne {
+	return u.Update(func(s *MoveUpsert) {
+		s.SetVersion(v)
+	})
+}
+
+// UpdateVersion sets the "version" field to the value that was provided on create.
+func (u *MoveUpsertOne) UpdateVersion() *MoveUpsertOne {
+	return u.Update(func(s *MoveUpsert) {
+		s.UpdateVersion()
 	})
 }
 
@@ -1228,6 +1272,20 @@ func (u *MoveUpsertBulk) SetGenusID(v int) *MoveUpsertBulk {
 func (u *MoveUpsertBulk) UpdateGenusID() *MoveUpsertBulk {
 	return u.Update(func(s *MoveUpsert) {
 		s.UpdateGenusID()
+	})
+}
+
+// SetVersion sets the "version" field.
+func (u *MoveUpsertBulk) SetVersion(v move.Version) *MoveUpsertBulk {
+	return u.Update(func(s *MoveUpsert) {
+		s.SetVersion(v)
+	})
+}
+
+// UpdateVersion sets the "version" field to the value that was provided on create.
+func (u *MoveUpsertBulk) UpdateVersion() *MoveUpsertBulk {
+	return u.Update(func(s *MoveUpsert) {
+		s.UpdateVersion()
 	})
 }
 

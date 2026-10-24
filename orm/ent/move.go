@@ -21,6 +21,8 @@ type Move struct {
 	ID int `json:"id,omitempty"`
 	// GenusID holds the value of the "genus_id" field.
 	GenusID int `json:"genus_id,omitempty"`
+	// Version holds the value of the "version" field.
+	Version move.Version `json:"version,omitempty"`
 	// MemorySlot holds the value of the "memory_slot" field.
 	MemorySlot int `json:"memory_slot,omitempty"`
 	// Col holds the value of the "col" field.
@@ -90,7 +92,7 @@ func (*Move) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case move.FieldID, move.FieldGenusID, move.FieldMemorySlot, move.FieldCol, move.FieldRow, move.FieldGuts, move.FieldForce, move.FieldHit, move.FieldWither, move.FieldCrit:
 			values[i] = new(sql.NullInt64)
-		case move.FieldName, move.FieldKind, move.FieldDescription, move.FieldIcon:
+		case move.FieldVersion, move.FieldName, move.FieldKind, move.FieldDescription, move.FieldIcon:
 			values[i] = new(sql.NullString)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -118,6 +120,12 @@ func (_m *Move) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field genus_id", values[i])
 			} else if value.Valid {
 				_m.GenusID = int(value.Int64)
+			}
+		case move.FieldVersion:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field version", values[i])
+			} else if value.Valid {
+				_m.Version = move.Version(value.String)
 			}
 		case move.FieldMemorySlot:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -264,6 +272,9 @@ func (_m *Move) String() string {
 	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
 	builder.WriteString("genus_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.GenusID))
+	builder.WriteString(", ")
+	builder.WriteString("version=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Version))
 	builder.WriteString(", ")
 	builder.WriteString("memory_slot=")
 	builder.WriteString(fmt.Sprintf("%v", _m.MemorySlot))

@@ -40,7 +40,7 @@ var _ = Describe("MoveService", func() {
 			m.Learned[0] = true
 			source.EXPECT().Current(ctx).Return(m, nil)
 			repo.EXPECT().GetGenus(ctx, monster.Genus(7)).Return(golem, nil)
-			repo.EXPECT().ListMoves(ctx, monster.Genus(7)).Return([]domain.Move{pat}, nil)
+			repo.EXPECT().ListMoves(ctx, monster.Genus(7), monster.MR2DX).Return([]domain.Move{pat}, nil)
 			repo.EXPECT().ListGenera(ctx).Return([]domain.Genus{golem}, nil)
 
 			grid, err := svc.CurrentGrid(ctx)
@@ -50,13 +50,23 @@ var _ = Describe("MoveService", func() {
 			Expect(grid.Cells[0][0].Learned).To(BeTrue())
 		})
 
+		It("asks for the moves of the version of the game that the monster comes from", func() {
+			source.EXPECT().Current(ctx).Return(monster.Monster{Genus: 7, Version: monster.MR2}, nil)
+			repo.EXPECT().GetGenus(ctx, monster.Genus(7)).Return(golem, nil)
+			repo.EXPECT().ListMoves(ctx, monster.Genus(7), monster.MR2).Return([]domain.Move{pat}, nil)
+			repo.EXPECT().ListGenera(ctx).Return([]domain.Genus{golem}, nil)
+
+			_, err := svc.CurrentGrid(ctx)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
 		It("names the genera that a move's unlock rule asks for", func() {
 			jill := domain.Genus{Code: 24, Name: "Jill"}
 			odd := domain.Move{Genus: 7, MemorySlot: 1, Col: 1, Row: 2, Name: "Odd", Icon: "Golem_2",
 				Unlock: domain.UnlockRule{All: []domain.Condition{domain.SubGenusIn{IDs: []monster.Genus{24}}}}}
 			source.EXPECT().Current(ctx).Return(monster.Monster{Genus: 7, SubGenus: 7}, nil)
 			repo.EXPECT().GetGenus(ctx, monster.Genus(7)).Return(golem, nil)
-			repo.EXPECT().ListMoves(ctx, monster.Genus(7)).Return([]domain.Move{odd}, nil)
+			repo.EXPECT().ListMoves(ctx, monster.Genus(7), monster.MR2DX).Return([]domain.Move{odd}, nil)
 			repo.EXPECT().ListGenera(ctx).Return([]domain.Genus{golem, jill}, nil)
 
 			grid, err := svc.CurrentGrid(ctx)
@@ -75,7 +85,7 @@ var _ = Describe("MoveService", func() {
 			m.Stats[monster.Pow] = 500
 			source.EXPECT().Current(ctx).Return(m, nil)
 			repo.EXPECT().GetGenus(ctx, monster.Genus(7)).Return(golem, nil)
-			repo.EXPECT().ListMoves(ctx, monster.Genus(7)).Return([]domain.Move{pat, press, roll}, nil)
+			repo.EXPECT().ListMoves(ctx, monster.Genus(7), monster.MR2DX).Return([]domain.Move{pat, press, roll}, nil)
 			repo.EXPECT().ListGenera(ctx).Return([]domain.Genus{golem}, nil)
 
 			grid, err := svc.CurrentGrid(ctx)
@@ -98,7 +108,7 @@ var _ = Describe("MoveService", func() {
 			m.Stats[monster.Pow] = 120
 			source.EXPECT().Current(ctx).Return(m, nil)
 			repo.EXPECT().GetGenus(ctx, monster.Genus(7)).Return(golem, nil)
-			repo.EXPECT().ListMoves(ctx, monster.Genus(7)).Return([]domain.Move{pat, luck}, nil)
+			repo.EXPECT().ListMoves(ctx, monster.Genus(7), monster.MR2DX).Return([]domain.Move{pat, luck}, nil)
 			repo.EXPECT().ListGenera(ctx).Return([]domain.Genus{golem}, nil)
 
 			grid, err := svc.CurrentGrid(ctx)
@@ -118,7 +128,7 @@ var _ = Describe("MoveService", func() {
 			m.Stats[monster.Pow] = 100
 			source.EXPECT().Current(ctx).Return(m, nil)
 			repo.EXPECT().GetGenus(ctx, monster.Genus(7)).Return(golem, nil)
-			repo.EXPECT().ListMoves(ctx, monster.Genus(7)).Return([]domain.Move{pat, both}, nil)
+			repo.EXPECT().ListMoves(ctx, monster.Genus(7), monster.MR2DX).Return([]domain.Move{pat, both}, nil)
 			repo.EXPECT().ListGenera(ctx).Return([]domain.Genus{golem}, nil)
 
 			grid, err := svc.CurrentGrid(ctx)
@@ -131,7 +141,7 @@ var _ = Describe("MoveService", func() {
 		It("returns the repository's error when it cannot list the genera", func() {
 			source.EXPECT().Current(ctx).Return(monster.Monster{Genus: 7}, nil)
 			repo.EXPECT().GetGenus(ctx, monster.Genus(7)).Return(golem, nil)
-			repo.EXPECT().ListMoves(ctx, monster.Genus(7)).Return([]domain.Move{pat}, nil)
+			repo.EXPECT().ListMoves(ctx, monster.Genus(7), monster.MR2DX).Return([]domain.Move{pat}, nil)
 			repo.EXPECT().ListGenera(ctx).Return(nil, errors.New("disk gone"))
 
 			_, err := svc.CurrentGrid(ctx)
@@ -156,7 +166,7 @@ var _ = Describe("MoveService", func() {
 		It("returns the repository's error when it cannot list the moves", func() {
 			source.EXPECT().Current(ctx).Return(monster.Monster{Genus: 7}, nil)
 			repo.EXPECT().GetGenus(ctx, monster.Genus(7)).Return(golem, nil)
-			repo.EXPECT().ListMoves(ctx, monster.Genus(7)).Return(nil, errors.New("disk gone"))
+			repo.EXPECT().ListMoves(ctx, monster.Genus(7), monster.MR2DX).Return(nil, errors.New("disk gone"))
 
 			_, err := svc.CurrentGrid(ctx)
 			Expect(err).To(MatchError(ContainSubstring("disk gone")))

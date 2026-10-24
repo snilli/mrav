@@ -25,6 +25,12 @@ var _ = Describe("Source", func() {
 		Expect(m.Active).To(Equal([monster.ActiveGroups]int{monster.NoActiveMove, monster.NoActiveMove, monster.NoActiveMove, monster.NoActiveMove}))
 	})
 
+	It("comes from the Steam game, the version that the shipped moves are based on", func() {
+		m, err := fakemonster.New().Current(ctx)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(m.Version).To(Equal(monster.MR2DX))
+	})
+
 	It("shows what Update set", func() {
 		s := fakemonster.New()
 		s.Update(func(m *monster.Monster) {
