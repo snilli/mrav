@@ -88,6 +88,24 @@ var _ = Describe("OpenShipped", Label("integration"), func() {
 		Expect(n).To(BeZero())
 	})
 
+	DescribeTable("ships the Mocchi's Petal Storm as a drain of 50%, as the LegendCup page has it",
+		func(version entmove.Version) {
+			ctx := context.Background()
+			client, err := testutil.OpenShipped(ctx)
+			if errors.Is(err, testutil.ErrNoShippedDB) {
+				Skip(err.Error())
+			}
+			Expect(err).NotTo(HaveOccurred())
+			DeferCleanup(client.Close)
+
+			storm := client.Move.Query().Where(entmove.VersionEQ(version), entmove.GenusID(26), entmove.Name("Petal Storm")).OnlyX(ctx)
+			Expect(storm.Extra).NotTo(BeNil())
+			Expect(storm.Extra.Text).To(Equal("50%"))
+		},
+		Entry("the PlayStation game, mr2", entmove.VersionMr2),
+		Entry("the Steam game, mr2dx", entmove.VersionMr2dx),
+	)
+
 	DescribeTable("leaves the Golem sub breed 38 out of the fourth place's lesson of Heavy Kick: Forward Golem on the PlayStation, Dream Golem on Steam",
 		func(version entmove.Version) {
 			ctx := context.Background()
