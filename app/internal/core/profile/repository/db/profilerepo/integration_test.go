@@ -151,8 +151,8 @@ var _ = Describe("profilerepo", Label("integration"), func() {
 		repo = profilerepo.New(shipped)
 
 		for version, want := range map[monster.Version]struct{ breeds, cocoons int }{
-			monster.MR2:   {415, 12},
-			monster.MR2DX: {482, 14},
+			monster.MR2:   {428, 12},
+			monster.MR2DX: {497, 14},
 		} {
 			total := 0
 			for main := range 50 {
@@ -223,6 +223,27 @@ var _ = Describe("profilerepo", Label("integration"), func() {
 			Expect(err).NotTo(HaveOccurred())
 			m := monster.Monster{Genus: monster.Genus(c.main), SubGenus: monster.Genus(c.sub), GutsRate: 9}
 			Expect(domain.ResolveBreed(rules, nil, m).Name).To(HavePrefix(c.name), string(c.version))
+		}
+
+		for _, c := range []struct {
+			version monster.Version
+			sub     int
+			guts    int
+			growth  [monster.StatCount]int
+			want    domain.Breed
+		}{
+			{monster.MR2, 0, 12, [monster.StatCount]int{2, 2, 3, 2, 1, 1}, domain.Breed{Name: "Red Worm", GutsOK: true}},
+			{monster.MR2DX, 0, 12, [monster.StatCount]int{2, 2, 3, 2, 1, 1}, domain.Breed{Name: "Red Worm", GutsOK: true}},
+			{monster.MR2, 36, 15, [monster.StatCount]int{4, 2, 2, 2, 0, 1}, domain.Breed{Name: "Worm", GutsOK: true}},
+			{monster.MR2DX, 37, 16, [monster.StatCount]int{3, 2, 2, 2, 2, 1}, domain.Breed{Name: "Purple Worm", GutsOK: true}},
+			{monster.MR2, 37, 16, [monster.StatCount]int{3, 2, 2, 2, 2, 1}, domain.Breed{Name: "Purple Worm (N/S)", GutsOK: false}},
+			{monster.MR2, 38, 9, [monster.StatCount]int{}, domain.Breed{Name: "Express Worm", GutsOK: true}},
+			{monster.MR2DX, 38, 9, [monster.StatCount]int{}, domain.Breed{Name: "Express Worm", GutsOK: true}},
+		} {
+			rules, err := repo.ListBreedRules(ctx, 36, c.version)
+			Expect(err).NotTo(HaveOccurred())
+			m := monster.Monster{Genus: 36, SubGenus: monster.Genus(c.sub), GutsRate: c.guts, Growth: c.growth}
+			Expect(domain.ResolveBreed(rules, cocoons, m)).To(Equal(c.want), string(c.version))
 		}
 
 		hare := monster.Monster{Genus: 13, SubGenus: 0, GutsRate: 12, Growth: [monster.StatCount]int{1, 3, 2, 2, 4, 0}}
