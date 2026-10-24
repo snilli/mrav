@@ -74,6 +74,20 @@ var _ = Describe("OpenShipped", Label("integration"), func() {
 		Expect(extra).To(BeEmpty(), "in data/mrav.sqlite, not declared by the schema")
 	})
 
+	It("ships no extra row of a move with a scale of its own, because the game rates the numbers of those rows on the scale of force", func() {
+		ctx := context.Background()
+		client, err := testutil.OpenShipped(ctx)
+		if errors.Is(err, testutil.ErrNoShippedDB) {
+			Skip(err.Error())
+		}
+		Expect(err).NotTo(HaveOccurred())
+		DeferCleanup(client.Close)
+
+		var n int
+		Expect(client.DB.QueryRowContext(ctx, "SELECT COUNT(*) FROM moves WHERE json_extract(extra, '$.scale') IS NOT NULL").Scan(&n)).To(Succeed())
+		Expect(n).To(BeZero())
+	})
+
 	DescribeTable("leaves the Golem sub breed 38 out of the fourth place's lesson of Heavy Kick: Forward Golem on the PlayStation, Dream Golem on Steam",
 		func(version entmove.Version) {
 			ctx := context.Background()

@@ -22,7 +22,6 @@ const (
 type Extra struct {
 	Label string
 	Text  string
-	Scale *Scale
 	Raw   int
 }
 

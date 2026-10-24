@@ -36,7 +36,7 @@ var _ = Describe("moverepo", Label("integration"), func() {
 	refreshment := movedomain.Move{
 		Genus: 0, MemorySlot: 13, Col: 3, Row: 2, Name: "Refreshment", Kind: movedomain.KindIntelligence,
 		Guts: 30, Hit: 1, Description: "d", Icon: "Pixie_12",
-		Extra: &movedomain.Extra{Label: "Recovery:", Scale: new(movedomain.ScaleForce), Raw: 30},
+		Extra: &movedomain.Extra{Label: "Recovery:", Raw: 30},
 		Unlock: movedomain.UnlockRule{All: []movedomain.Condition{
 			movedomain.MoveUsedAtLeast{Slot: 12, Min: 50},
 			movedomain.StatSumAtLeast{Stats: []monster.Stat{monster.Pow, monster.Int}, Min: 400},
@@ -72,7 +72,7 @@ var _ = Describe("moverepo", Label("integration"), func() {
 				{Type: stored.NatureAtMost, Max: new(-50)},
 				{Type: stored.SubGenusNotIn, IDs: []int{24, 5}},
 			}).
-			SetExtra(&stored.Extra{Label: "Recovery:", Scale: new(0), Raw: 30}).
+			SetExtra(&stored.Extra{Label: "Recovery:", Raw: 30}).
 			SaveX(ctx)
 		seed(dragon.ID, "mr2dx", never).SaveX(ctx)
 		seed(pixie.ID, "mr2dx", pat).SaveX(ctx)

@@ -50,6 +50,5 @@ type Portal struct {
 type Extra struct {
 	Label string `json:"label"`
 	Text  string `json:"text,omitempty"`
-	Scale *int   `json:"scale,omitempty"`
 	Raw   int    `json:"raw,omitempty"`
 }

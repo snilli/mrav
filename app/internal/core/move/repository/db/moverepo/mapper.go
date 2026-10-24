@@ -76,12 +76,7 @@ func domainExtra(e *stored.Extra) *movedomain.Extra {
 	if e == nil {
 		return nil
 	}
-	out := &movedomain.Extra{Label: e.Label, Text: e.Text, Raw: e.Raw}
-	if e.Scale != nil {
-		s := movedomain.Scale(*e.Scale)
-		out.Scale = &s
-	}
-	return out
+	return &movedomain.Extra{Label: e.Label, Text: e.Text, Raw: e.Raw}
 }
 
 func genera(ids []int) []monster.Genus {

@@ -150,8 +150,8 @@ func NewDetailView(c domain.Cell) DetailView {
 	}
 	if e := m.Extra; e != nil {
 		value := e.Text
-		if e.Scale != nil {
-			value = domain.Rate(*e.Scale, e.Raw)
+		if e.Raw != 0 {
+			value = domain.Rate(domain.ScaleForce, e.Raw)
 		}
 		v.Extra = e.Label + " " + value
 	}

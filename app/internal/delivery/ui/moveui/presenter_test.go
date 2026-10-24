@@ -153,10 +153,11 @@ var _ = Describe("NewDetailView", func() {
 		Expect(moveui.NewDetailView(domain.Cell{Move: &m}).Extra).To(Equal("HP Drain: 100%"))
 	})
 
-	It("adds the extra row of a move, rated in words", func() {
-		scale := domain.ScaleForce
-		m := domain.Move{Name: "Refreshment", Extra: &domain.Extra{Label: "Recovery:", Scale: &scale, Raw: 30}}
+	It("adds the extra row of a move, rated in words on the scale of force", func() {
+		m := domain.Move{Name: "Refreshment", Extra: &domain.Extra{Label: "Recovery:", Raw: 30}}
 		Expect(moveui.NewDetailView(domain.Cell{Move: &m}).Extra).To(Equal("Recovery: B (30)"))
+		m = domain.Move{Name: "Explosion", Extra: &domain.Extra{Label: "Self-Damage:", Raw: 70}}
+		Expect(moveui.NewDetailView(domain.Cell{Move: &m}).Extra).To(Equal("Self-Damage: S (70)"))
 	})
 
 	It("lists what the monster still needs to learn the move, and where it stands on each", func() {

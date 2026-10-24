@@ -86,7 +86,7 @@ var _ = Describe("NewClient", func() {
 			{Type: stored.MoveUsed, Slot: new(3), Min: new(30)},
 			{Type: stored.SubGenusIn, IDs: []int{2, 5}},
 		}
-		extra := &stored.Extra{Label: "Recovery:", Scale: new(0), Raw: 30}
+		extra := &stored.Extra{Label: "Recovery:", Raw: 30}
 		id := newMove(pixie.ID, 1, 1, 1).SetUnlock(unlock).SetExtra(extra).SaveX(ctx).ID
 
 		got := client.Move.GetX(ctx, id)
