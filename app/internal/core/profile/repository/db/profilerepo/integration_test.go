@@ -218,6 +218,11 @@ var _ = Describe("profilerepo", Label("integration"), func() {
 			{monster.MR2, 1, 39, "[E] Magma Heart"},
 			{monster.MR2, 0, 18, "Jinnee"},
 			{monster.MR2DX, 7, 33, "Ecologuardia"},
+			{monster.MR2, 8, 33, "AlohaSaurian"},
+			{monster.MR2DX, 3, 0, "PeachTreeBug"},
+			{monster.MR2DX, 7, 40, "ForwardGolem"},
+			{monster.MR2, 25, 38, "GentleMocchi"},
+			{monster.MR2, 27, 38, "GabooSoldier"},
 		} {
 			rules, err := repo.ListBreedRules(ctx, c.main, c.version)
 			Expect(err).NotTo(HaveOccurred())
