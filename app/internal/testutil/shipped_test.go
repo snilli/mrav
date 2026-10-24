@@ -74,6 +74,29 @@ var _ = Describe("OpenShipped", Label("integration"), func() {
 		Expect(extra).To(BeEmpty(), "in data/mrav.sqlite, not declared by the schema")
 	})
 
+	DescribeTable("leaves the Golem sub breed 38 out of the fourth place's lesson of Heavy Kick: Forward Golem on the PlayStation, Dream Golem on Steam",
+		func(version entmove.Version) {
+			ctx := context.Background()
+			client, err := testutil.OpenShipped(ctx)
+			if errors.Is(err, testutil.ErrNoShippedDB) {
+				Skip(err.Error())
+			}
+			Expect(err).NotTo(HaveOccurred())
+			DeferCleanup(client.Close)
+
+			kick := client.Move.Query().Where(entmove.VersionEQ(version), entmove.GenusID(8), entmove.Name("Heavy Kick")).OnlyX(ctx)
+			var fourth []int
+			for _, a := range kick.Acquire {
+				if a.Place == 4 {
+					fourth = a.SubNotIn
+				}
+			}
+			Expect(fourth).To(Equal([]int{4, 5, 6, 10, 14, 17, 22, 31, 38}))
+		},
+		Entry("the PlayStation game, mr2", entmove.VersionMr2),
+		Entry("the Steam game, mr2dx", entmove.VersionMr2dx),
+	)
+
 	DescribeTable("ships every move once for each version of the game, with what the Errantry asks for each move it teaches, from the Errantry calculator",
 		func(version entmove.Version, withAcquire, entries int) {
 			ctx := context.Background()
