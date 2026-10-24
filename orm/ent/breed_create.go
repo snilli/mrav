@@ -21,6 +21,12 @@ type BreedCreate struct {
 	conflict []sql.ConflictOption
 }
 
+// SetVersion sets the "version" field.
+func (_c *BreedCreate) SetVersion(v breed.Version) *BreedCreate {
+	_c.mutation.SetVersion(v)
+	return _c
+}
+
 // SetMainGenus sets the "main_genus" field.
 func (_c *BreedCreate) SetMainGenus(v int) *BreedCreate {
 	_c.mutation.SetMainGenus(v)
@@ -42,20 +48,6 @@ func (_c *BreedCreate) SetSeq(v int) *BreedCreate {
 // SetName sets the "name" field.
 func (_c *BreedCreate) SetName(v string) *BreedCreate {
 	_c.mutation.SetName(v)
-	return _c
-}
-
-// SetOtherwise sets the "otherwise" field.
-func (_c *BreedCreate) SetOtherwise(v string) *BreedCreate {
-	_c.mutation.SetOtherwise(v)
-	return _c
-}
-
-// SetNillableOtherwise sets the "otherwise" field if the given value is not nil.
-func (_c *BreedCreate) SetNillableOtherwise(v *string) *BreedCreate {
-	if v != nil {
-		_c.SetOtherwise(*v)
-	}
 	return _c
 }
 
@@ -128,10 +120,6 @@ func (_c *BreedCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (_c *BreedCreate) defaults() {
-	if _, ok := _c.mutation.Otherwise(); !ok {
-		v := breed.DefaultOtherwise
-		_c.mutation.SetOtherwise(v)
-	}
 	if _, ok := _c.mutation.MatchGuts(); !ok {
 		v := breed.DefaultMatchGuts
 		_c.mutation.SetMatchGuts(v)
@@ -140,6 +128,14 @@ func (_c *BreedCreate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_c *BreedCreate) check() error {
+	if _, ok := _c.mutation.Version(); !ok {
+		return &ValidationError{Name: "version", err: errors.New(`ent: missing required field "Breed.version"`)}
+	}
+	if v, ok := _c.mutation.Version(); ok {
+		if err := breed.VersionValidator(v); err != nil {
+			return &ValidationError{Name: "version", err: fmt.Errorf(`ent: validator failed for field "Breed.version": %w`, err)}
+		}
+	}
 	if _, ok := _c.mutation.MainGenus(); !ok {
 		return &ValidationError{Name: "main_genus", err: errors.New(`ent: missing required field "Breed.main_genus"`)}
 	}
@@ -171,9 +167,6 @@ func (_c *BreedCreate) check() error {
 		if err := breed.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Breed.name": %w`, err)}
 		}
-	}
-	if _, ok := _c.mutation.Otherwise(); !ok {
-		return &ValidationError{Name: "otherwise", err: errors.New(`ent: missing required field "Breed.otherwise"`)}
 	}
 	if v, ok := _c.mutation.Guts(); ok {
 		if err := breed.GutsValidator(v); err != nil {
@@ -210,6 +203,10 @@ func (_c *BreedCreate) createSpec() (*Breed, *sqlgraph.CreateSpec) {
 		_spec = sqlgraph.NewCreateSpec(breed.Table, sqlgraph.NewFieldSpec(breed.FieldID, field.TypeInt))
 	)
 	_spec.OnConflict = _c.conflict
+	if value, ok := _c.mutation.Version(); ok {
+		_spec.SetField(breed.FieldVersion, field.TypeEnum, value)
+		_node.Version = value
+	}
 	if value, ok := _c.mutation.MainGenus(); ok {
 		_spec.SetField(breed.FieldMainGenus, field.TypeInt, value)
 		_node.MainGenus = value
@@ -225,10 +222,6 @@ func (_c *BreedCreate) createSpec() (*Breed, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Name(); ok {
 		_spec.SetField(breed.FieldName, field.TypeString, value)
 		_node.Name = value
-	}
-	if value, ok := _c.mutation.Otherwise(); ok {
-		_spec.SetField(breed.FieldOtherwise, field.TypeString, value)
-		_node.Otherwise = value
 	}
 	if value, ok := _c.mutation.Guts(); ok {
 		_spec.SetField(breed.FieldGuts, field.TypeInt, value)
@@ -249,7 +242,7 @@ func (_c *BreedCreate) createSpec() (*Breed, *sqlgraph.CreateSpec) {
 // of the `INSERT` statement. For example:
 //
 //	client.Breed.Create().
-//		SetMainGenus(v).
+//		SetVersion(v).
 //		OnConflict(
 //			// Update the row with the new values
 //			// the was proposed for insertion.
@@ -258,7 +251,7 @@ func (_c *BreedCreate) createSpec() (*Breed, *sqlgraph.CreateSpec) {
 //		// Override some of the fields with custom
 //		// update values.
 //		Update(func(u *ent.BreedUpsert) {
-//			SetMainGenus(v+v).
+//			SetVersion(v+v).
 //		}).
 //		Exec(ctx)
 func (_c *BreedCreate) OnConflict(opts ...sql.ConflictOption) *BreedUpsertOne {
@@ -293,6 +286,18 @@ type (
 		*sql.UpdateSet
 	}
 )
+
+// SetVersion sets the "version" field.
+func (u *BreedUpsert) SetVersion(v breed.Version) *BreedUpsert {
+	u.Set(breed.FieldVersion, v)
+	return u
+}
+
+// UpdateVersion sets the "version" field to the value that was provided on create.
+func (u *BreedUpsert) UpdateVersion() *BreedUpsert {
+	u.SetExcluded(breed.FieldVersion)
+	return u
+}
 
 // SetMainGenus sets the "main_genus" field.
 func (u *BreedUpsert) SetMainGenus(v int) *BreedUpsert {
@@ -357,18 +362,6 @@ func (u *BreedUpsert) SetName(v string) *BreedUpsert {
 // UpdateName sets the "name" field to the value that was provided on create.
 func (u *BreedUpsert) UpdateName() *BreedUpsert {
 	u.SetExcluded(breed.FieldName)
-	return u
-}
-
-// SetOtherwise sets the "otherwise" field.
-func (u *BreedUpsert) SetOtherwise(v string) *BreedUpsert {
-	u.Set(breed.FieldOtherwise, v)
-	return u
-}
-
-// UpdateOtherwise sets the "otherwise" field to the value that was provided on create.
-func (u *BreedUpsert) UpdateOtherwise() *BreedUpsert {
-	u.SetExcluded(breed.FieldOtherwise)
 	return u
 }
 
@@ -466,6 +459,20 @@ func (u *BreedUpsertOne) Update(set func(*BreedUpsert)) *BreedUpsertOne {
 	return u
 }
 
+// SetVersion sets the "version" field.
+func (u *BreedUpsertOne) SetVersion(v breed.Version) *BreedUpsertOne {
+	return u.Update(func(s *BreedUpsert) {
+		s.SetVersion(v)
+	})
+}
+
+// UpdateVersion sets the "version" field to the value that was provided on create.
+func (u *BreedUpsertOne) UpdateVersion() *BreedUpsertOne {
+	return u.Update(func(s *BreedUpsert) {
+		s.UpdateVersion()
+	})
+}
+
 // SetMainGenus sets the "main_genus" field.
 func (u *BreedUpsertOne) SetMainGenus(v int) *BreedUpsertOne {
 	return u.Update(func(s *BreedUpsert) {
@@ -540,20 +547,6 @@ func (u *BreedUpsertOne) SetName(v string) *BreedUpsertOne {
 func (u *BreedUpsertOne) UpdateName() *BreedUpsertOne {
 	return u.Update(func(s *BreedUpsert) {
 		s.UpdateName()
-	})
-}
-
-// SetOtherwise sets the "otherwise" field.
-func (u *BreedUpsertOne) SetOtherwise(v string) *BreedUpsertOne {
-	return u.Update(func(s *BreedUpsert) {
-		s.SetOtherwise(v)
-	})
-}
-
-// UpdateOtherwise sets the "otherwise" field to the value that was provided on create.
-func (u *BreedUpsertOne) UpdateOtherwise() *BreedUpsertOne {
-	return u.Update(func(s *BreedUpsert) {
-		s.UpdateOtherwise()
 	})
 }
 
@@ -755,7 +748,7 @@ func (_c *BreedCreateBulk) ExecX(ctx context.Context) {
 //		// Override some of the fields with custom
 //		// update values.
 //		Update(func(u *ent.BreedUpsert) {
-//			SetMainGenus(v+v).
+//			SetVersion(v+v).
 //		}).
 //		Exec(ctx)
 func (_c *BreedCreateBulk) OnConflict(opts ...sql.ConflictOption) *BreedUpsertBulk {
@@ -822,6 +815,20 @@ func (u *BreedUpsertBulk) Update(set func(*BreedUpsert)) *BreedUpsertBulk {
 		set(&BreedUpsert{UpdateSet: update})
 	}))
 	return u
+}
+
+// SetVersion sets the "version" field.
+func (u *BreedUpsertBulk) SetVersion(v breed.Version) *BreedUpsertBulk {
+	return u.Update(func(s *BreedUpsert) {
+		s.SetVersion(v)
+	})
+}
+
+// UpdateVersion sets the "version" field to the value that was provided on create.
+func (u *BreedUpsertBulk) UpdateVersion() *BreedUpsertBulk {
+	return u.Update(func(s *BreedUpsert) {
+		s.UpdateVersion()
+	})
 }
 
 // SetMainGenus sets the "main_genus" field.
@@ -898,20 +905,6 @@ func (u *BreedUpsertBulk) SetName(v string) *BreedUpsertBulk {
 func (u *BreedUpsertBulk) UpdateName() *BreedUpsertBulk {
 	return u.Update(func(s *BreedUpsert) {
 		s.UpdateName()
-	})
-}
-
-// SetOtherwise sets the "otherwise" field.
-func (u *BreedUpsertBulk) SetOtherwise(v string) *BreedUpsertBulk {
-	return u.Update(func(s *BreedUpsert) {
-		s.SetOtherwise(v)
-	})
-}
-
-// UpdateOtherwise sets the "otherwise" field to the value that was provided on create.
-func (u *BreedUpsertBulk) UpdateOtherwise() *BreedUpsertBulk {
-	return u.Update(func(s *BreedUpsert) {
-		s.UpdateOtherwise()
 	})
 }
 

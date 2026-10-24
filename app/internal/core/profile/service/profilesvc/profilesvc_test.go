@@ -27,7 +27,7 @@ var _ = Describe("ProfileService", func() {
 	)
 	growth := [monster.StatCount]int{0, 1, 4, 3, 3, 0}
 	henger := monster.Monster{Genus: 5, SubGenus: 3, GutsRate: 9, Growth: growth, ItemLike: 4, ItemDislike: 130, Drug: 38}
-	rule := domain.BreedRule{Main: 5, Sub: 3, Name: "Hengerdina", Otherwise: "Hengerdina (N/S)", Growth: &growth}
+	rule := domain.BreedRule{Main: 5, Sub: 3, Name: "Hengerdina", Growth: &growth}
 	names := map[monster.Genus]string{5: "Henger", 3: "C. Pandora"}
 	desires := map[int]string{4: "Cup Jelly", 130: "Nothing", 38: "Troron"}
 
@@ -35,8 +35,8 @@ var _ = Describe("ProfileService", func() {
 		monsters.EXPECT().Current(ctx).Return(henger, nil)
 		players.EXPECT().Player(ctx).Return(player.Player{Money: 1500}, nil)
 		repo.EXPECT().ListGenusNames(ctx).Return(names, nil)
-		repo.EXPECT().ListBreedRules(ctx, 5).Return([]domain.BreedRule{rule}, nil)
-		repo.EXPECT().ListCocoonRules(ctx).Return(nil, nil)
+		repo.EXPECT().ListBreedRules(ctx, 5, monster.MR2DX).Return([]domain.BreedRule{rule}, nil)
+		repo.EXPECT().ListCocoonRules(ctx, monster.MR2DX).Return(nil, nil)
 		repo.EXPECT().ListDesireNames(ctx).Return(desires, nil)
 		repo.EXPECT().ListExpeditionMaps(ctx).Return(nil, nil)
 	}
@@ -65,13 +65,29 @@ var _ = Describe("ProfileService", func() {
 		Expect(got.Breeds).To(BeNil())
 	})
 
+	It("reads the rules of the game that the monster comes from", func() {
+		ps1 := henger
+		ps1.Version = monster.MR2
+		monsters.EXPECT().Current(ctx).Return(ps1, nil)
+		players.EXPECT().Player(ctx).Return(player.Player{}, nil)
+		repo.EXPECT().ListGenusNames(ctx).Return(names, nil)
+		repo.EXPECT().ListBreedRules(ctx, 5, monster.MR2).Return([]domain.BreedRule{rule}, nil)
+		repo.EXPECT().ListCocoonRules(ctx, monster.MR2).Return(nil, nil)
+		repo.EXPECT().ListDesireNames(ctx).Return(desires, nil)
+		repo.EXPECT().ListExpeditionMaps(ctx).Return(nil, nil)
+
+		got, err := svc.Current(ctx)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(got.Breed.Name).To(Equal("Hengerdina"))
+	})
+
 	It("lists the main breeds with whether each is unlocked, when the game says", func() {
 		monsters.EXPECT().Current(ctx).Return(henger, nil)
 		unlocked := [player.BreedCount]bool{5: true}
 		players.EXPECT().Player(ctx).Return(player.Player{Ranch: player.Ranch{Known: true, Unlocked: unlocked}}, nil)
 		repo.EXPECT().ListGenusNames(ctx).Return(names, nil)
-		repo.EXPECT().ListBreedRules(ctx, 5).Return([]domain.BreedRule{rule}, nil)
-		repo.EXPECT().ListCocoonRules(ctx).Return(nil, nil)
+		repo.EXPECT().ListBreedRules(ctx, 5, monster.MR2DX).Return([]domain.BreedRule{rule}, nil)
+		repo.EXPECT().ListCocoonRules(ctx, monster.MR2DX).Return(nil, nil)
 		repo.EXPECT().ListDesireNames(ctx).Return(desires, nil)
 		repo.EXPECT().ListExpeditionMaps(ctx).Return(nil, nil)
 
@@ -96,8 +112,8 @@ var _ = Describe("ProfileService", func() {
 		monsters.EXPECT().Current(ctx).Return(m, nil)
 		players.EXPECT().Player(ctx).Return(player.Player{}, nil)
 		repo.EXPECT().ListGenusNames(ctx).Return(names, nil)
-		repo.EXPECT().ListBreedRules(ctx, 5).Return([]domain.BreedRule{rule}, nil)
-		repo.EXPECT().ListCocoonRules(ctx).Return(nil, nil)
+		repo.EXPECT().ListBreedRules(ctx, 5, monster.MR2DX).Return([]domain.BreedRule{rule}, nil)
+		repo.EXPECT().ListCocoonRules(ctx, monster.MR2DX).Return(nil, nil)
 		repo.EXPECT().ListDesireNames(ctx).Return(desires, nil)
 		repo.EXPECT().ListExpeditionMaps(ctx).Return(maps, nil)
 	}
@@ -133,8 +149,8 @@ var _ = Describe("ProfileService", func() {
 		monsters.EXPECT().Current(ctx).Return(m, nil)
 		players.EXPECT().Player(ctx).Return(player.Player{}, nil)
 		repo.EXPECT().ListGenusNames(ctx).Return(names, nil)
-		repo.EXPECT().ListBreedRules(ctx, 5).Return([]domain.BreedRule{rule}, nil)
-		repo.EXPECT().ListCocoonRules(ctx).Return(nil, nil)
+		repo.EXPECT().ListBreedRules(ctx, 5, monster.MR2DX).Return([]domain.BreedRule{rule}, nil)
+		repo.EXPECT().ListCocoonRules(ctx, monster.MR2DX).Return(nil, nil)
 		repo.EXPECT().ListDesireNames(ctx).Return(desires, nil)
 		repo.EXPECT().ListExpeditionMaps(ctx).Return(nil, nil)
 
@@ -173,23 +189,23 @@ var _ = Describe("ProfileService", func() {
 		}),
 		Entry("the breed rules", func() {
 			repo.EXPECT().ListGenusNames(ctx).Return(names, nil)
-			repo.EXPECT().ListBreedRules(ctx, 5).Return(nil, errors.New("disk gone"))
+			repo.EXPECT().ListBreedRules(ctx, 5, monster.MR2DX).Return(nil, errors.New("disk gone"))
 		}),
 		Entry("the cocoon rules", func() {
 			repo.EXPECT().ListGenusNames(ctx).Return(names, nil)
-			repo.EXPECT().ListBreedRules(ctx, 5).Return(nil, nil)
-			repo.EXPECT().ListCocoonRules(ctx).Return(nil, errors.New("disk gone"))
+			repo.EXPECT().ListBreedRules(ctx, 5, monster.MR2DX).Return(nil, nil)
+			repo.EXPECT().ListCocoonRules(ctx, monster.MR2DX).Return(nil, errors.New("disk gone"))
 		}),
 		Entry("the desire names", func() {
 			repo.EXPECT().ListGenusNames(ctx).Return(names, nil)
-			repo.EXPECT().ListBreedRules(ctx, 5).Return(nil, nil)
-			repo.EXPECT().ListCocoonRules(ctx).Return(nil, nil)
+			repo.EXPECT().ListBreedRules(ctx, 5, monster.MR2DX).Return(nil, nil)
+			repo.EXPECT().ListCocoonRules(ctx, monster.MR2DX).Return(nil, nil)
 			repo.EXPECT().ListDesireNames(ctx).Return(nil, errors.New("disk gone"))
 		}),
 		Entry("the maps of the trips", func() {
 			repo.EXPECT().ListGenusNames(ctx).Return(names, nil)
-			repo.EXPECT().ListBreedRules(ctx, 5).Return(nil, nil)
-			repo.EXPECT().ListCocoonRules(ctx).Return(nil, nil)
+			repo.EXPECT().ListBreedRules(ctx, 5, monster.MR2DX).Return(nil, nil)
+			repo.EXPECT().ListCocoonRules(ctx, monster.MR2DX).Return(nil, nil)
 			repo.EXPECT().ListDesireNames(ctx).Return(nil, nil)
 			repo.EXPECT().ListExpeditionMaps(ctx).Return(nil, errors.New("disk gone"))
 		}),

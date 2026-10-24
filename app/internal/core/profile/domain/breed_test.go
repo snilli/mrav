@@ -16,7 +16,7 @@ func mon(main, sub, guts int, g growth) monster.Monster {
 
 var _ = Describe("ResolveBreed", func() {
 	pixieG := growth{0, 1, 4, 3, 3, 0}
-	pixie := domain.BreedRule{Main: 0, Sub: 0, Name: "Pixie", Otherwise: "Pixie (N/S)", Guts: new(7), Growth: &pixieG}
+	pixie := domain.BreedRule{Main: 0, Sub: 0, Name: "Pixie", Guts: new(7), Growth: &pixieG}
 
 	It("names a breed whose growth rates are the standard ones, and says so when the guts rate is too", func() {
 		b := domain.ResolveBreed([]domain.BreedRule{pixie}, nil, mon(0, 0, 7, pixieG))
@@ -33,9 +33,22 @@ var _ = Describe("ResolveBreed", func() {
 		Expect(b).To(Equal(domain.Breed{Name: "Pixie", GutsOK: false}))
 	})
 
-	It("takes the name a rule gives for growth rates that do not match, when it is not the name with (N/S)", func() {
-		poison := domain.BreedRule{Main: 0, Sub: 38, Name: "Poison (DNA Capsule)", Otherwise: "Poison", Growth: &pixieG}
-		Expect(domain.ResolveBreed([]domain.BreedRule{poison}, nil, mon(0, 38, 9, growth{4, 4, 4, 4, 4, 4})).Name).To(Equal("Poison"))
+	It("adds (N/S) to the name of the last row when no row matches, whichever of several rows that is", func() {
+		g := growth{2, 3, 2, 2, 0, 4}
+		durahan := []domain.BreedRule{
+			{Main: 9, Sub: 9, Name: "Durahan", Guts: new(14), Growth: &g},
+			{Main: 9, Sub: 9, Name: "Durahan II", Guts: new(12), Growth: &growth{3, 3, 2, 2, 0, 4}},
+		}
+		Expect(domain.ResolveBreed(durahan, nil, mon(9, 9, 14, growth{1, 1, 1, 1, 1, 1})).Name).To(Equal("Durahan II (N/S)"))
+	})
+
+	It("takes the name of a row with no growth rates for growth rates that no row before it matches, and never adds (N/S) to it", func() {
+		poison := []domain.BreedRule{
+			{Main: 0, Sub: 38, Name: "Poison (DNA Capsule)", Growth: &pixieG},
+			{Main: 0, Sub: 38, Name: "Poison"},
+		}
+		Expect(domain.ResolveBreed(poison, nil, mon(0, 38, 9, growth{4, 4, 4, 4, 4, 4})).Name).To(Equal("Poison"))
+		Expect(domain.ResolveBreed(poison, nil, mon(0, 38, 9, pixieG)).Name).To(Equal("Poison (DNA Capsule)"))
 	})
 
 	It("gives a fixed name to a breed that has no growth rates to check, and calls the guts rate right from 6 up", func() {
@@ -52,8 +65,9 @@ var _ = Describe("ResolveBreed", func() {
 	Describe("a breed with several variants, chosen by guts rate and growth rates together", func() {
 		g1, g2 := growth{2, 4, 4, 2, 1, 2}, growth{3, 3, 0, 1, 1, 3}
 		moo := []domain.BreedRule{
-			{Main: 1, Sub: 38, Name: "Moo (DNA Capsule)", Otherwise: "Moo (N/S)", Guts: new(19), MatchGuts: true, Growth: &g1},
-			{Main: 1, Sub: 38, Name: "Moo (CD)", Otherwise: "Moo (N/S)", Guts: new(18), MatchGuts: true, Growth: &g2},
+			{Main: 1, Sub: 38, Name: "Moo (DNA Capsule)", Guts: new(19), MatchGuts: true, Growth: &g1},
+			{Main: 1, Sub: 38, Name: "Moo (CD)", Guts: new(18), MatchGuts: true, Growth: &g2},
+			{Main: 1, Sub: 38, Name: "Moo (N/S)"},
 		}
 
 		It("takes the first variant that matches", func() {
@@ -74,8 +88,8 @@ var _ = Describe("ResolveBreed", func() {
 	It("tells the first release of a breed from the patched one by its guts rate", func() {
 		g := growth{0, 3, 2, 2, 4, 0}
 		hare := []domain.BreedRule{
-			{Main: 13, Sub: 0, Name: "Fairy Hare (MF2 v1.0)", Otherwise: "Fairy Hare (N/S)", Guts: new(125), MatchGuts: true, Growth: &g},
-			{Main: 13, Sub: 0, Name: "Fairy Hare", Otherwise: "Fairy Hare (N/S)", Guts: new(12), Growth: &g},
+			{Main: 13, Sub: 0, Name: "Fairy Hare (MF2 v1.0)", Guts: new(125), MatchGuts: true, Growth: &g},
+			{Main: 13, Sub: 0, Name: "Fairy Hare", Guts: new(12), Growth: &g},
 		}
 		Expect(domain.ResolveBreed(hare, nil, mon(13, 0, 125, g)).Name).To(Equal("Fairy Hare (MF2 v1.0)"))
 		Expect(domain.ResolveBreed(hare, nil, mon(13, 0, 12, g)).Name).To(Equal("Fairy Hare"))
@@ -89,7 +103,7 @@ var _ = Describe("ResolveBreed", func() {
 	Describe("a cocoon", func() {
 		cocoonG := growth{2, 2, 3, 2, 1, 1}
 		cocoons := []domain.CocoonRule{{Guts: 12, Growth: cocoonG, Name: "Cocooned Worm/Pixie"}}
-		worm := domain.BreedRule{Main: 0, Sub: 36, Name: "Worm", Otherwise: "Worm (N/S)", Guts: new(15), Growth: &growth{4, 2, 2, 2, 0, 1}}
+		worm := domain.BreedRule{Main: 0, Sub: 36, Name: "Worm", Guts: new(15), Growth: &growth{4, 2, 2, 2, 0, 1}}
 
 		It("is named by its guts rate and growth rates when it is the sub breed Worm of a breed that can cocoon", func() {
 			b := domain.ResolveBreed([]domain.BreedRule{worm}, cocoons, mon(0, 36, 12, cocoonG))
@@ -102,7 +116,7 @@ var _ = Describe("ResolveBreed", func() {
 		})
 
 		It("is not looked for in a breed that cannot cocoon", func() {
-			other := domain.BreedRule{Main: 1, Sub: 36, Name: "Other", Otherwise: "Other (N/S)", Growth: &growth{}}
+			other := domain.BreedRule{Main: 1, Sub: 36, Name: "Other", Growth: &growth{}}
 			Expect(domain.ResolveBreed([]domain.BreedRule{other}, cocoons, mon(1, 36, 12, cocoonG)).Name).To(Equal("Other (N/S)"))
 		})
 	})

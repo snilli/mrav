@@ -21,6 +21,12 @@ type CocoonCreate struct {
 	conflict []sql.ConflictOption
 }
 
+// SetVersion sets the "version" field.
+func (_c *CocoonCreate) SetVersion(v cocoon.Version) *CocoonCreate {
+	_c.mutation.SetVersion(v)
+	return _c
+}
+
 // SetGuts sets the "guts" field.
 func (_c *CocoonCreate) SetGuts(v int) *CocoonCreate {
 	_c.mutation.SetGuts(v)
@@ -73,6 +79,14 @@ func (_c *CocoonCreate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (_c *CocoonCreate) check() error {
+	if _, ok := _c.mutation.Version(); !ok {
+		return &ValidationError{Name: "version", err: errors.New(`ent: missing required field "Cocoon.version"`)}
+	}
+	if v, ok := _c.mutation.Version(); ok {
+		if err := cocoon.VersionValidator(v); err != nil {
+			return &ValidationError{Name: "version", err: fmt.Errorf(`ent: validator failed for field "Cocoon.version": %w`, err)}
+		}
+	}
 	if _, ok := _c.mutation.Guts(); !ok {
 		return &ValidationError{Name: "guts", err: errors.New(`ent: missing required field "Cocoon.guts"`)}
 	}
@@ -119,6 +133,10 @@ func (_c *CocoonCreate) createSpec() (*Cocoon, *sqlgraph.CreateSpec) {
 		_spec = sqlgraph.NewCreateSpec(cocoon.Table, sqlgraph.NewFieldSpec(cocoon.FieldID, field.TypeInt))
 	)
 	_spec.OnConflict = _c.conflict
+	if value, ok := _c.mutation.Version(); ok {
+		_spec.SetField(cocoon.FieldVersion, field.TypeEnum, value)
+		_node.Version = value
+	}
 	if value, ok := _c.mutation.Guts(); ok {
 		_spec.SetField(cocoon.FieldGuts, field.TypeInt, value)
 		_node.Guts = value
@@ -138,7 +156,7 @@ func (_c *CocoonCreate) createSpec() (*Cocoon, *sqlgraph.CreateSpec) {
 // of the `INSERT` statement. For example:
 //
 //	client.Cocoon.Create().
-//		SetGuts(v).
+//		SetVersion(v).
 //		OnConflict(
 //			// Update the row with the new values
 //			// the was proposed for insertion.
@@ -147,7 +165,7 @@ func (_c *CocoonCreate) createSpec() (*Cocoon, *sqlgraph.CreateSpec) {
 //		// Override some of the fields with custom
 //		// update values.
 //		Update(func(u *ent.CocoonUpsert) {
-//			SetGuts(v+v).
+//			SetVersion(v+v).
 //		}).
 //		Exec(ctx)
 func (_c *CocoonCreate) OnConflict(opts ...sql.ConflictOption) *CocoonUpsertOne {
@@ -182,6 +200,18 @@ type (
 		*sql.UpdateSet
 	}
 )
+
+// SetVersion sets the "version" field.
+func (u *CocoonUpsert) SetVersion(v cocoon.Version) *CocoonUpsert {
+	u.Set(cocoon.FieldVersion, v)
+	return u
+}
+
+// UpdateVersion sets the "version" field to the value that was provided on create.
+func (u *CocoonUpsert) UpdateVersion() *CocoonUpsert {
+	u.SetExcluded(cocoon.FieldVersion)
+	return u
+}
 
 // SetGuts sets the "guts" field.
 func (u *CocoonUpsert) SetGuts(v int) *CocoonUpsert {
@@ -263,6 +293,20 @@ func (u *CocoonUpsertOne) Update(set func(*CocoonUpsert)) *CocoonUpsertOne {
 		set(&CocoonUpsert{UpdateSet: update})
 	}))
 	return u
+}
+
+// SetVersion sets the "version" field.
+func (u *CocoonUpsertOne) SetVersion(v cocoon.Version) *CocoonUpsertOne {
+	return u.Update(func(s *CocoonUpsert) {
+		s.SetVersion(v)
+	})
+}
+
+// UpdateVersion sets the "version" field to the value that was provided on create.
+func (u *CocoonUpsertOne) UpdateVersion() *CocoonUpsertOne {
+	return u.Update(func(s *CocoonUpsert) {
+		s.UpdateVersion()
+	})
 }
 
 // SetGuts sets the "guts" field.
@@ -448,7 +492,7 @@ func (_c *CocoonCreateBulk) ExecX(ctx context.Context) {
 //		// Override some of the fields with custom
 //		// update values.
 //		Update(func(u *ent.CocoonUpsert) {
-//			SetGuts(v+v).
+//			SetVersion(v+v).
 //		}).
 //		Exec(ctx)
 func (_c *CocoonCreateBulk) OnConflict(opts ...sql.ConflictOption) *CocoonUpsertBulk {
@@ -515,6 +559,20 @@ func (u *CocoonUpsertBulk) Update(set func(*CocoonUpsert)) *CocoonUpsertBulk {
 		set(&CocoonUpsert{UpdateSet: update})
 	}))
 	return u
+}
+
+// SetVersion sets the "version" field.
+func (u *CocoonUpsertBulk) SetVersion(v cocoon.Version) *CocoonUpsertBulk {
+	return u.Update(func(s *CocoonUpsert) {
+		s.SetVersion(v)
+	})
+}
+
+// UpdateVersion sets the "version" field to the value that was provided on create.
+func (u *CocoonUpsertBulk) UpdateVersion() *CocoonUpsertBulk {
+	return u.Update(func(s *CocoonUpsert) {
+		s.UpdateVersion()
+	})
 }
 
 // SetGuts sets the "guts" field.

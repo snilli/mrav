@@ -17,6 +17,8 @@ type Cocoon struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID int `json:"id,omitempty"`
+	// Version holds the value of the "version" field.
+	Version cocoon.Version `json:"version,omitempty"`
 	// Guts holds the value of the "guts" field.
 	Guts int `json:"guts,omitempty"`
 	// Growth holds the value of the "growth" field.
@@ -35,7 +37,7 @@ func (*Cocoon) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case cocoon.FieldID, cocoon.FieldGuts:
 			values[i] = new(sql.NullInt64)
-		case cocoon.FieldName:
+		case cocoon.FieldVersion, cocoon.FieldName:
 			values[i] = new(sql.NullString)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -58,6 +60,12 @@ func (_m *Cocoon) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
 			_m.ID = int(value.Int64)
+		case cocoon.FieldVersion:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field version", values[i])
+			} else if value.Valid {
+				_m.Version = cocoon.Version(value.String)
+			}
 		case cocoon.FieldGuts:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field guts", values[i])
@@ -114,6 +122,9 @@ func (_m *Cocoon) String() string {
 	var builder strings.Builder
 	builder.WriteString("Cocoon(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
+	builder.WriteString("version=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Version))
+	builder.WriteString(", ")
 	builder.WriteString("guts=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Guts))
 	builder.WriteString(", ")

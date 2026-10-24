@@ -262,12 +262,12 @@ func (_q *BreedQuery) Clone() *BreedQuery {
 // Example:
 //
 //	var v []struct {
-//		MainGenus int `json:"main_genus,omitempty"`
+//		Version breed.Version `json:"version,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.Breed.Query().
-//		GroupBy(breed.FieldMainGenus).
+//		GroupBy(breed.FieldVersion).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (_q *BreedQuery) GroupBy(field string, fields ...string) *BreedGroupBy {
@@ -285,11 +285,11 @@ func (_q *BreedQuery) GroupBy(field string, fields ...string) *BreedGroupBy {
 // Example:
 //
 //	var v []struct {
-//		MainGenus int `json:"main_genus,omitempty"`
+//		Version breed.Version `json:"version,omitempty"`
 //	}
 //
 //	client.Breed.Query().
-//		Select(breed.FieldMainGenus).
+//		Select(breed.FieldVersion).
 //		Scan(ctx, &v)
 func (_q *BreedQuery) Select(fields ...string) *BreedSelect {
 	_q.ctx.Fields = append(_q.ctx.Fields, fields...)

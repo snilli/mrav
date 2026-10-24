@@ -73,11 +73,6 @@ func Name(v string) predicate.Breed {
 	return predicate.Breed(sql.FieldEQ(FieldName, v))
 }
 
-// Otherwise applies equality check predicate on the "otherwise" field. It's identical to OtherwiseEQ.
-func Otherwise(v string) predicate.Breed {
-	return predicate.Breed(sql.FieldEQ(FieldOtherwise, v))
-}
-
 // Guts applies equality check predicate on the "guts" field. It's identical to GutsEQ.
 func Guts(v int) predicate.Breed {
 	return predicate.Breed(sql.FieldEQ(FieldGuts, v))
@@ -86,6 +81,26 @@ func Guts(v int) predicate.Breed {
 // MatchGuts applies equality check predicate on the "match_guts" field. It's identical to MatchGutsEQ.
 func MatchGuts(v bool) predicate.Breed {
 	return predicate.Breed(sql.FieldEQ(FieldMatchGuts, v))
+}
+
+// VersionEQ applies the EQ predicate on the "version" field.
+func VersionEQ(v Version) predicate.Breed {
+	return predicate.Breed(sql.FieldEQ(FieldVersion, v))
+}
+
+// VersionNEQ applies the NEQ predicate on the "version" field.
+func VersionNEQ(v Version) predicate.Breed {
+	return predicate.Breed(sql.FieldNEQ(FieldVersion, v))
+}
+
+// VersionIn applies the In predicate on the "version" field.
+func VersionIn(vs ...Version) predicate.Breed {
+	return predicate.Breed(sql.FieldIn(FieldVersion, vs...))
+}
+
+// VersionNotIn applies the NotIn predicate on the "version" field.
+func VersionNotIn(vs ...Version) predicate.Breed {
+	return predicate.Breed(sql.FieldNotIn(FieldVersion, vs...))
 }
 
 // MainGenusEQ applies the EQ predicate on the "main_genus" field.
@@ -271,71 +286,6 @@ func NameEqualFold(v string) predicate.Breed {
 // NameContainsFold applies the ContainsFold predicate on the "name" field.
 func NameContainsFold(v string) predicate.Breed {
 	return predicate.Breed(sql.FieldContainsFold(FieldName, v))
-}
-
-// OtherwiseEQ applies the EQ predicate on the "otherwise" field.
-func OtherwiseEQ(v string) predicate.Breed {
-	return predicate.Breed(sql.FieldEQ(FieldOtherwise, v))
-}
-
-// OtherwiseNEQ applies the NEQ predicate on the "otherwise" field.
-func OtherwiseNEQ(v string) predicate.Breed {
-	return predicate.Breed(sql.FieldNEQ(FieldOtherwise, v))
-}
-
-// OtherwiseIn applies the In predicate on the "otherwise" field.
-func OtherwiseIn(vs ...string) predicate.Breed {
-	return predicate.Breed(sql.FieldIn(FieldOtherwise, vs...))
-}
-
-// OtherwiseNotIn applies the NotIn predicate on the "otherwise" field.
-func OtherwiseNotIn(vs ...string) predicate.Breed {
-	return predicate.Breed(sql.FieldNotIn(FieldOtherwise, vs...))
-}
-
-// OtherwiseGT applies the GT predicate on the "otherwise" field.
-func OtherwiseGT(v string) predicate.Breed {
-	return predicate.Breed(sql.FieldGT(FieldOtherwise, v))
-}
-
-// OtherwiseGTE applies the GTE predicate on the "otherwise" field.
-func OtherwiseGTE(v string) predicate.Breed {
-	return predicate.Breed(sql.FieldGTE(FieldOtherwise, v))
-}
-
-// OtherwiseLT applies the LT predicate on the "otherwise" field.
-func OtherwiseLT(v string) predicate.Breed {
-	return predicate.Breed(sql.FieldLT(FieldOtherwise, v))
-}
-
-// OtherwiseLTE applies the LTE predicate on the "otherwise" field.
-func OtherwiseLTE(v string) predicate.Breed {
-	return predicate.Breed(sql.FieldLTE(FieldOtherwise, v))
-}
-
-// OtherwiseContains applies the Contains predicate on the "otherwise" field.
-func OtherwiseContains(v string) predicate.Breed {
-	return predicate.Breed(sql.FieldContains(FieldOtherwise, v))
-}
-
-// OtherwiseHasPrefix applies the HasPrefix predicate on the "otherwise" field.
-func OtherwiseHasPrefix(v string) predicate.Breed {
-	return predicate.Breed(sql.FieldHasPrefix(FieldOtherwise, v))
-}
-
-// OtherwiseHasSuffix applies the HasSuffix predicate on the "otherwise" field.
-func OtherwiseHasSuffix(v string) predicate.Breed {
-	return predicate.Breed(sql.FieldHasSuffix(FieldOtherwise, v))
-}
-
-// OtherwiseEqualFold applies the EqualFold predicate on the "otherwise" field.
-func OtherwiseEqualFold(v string) predicate.Breed {
-	return predicate.Breed(sql.FieldEqualFold(FieldOtherwise, v))
-}
-
-// OtherwiseContainsFold applies the ContainsFold predicate on the "otherwise" field.
-func OtherwiseContainsFold(v string) predicate.Breed {
-	return predicate.Breed(sql.FieldContainsFold(FieldOtherwise, v))
 }
 
 // GutsEQ applies the EQ predicate on the "guts" field.

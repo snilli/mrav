@@ -28,6 +28,20 @@ func (_u *BreedUpdate) Where(ps ...predicate.Breed) *BreedUpdate {
 	return _u
 }
 
+// SetVersion sets the "version" field.
+func (_u *BreedUpdate) SetVersion(v breed.Version) *BreedUpdate {
+	_u.mutation.SetVersion(v)
+	return _u
+}
+
+// SetNillableVersion sets the "version" field if the given value is not nil.
+func (_u *BreedUpdate) SetNillableVersion(v *breed.Version) *BreedUpdate {
+	if v != nil {
+		_u.SetVersion(*v)
+	}
+	return _u
+}
+
 // SetMainGenus sets the "main_genus" field.
 func (_u *BreedUpdate) SetMainGenus(v int) *BreedUpdate {
 	_u.mutation.ResetMainGenus()
@@ -101,20 +115,6 @@ func (_u *BreedUpdate) SetName(v string) *BreedUpdate {
 func (_u *BreedUpdate) SetNillableName(v *string) *BreedUpdate {
 	if v != nil {
 		_u.SetName(*v)
-	}
-	return _u
-}
-
-// SetOtherwise sets the "otherwise" field.
-func (_u *BreedUpdate) SetOtherwise(v string) *BreedUpdate {
-	_u.mutation.SetOtherwise(v)
-	return _u
-}
-
-// SetNillableOtherwise sets the "otherwise" field if the given value is not nil.
-func (_u *BreedUpdate) SetNillableOtherwise(v *string) *BreedUpdate {
-	if v != nil {
-		_u.SetOtherwise(*v)
 	}
 	return _u
 }
@@ -212,6 +212,11 @@ func (_u *BreedUpdate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *BreedUpdate) check() error {
+	if v, ok := _u.mutation.Version(); ok {
+		if err := breed.VersionValidator(v); err != nil {
+			return &ValidationError{Name: "version", err: fmt.Errorf(`ent: validator failed for field "Breed.version": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.MainGenus(); ok {
 		if err := breed.MainGenusValidator(v); err != nil {
 			return &ValidationError{Name: "main_genus", err: fmt.Errorf(`ent: validator failed for field "Breed.main_genus": %w`, err)}
@@ -252,6 +257,9 @@ func (_u *BreedUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			}
 		}
 	}
+	if value, ok := _u.mutation.Version(); ok {
+		_spec.SetField(breed.FieldVersion, field.TypeEnum, value)
+	}
 	if value, ok := _u.mutation.MainGenus(); ok {
 		_spec.SetField(breed.FieldMainGenus, field.TypeInt, value)
 	}
@@ -272,9 +280,6 @@ func (_u *BreedUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(breed.FieldName, field.TypeString, value)
-	}
-	if value, ok := _u.mutation.Otherwise(); ok {
-		_spec.SetField(breed.FieldOtherwise, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.Guts(); ok {
 		_spec.SetField(breed.FieldGuts, field.TypeInt, value)
@@ -317,6 +322,20 @@ type BreedUpdateOne struct {
 	fields   []string
 	hooks    []Hook
 	mutation *BreedMutation
+}
+
+// SetVersion sets the "version" field.
+func (_u *BreedUpdateOne) SetVersion(v breed.Version) *BreedUpdateOne {
+	_u.mutation.SetVersion(v)
+	return _u
+}
+
+// SetNillableVersion sets the "version" field if the given value is not nil.
+func (_u *BreedUpdateOne) SetNillableVersion(v *breed.Version) *BreedUpdateOne {
+	if v != nil {
+		_u.SetVersion(*v)
+	}
+	return _u
 }
 
 // SetMainGenus sets the "main_genus" field.
@@ -392,20 +411,6 @@ func (_u *BreedUpdateOne) SetName(v string) *BreedUpdateOne {
 func (_u *BreedUpdateOne) SetNillableName(v *string) *BreedUpdateOne {
 	if v != nil {
 		_u.SetName(*v)
-	}
-	return _u
-}
-
-// SetOtherwise sets the "otherwise" field.
-func (_u *BreedUpdateOne) SetOtherwise(v string) *BreedUpdateOne {
-	_u.mutation.SetOtherwise(v)
-	return _u
-}
-
-// SetNillableOtherwise sets the "otherwise" field if the given value is not nil.
-func (_u *BreedUpdateOne) SetNillableOtherwise(v *string) *BreedUpdateOne {
-	if v != nil {
-		_u.SetOtherwise(*v)
 	}
 	return _u
 }
@@ -516,6 +521,11 @@ func (_u *BreedUpdateOne) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *BreedUpdateOne) check() error {
+	if v, ok := _u.mutation.Version(); ok {
+		if err := breed.VersionValidator(v); err != nil {
+			return &ValidationError{Name: "version", err: fmt.Errorf(`ent: validator failed for field "Breed.version": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.MainGenus(); ok {
 		if err := breed.MainGenusValidator(v); err != nil {
 			return &ValidationError{Name: "main_genus", err: fmt.Errorf(`ent: validator failed for field "Breed.main_genus": %w`, err)}
@@ -573,6 +583,9 @@ func (_u *BreedUpdateOne) sqlSave(ctx context.Context) (_node *Breed, err error)
 			}
 		}
 	}
+	if value, ok := _u.mutation.Version(); ok {
+		_spec.SetField(breed.FieldVersion, field.TypeEnum, value)
+	}
 	if value, ok := _u.mutation.MainGenus(); ok {
 		_spec.SetField(breed.FieldMainGenus, field.TypeInt, value)
 	}
@@ -593,9 +606,6 @@ func (_u *BreedUpdateOne) sqlSave(ctx context.Context) (_node *Breed, err error)
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(breed.FieldName, field.TypeString, value)
-	}
-	if value, ok := _u.mutation.Otherwise(); ok {
-		_spec.SetField(breed.FieldOtherwise, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.Guts(); ok {
 		_spec.SetField(breed.FieldGuts, field.TypeInt, value)

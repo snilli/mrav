@@ -262,12 +262,12 @@ func (_q *CocoonQuery) Clone() *CocoonQuery {
 // Example:
 //
 //	var v []struct {
-//		Guts int `json:"guts,omitempty"`
+//		Version cocoon.Version `json:"version,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.Cocoon.Query().
-//		GroupBy(cocoon.FieldGuts).
+//		GroupBy(cocoon.FieldVersion).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (_q *CocoonQuery) GroupBy(field string, fields ...string) *CocoonGroupBy {
@@ -285,11 +285,11 @@ func (_q *CocoonQuery) GroupBy(field string, fields ...string) *CocoonGroupBy {
 // Example:
 //
 //	var v []struct {
-//		Guts int `json:"guts,omitempty"`
+//		Version cocoon.Version `json:"version,omitempty"`
 //	}
 //
 //	client.Cocoon.Query().
-//		Select(cocoon.FieldGuts).
+//		Select(cocoon.FieldVersion).
 //		Scan(ctx, &v)
 func (_q *CocoonQuery) Select(fields ...string) *CocoonSelect {
 	_q.ctx.Fields = append(_q.ctx.Fields, fields...)

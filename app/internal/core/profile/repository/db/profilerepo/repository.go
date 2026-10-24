@@ -24,10 +24,15 @@ import (
 type Repository struct {
 	client  *orm.Client
 	genera  memo.Cache[struct{}, map[monster.Genus]string]
-	breeds  memo.Cache[int, []domain.BreedRule]
-	cocoons memo.Cache[struct{}, []domain.CocoonRule]
+	breeds  memo.Cache[breedsKey, []domain.BreedRule]
+	cocoons memo.Cache[monster.Version, []domain.CocoonRule]
 	desires memo.Cache[struct{}, map[int]string]
 	maps    memo.Cache[struct{}, []domain.ExpeditionMap]
+}
+
+type breedsKey struct {
+	main    int
+	version monster.Version
 }
 
 func New(client *orm.Client) profile.ProfileRepository {
@@ -50,13 +55,13 @@ func (r *Repository) loadGenusNames(ctx context.Context) (map[monster.Genus]stri
 	return names, nil
 }
 
-func (r *Repository) ListBreedRules(ctx context.Context, main int) ([]domain.BreedRule, error) {
-	return r.breeds.Get(main, func() ([]domain.BreedRule, error) { return r.loadBreedRules(ctx, main) })
+func (r *Repository) ListBreedRules(ctx context.Context, main int, version monster.Version) ([]domain.BreedRule, error) {
+	return r.breeds.Get(breedsKey{main, version}, func() ([]domain.BreedRule, error) { return r.loadBreedRules(ctx, main, version) })
 }
 
-func (r *Repository) loadBreedRules(ctx context.Context, main int) ([]domain.BreedRule, error) {
+func (r *Repository) loadBreedRules(ctx context.Context, main int, version monster.Version) ([]domain.BreedRule, error) {
 	rows, err := r.client.Breed.Query().
-		Where(entbreed.MainGenus(main)).
+		Where(entbreed.VersionEQ(entbreed.Version(version)), entbreed.MainGenus(main)).
 		Order(ent.Asc(entbreed.FieldSubGenus), ent.Asc(entbreed.FieldSeq)).
 		All(ctx)
 	if err != nil {
@@ -65,7 +70,7 @@ func (r *Repository) loadBreedRules(ctx context.Context, main int) ([]domain.Bre
 	rules := make([]domain.BreedRule, len(rows))
 	for i, b := range rows {
 		rule := domain.BreedRule{
-			Main: b.MainGenus, Sub: b.SubGenus, Name: b.Name, Otherwise: b.Otherwise, Guts: b.Guts, MatchGuts: b.MatchGuts,
+			Main: b.MainGenus, Sub: b.SubGenus, Name: b.Name, Guts: b.Guts, MatchGuts: b.MatchGuts,
 		}
 		if len(b.Growth) > 0 {
 			growth, err := growthOf(b.Growth)
@@ -79,12 +84,14 @@ func (r *Repository) loadBreedRules(ctx context.Context, main int) ([]domain.Bre
 	return rules, nil
 }
 
-func (r *Repository) ListCocoonRules(ctx context.Context) ([]domain.CocoonRule, error) {
-	return r.cocoons.Get(struct{}{}, func() ([]domain.CocoonRule, error) { return r.loadCocoonRules(ctx) })
+func (r *Repository) ListCocoonRules(ctx context.Context, version monster.Version) ([]domain.CocoonRule, error) {
+	return r.cocoons.Get(version, func() ([]domain.CocoonRule, error) { return r.loadCocoonRules(ctx, version) })
 }
 
-func (r *Repository) loadCocoonRules(ctx context.Context) ([]domain.CocoonRule, error) {
-	rows, err := r.client.Cocoon.Query().Order(ent.Asc(entcocoon.FieldID)).All(ctx)
+func (r *Repository) loadCocoonRules(ctx context.Context, version monster.Version) ([]domain.CocoonRule, error) {
+	rows, err := r.client.Cocoon.Query().
+		Where(entcocoon.VersionEQ(entcocoon.Version(version))).
+		Order(ent.Asc(entcocoon.FieldID)).All(ctx)
 	if err != nil {
 		return nil, err
 	}

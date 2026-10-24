@@ -5,8 +5,8 @@
 package mockprofile
 
 import (
-	domain0 "app/internal/core/monster/domain"
-	"app/internal/core/profile/domain"
+	"app/internal/core/monster/domain"
+	domain0 "app/internal/core/profile/domain"
 	"context"
 
 	mock "github.com/stretchr/testify/mock"
@@ -49,27 +49,27 @@ func (_m *MockProfileRepository) EXPECT() *MockProfileRepository_Expecter {
 }
 
 // ListBreedRules provides a mock function for the type MockProfileRepository
-func (_mock *MockProfileRepository) ListBreedRules(ctx context.Context, main int) ([]domain.BreedRule, error) {
-	ret := _mock.Called(ctx, main)
+func (_mock *MockProfileRepository) ListBreedRules(ctx context.Context, main int, version domain.Version) ([]domain0.BreedRule, error) {
+	ret := _mock.Called(ctx, main, version)
 
 	if len(ret) == 0 {
 		panic("no return value specified for ListBreedRules")
 	}
 
-	var r0 []domain.BreedRule
+	var r0 []domain0.BreedRule
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int) ([]domain.BreedRule, error)); ok {
-		return returnFunc(ctx, main)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int, domain.Version) ([]domain0.BreedRule, error)); ok {
+		return returnFunc(ctx, main, version)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int) []domain.BreedRule); ok {
-		r0 = returnFunc(ctx, main)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int, domain.Version) []domain0.BreedRule); ok {
+		r0 = returnFunc(ctx, main, version)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]domain.BreedRule)
+			r0 = ret.Get(0).([]domain0.BreedRule)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, int) error); ok {
-		r1 = returnFunc(ctx, main)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int, domain.Version) error); ok {
+		r1 = returnFunc(ctx, main, version)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -84,11 +84,12 @@ type MockProfileRepository_ListBreedRules_Call struct {
 // ListBreedRules is a helper method to define mock.On call
 //   - ctx context.Context
 //   - main int
-func (_e *MockProfileRepository_Expecter) ListBreedRules(ctx any, main any) *MockProfileRepository_ListBreedRules_Call {
-	return &MockProfileRepository_ListBreedRules_Call{Call: _e.mock.On("ListBreedRules", ctx, main)}
+//   - version domain.Version
+func (_e *MockProfileRepository_Expecter) ListBreedRules(ctx any, main any, version any) *MockProfileRepository_ListBreedRules_Call {
+	return &MockProfileRepository_ListBreedRules_Call{Call: _e.mock.On("ListBreedRules", ctx, main, version)}
 }
 
-func (_c *MockProfileRepository_ListBreedRules_Call) Run(run func(ctx context.Context, main int)) *MockProfileRepository_ListBreedRules_Call {
+func (_c *MockProfileRepository_ListBreedRules_Call) Run(run func(ctx context.Context, main int, version domain.Version)) *MockProfileRepository_ListBreedRules_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -98,46 +99,51 @@ func (_c *MockProfileRepository_ListBreedRules_Call) Run(run func(ctx context.Co
 		if args[1] != nil {
 			arg1 = args[1].(int)
 		}
+		var arg2 domain.Version
+		if args[2] != nil {
+			arg2 = args[2].(domain.Version)
+		}
 		run(
 			arg0,
 			arg1,
+			arg2,
 		)
 	})
 	return _c
 }
 
-func (_c *MockProfileRepository_ListBreedRules_Call) Return(breedRules []domain.BreedRule, err error) *MockProfileRepository_ListBreedRules_Call {
+func (_c *MockProfileRepository_ListBreedRules_Call) Return(breedRules []domain0.BreedRule, err error) *MockProfileRepository_ListBreedRules_Call {
 	_c.Call.Return(breedRules, err)
 	return _c
 }
 
-func (_c *MockProfileRepository_ListBreedRules_Call) RunAndReturn(run func(ctx context.Context, main int) ([]domain.BreedRule, error)) *MockProfileRepository_ListBreedRules_Call {
+func (_c *MockProfileRepository_ListBreedRules_Call) RunAndReturn(run func(ctx context.Context, main int, version domain.Version) ([]domain0.BreedRule, error)) *MockProfileRepository_ListBreedRules_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // ListCocoonRules provides a mock function for the type MockProfileRepository
-func (_mock *MockProfileRepository) ListCocoonRules(ctx context.Context) ([]domain.CocoonRule, error) {
-	ret := _mock.Called(ctx)
+func (_mock *MockProfileRepository) ListCocoonRules(ctx context.Context, version domain.Version) ([]domain0.CocoonRule, error) {
+	ret := _mock.Called(ctx, version)
 
 	if len(ret) == 0 {
 		panic("no return value specified for ListCocoonRules")
 	}
 
-	var r0 []domain.CocoonRule
+	var r0 []domain0.CocoonRule
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context) ([]domain.CocoonRule, error)); ok {
-		return returnFunc(ctx)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, domain.Version) ([]domain0.CocoonRule, error)); ok {
+		return returnFunc(ctx, version)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context) []domain.CocoonRule); ok {
-		r0 = returnFunc(ctx)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, domain.Version) []domain0.CocoonRule); ok {
+		r0 = returnFunc(ctx, version)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]domain.CocoonRule)
+			r0 = ret.Get(0).([]domain0.CocoonRule)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = returnFunc(ctx)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, domain.Version) error); ok {
+		r1 = returnFunc(ctx, version)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -151,29 +157,35 @@ type MockProfileRepository_ListCocoonRules_Call struct {
 
 // ListCocoonRules is a helper method to define mock.On call
 //   - ctx context.Context
-func (_e *MockProfileRepository_Expecter) ListCocoonRules(ctx any) *MockProfileRepository_ListCocoonRules_Call {
-	return &MockProfileRepository_ListCocoonRules_Call{Call: _e.mock.On("ListCocoonRules", ctx)}
+//   - version domain.Version
+func (_e *MockProfileRepository_Expecter) ListCocoonRules(ctx any, version any) *MockProfileRepository_ListCocoonRules_Call {
+	return &MockProfileRepository_ListCocoonRules_Call{Call: _e.mock.On("ListCocoonRules", ctx, version)}
 }
 
-func (_c *MockProfileRepository_ListCocoonRules_Call) Run(run func(ctx context.Context)) *MockProfileRepository_ListCocoonRules_Call {
+func (_c *MockProfileRepository_ListCocoonRules_Call) Run(run func(ctx context.Context, version domain.Version)) *MockProfileRepository_ListCocoonRules_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
+		var arg1 domain.Version
+		if args[1] != nil {
+			arg1 = args[1].(domain.Version)
+		}
 		run(
 			arg0,
+			arg1,
 		)
 	})
 	return _c
 }
 
-func (_c *MockProfileRepository_ListCocoonRules_Call) Return(cocoonRules []domain.CocoonRule, err error) *MockProfileRepository_ListCocoonRules_Call {
+func (_c *MockProfileRepository_ListCocoonRules_Call) Return(cocoonRules []domain0.CocoonRule, err error) *MockProfileRepository_ListCocoonRules_Call {
 	_c.Call.Return(cocoonRules, err)
 	return _c
 }
 
-func (_c *MockProfileRepository_ListCocoonRules_Call) RunAndReturn(run func(ctx context.Context) ([]domain.CocoonRule, error)) *MockProfileRepository_ListCocoonRules_Call {
+func (_c *MockProfileRepository_ListCocoonRules_Call) RunAndReturn(run func(ctx context.Context, version domain.Version) ([]domain0.CocoonRule, error)) *MockProfileRepository_ListCocoonRules_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -241,23 +253,23 @@ func (_c *MockProfileRepository_ListDesireNames_Call) RunAndReturn(run func(ctx 
 }
 
 // ListExpeditionMaps provides a mock function for the type MockProfileRepository
-func (_mock *MockProfileRepository) ListExpeditionMaps(ctx context.Context) ([]domain.ExpeditionMap, error) {
+func (_mock *MockProfileRepository) ListExpeditionMaps(ctx context.Context) ([]domain0.ExpeditionMap, error) {
 	ret := _mock.Called(ctx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for ListExpeditionMaps")
 	}
 
-	var r0 []domain.ExpeditionMap
+	var r0 []domain0.ExpeditionMap
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context) ([]domain.ExpeditionMap, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context) ([]domain0.ExpeditionMap, error)); ok {
 		return returnFunc(ctx)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context) []domain.ExpeditionMap); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context) []domain0.ExpeditionMap); ok {
 		r0 = returnFunc(ctx)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]domain.ExpeditionMap)
+			r0 = ret.Get(0).([]domain0.ExpeditionMap)
 		}
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context) error); ok {
@@ -292,34 +304,34 @@ func (_c *MockProfileRepository_ListExpeditionMaps_Call) Run(run func(ctx contex
 	return _c
 }
 
-func (_c *MockProfileRepository_ListExpeditionMaps_Call) Return(expeditionMaps []domain.ExpeditionMap, err error) *MockProfileRepository_ListExpeditionMaps_Call {
+func (_c *MockProfileRepository_ListExpeditionMaps_Call) Return(expeditionMaps []domain0.ExpeditionMap, err error) *MockProfileRepository_ListExpeditionMaps_Call {
 	_c.Call.Return(expeditionMaps, err)
 	return _c
 }
 
-func (_c *MockProfileRepository_ListExpeditionMaps_Call) RunAndReturn(run func(ctx context.Context) ([]domain.ExpeditionMap, error)) *MockProfileRepository_ListExpeditionMaps_Call {
+func (_c *MockProfileRepository_ListExpeditionMaps_Call) RunAndReturn(run func(ctx context.Context) ([]domain0.ExpeditionMap, error)) *MockProfileRepository_ListExpeditionMaps_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // ListGenusNames provides a mock function for the type MockProfileRepository
-func (_mock *MockProfileRepository) ListGenusNames(ctx context.Context) (map[domain0.Genus]string, error) {
+func (_mock *MockProfileRepository) ListGenusNames(ctx context.Context) (map[domain.Genus]string, error) {
 	ret := _mock.Called(ctx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for ListGenusNames")
 	}
 
-	var r0 map[domain0.Genus]string
+	var r0 map[domain.Genus]string
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context) (map[domain0.Genus]string, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context) (map[domain.Genus]string, error)); ok {
 		return returnFunc(ctx)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context) map[domain0.Genus]string); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context) map[domain.Genus]string); ok {
 		r0 = returnFunc(ctx)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(map[domain0.Genus]string)
+			r0 = ret.Get(0).(map[domain.Genus]string)
 		}
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context) error); ok {
@@ -354,12 +366,12 @@ func (_c *MockProfileRepository_ListGenusNames_Call) Run(run func(ctx context.Co
 	return _c
 }
 
-func (_c *MockProfileRepository_ListGenusNames_Call) Return(genusToString map[domain0.Genus]string, err error) *MockProfileRepository_ListGenusNames_Call {
+func (_c *MockProfileRepository_ListGenusNames_Call) Return(genusToString map[domain.Genus]string, err error) *MockProfileRepository_ListGenusNames_Call {
 	_c.Call.Return(genusToString, err)
 	return _c
 }
 
-func (_c *MockProfileRepository_ListGenusNames_Call) RunAndReturn(run func(ctx context.Context) (map[domain0.Genus]string, error)) *MockProfileRepository_ListGenusNames_Call {
+func (_c *MockProfileRepository_ListGenusNames_Call) RunAndReturn(run func(ctx context.Context) (map[domain.Genus]string, error)) *MockProfileRepository_ListGenusNames_Call {
 	_c.Call.Return(run)
 	return _c
 }

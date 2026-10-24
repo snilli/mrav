@@ -28,6 +28,20 @@ func (_u *CocoonUpdate) Where(ps ...predicate.Cocoon) *CocoonUpdate {
 	return _u
 }
 
+// SetVersion sets the "version" field.
+func (_u *CocoonUpdate) SetVersion(v cocoon.Version) *CocoonUpdate {
+	_u.mutation.SetVersion(v)
+	return _u
+}
+
+// SetNillableVersion sets the "version" field if the given value is not nil.
+func (_u *CocoonUpdate) SetNillableVersion(v *cocoon.Version) *CocoonUpdate {
+	if v != nil {
+		_u.SetVersion(*v)
+	}
+	return _u
+}
+
 // SetGuts sets the "guts" field.
 func (_u *CocoonUpdate) SetGuts(v int) *CocoonUpdate {
 	_u.mutation.ResetGuts()
@@ -109,6 +123,11 @@ func (_u *CocoonUpdate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *CocoonUpdate) check() error {
+	if v, ok := _u.mutation.Version(); ok {
+		if err := cocoon.VersionValidator(v); err != nil {
+			return &ValidationError{Name: "version", err: fmt.Errorf(`ent: validator failed for field "Cocoon.version": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Guts(); ok {
 		if err := cocoon.GutsValidator(v); err != nil {
 			return &ValidationError{Name: "guts", err: fmt.Errorf(`ent: validator failed for field "Cocoon.guts": %w`, err)}
@@ -133,6 +152,9 @@ func (_u *CocoonUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := _u.mutation.Version(); ok {
+		_spec.SetField(cocoon.FieldVersion, field.TypeEnum, value)
 	}
 	if value, ok := _u.mutation.Guts(); ok {
 		_spec.SetField(cocoon.FieldGuts, field.TypeInt, value)
@@ -169,6 +191,20 @@ type CocoonUpdateOne struct {
 	fields   []string
 	hooks    []Hook
 	mutation *CocoonMutation
+}
+
+// SetVersion sets the "version" field.
+func (_u *CocoonUpdateOne) SetVersion(v cocoon.Version) *CocoonUpdateOne {
+	_u.mutation.SetVersion(v)
+	return _u
+}
+
+// SetNillableVersion sets the "version" field if the given value is not nil.
+func (_u *CocoonUpdateOne) SetNillableVersion(v *cocoon.Version) *CocoonUpdateOne {
+	if v != nil {
+		_u.SetVersion(*v)
+	}
+	return _u
 }
 
 // SetGuts sets the "guts" field.
@@ -265,6 +301,11 @@ func (_u *CocoonUpdateOne) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *CocoonUpdateOne) check() error {
+	if v, ok := _u.mutation.Version(); ok {
+		if err := cocoon.VersionValidator(v); err != nil {
+			return &ValidationError{Name: "version", err: fmt.Errorf(`ent: validator failed for field "Cocoon.version": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Guts(); ok {
 		if err := cocoon.GutsValidator(v); err != nil {
 			return &ValidationError{Name: "guts", err: fmt.Errorf(`ent: validator failed for field "Cocoon.guts": %w`, err)}
@@ -306,6 +347,9 @@ func (_u *CocoonUpdateOne) sqlSave(ctx context.Context) (_node *Cocoon, err erro
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := _u.mutation.Version(); ok {
+		_spec.SetField(cocoon.FieldVersion, field.TypeEnum, value)
 	}
 	if value, ok := _u.mutation.Guts(); ok {
 		_spec.SetField(cocoon.FieldGuts, field.TypeInt, value)

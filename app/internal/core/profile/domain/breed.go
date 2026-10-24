@@ -11,6 +11,7 @@ const (
 	UndefinedMonster = "Undefined Monster"
 
 	protomessiah = "Protomessiah"
+	notStandard  = " (N/S)"
 	wormSub      = 36
 )
 
@@ -19,7 +20,6 @@ var realBeaclon = [monster.StatCount]int{3, 3, 0, 1, 1, 3}
 type BreedRule struct {
 	Main, Sub int
 	Name      string
-	Otherwise string
 	Guts      *int
 	MatchGuts bool
 	Growth    *[monster.StatCount]int
@@ -82,11 +82,7 @@ func nameFromRules(rules []BreedRule, m monster.Monster) Breed {
 			return Breed{Name: r.Name, GutsOK: gutsOK}
 		}
 	}
-	last := forSub[len(forSub)-1]
-	if last.Otherwise == "" {
-		return Breed{Name: last.Name, GutsOK: gutsOK}
-	}
-	return Breed{Name: last.Otherwise, GutsOK: gutsOK}
+	return Breed{Name: forSub[len(forSub)-1].Name + notStandard, GutsOK: gutsOK}
 }
 
 func PossibleCocoon(main, sub int, growth [monster.StatCount]int) bool {

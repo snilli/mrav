@@ -3,6 +3,8 @@
 package cocoon
 
 import (
+	"fmt"
+
 	"entgo.io/ent/dialect/sql"
 )
 
@@ -11,6 +13,8 @@ const (
 	Label = "cocoon"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
+	// FieldVersion holds the string denoting the version field in the database.
+	FieldVersion = "version"
 	// FieldGuts holds the string denoting the guts field in the database.
 	FieldGuts = "guts"
 	// FieldGrowth holds the string denoting the growth field in the database.
@@ -24,6 +28,7 @@ const (
 // Columns holds all SQL columns for cocoon fields.
 var Columns = []string{
 	FieldID,
+	FieldVersion,
 	FieldGuts,
 	FieldGrowth,
 	FieldName,
@@ -46,12 +51,40 @@ var (
 	NameValidator func(string) error
 )
 
+// Version defines the type for the "version" enum field.
+type Version string
+
+// Version values.
+const (
+	VersionMr2   Version = "mr2"
+	VersionMr2dx Version = "mr2dx"
+)
+
+func (v Version) String() string {
+	return string(v)
+}
+
+// VersionValidator is a validator for the "version" field enum values. It is called by the builders before save.
+func VersionValidator(v Version) error {
+	switch v {
+	case VersionMr2, VersionMr2dx:
+		return nil
+	default:
+		return fmt.Errorf("cocoon: invalid enum value for version field: %q", v)
+	}
+}
+
 // OrderOption defines the ordering options for the Cocoon queries.
 type OrderOption func(*sql.Selector)
 
 // ByID orders the results by the id field.
 func ByID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// ByVersion orders the results by the version field.
+func ByVersion(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldVersion, opts...).ToFunc()
 }
 
 // ByGuts orders the results by the guts field.

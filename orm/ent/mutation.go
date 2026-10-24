@@ -51,6 +51,7 @@ type BreedMutation struct {
 	op            Op
 	typ           string
 	id            *int
+	version       *breed.Version
 	main_genus    *int
 	addmain_genus *int
 	sub_genus     *int
@@ -58,7 +59,6 @@ type BreedMutation struct {
 	seq           *int
 	addseq        *int
 	name          *string
-	otherwise     *string
 	guts          *int
 	addguts       *int
 	match_guts    *bool
@@ -166,6 +166,42 @@ func (m *BreedMutation) IDs(ctx context.Context) ([]int, error) {
 	default:
 		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
 	}
+}
+
+// SetVersion sets the "version" field.
+func (m *BreedMutation) SetVersion(b breed.Version) {
+	m.version = &b
+}
+
+// Version returns the value of the "version" field in the mutation.
+func (m *BreedMutation) Version() (r breed.Version, exists bool) {
+	v := m.version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldVersion returns the old "version" field's value of the Breed entity.
+// If the Breed object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BreedMutation) OldVersion(ctx context.Context) (v breed.Version, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldVersion is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldVersion requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldVersion: %w", err)
+	}
+	return oldValue.Version, nil
+}
+
+// ResetVersion resets all changes to the "version" field.
+func (m *BreedMutation) ResetVersion() {
+	m.version = nil
 }
 
 // SetMainGenus sets the "main_genus" field.
@@ -370,42 +406,6 @@ func (m *BreedMutation) OldName(ctx context.Context) (v string, err error) {
 // ResetName resets all changes to the "name" field.
 func (m *BreedMutation) ResetName() {
 	m.name = nil
-}
-
-// SetOtherwise sets the "otherwise" field.
-func (m *BreedMutation) SetOtherwise(s string) {
-	m.otherwise = &s
-}
-
-// Otherwise returns the value of the "otherwise" field in the mutation.
-func (m *BreedMutation) Otherwise() (r string, exists bool) {
-	v := m.otherwise
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldOtherwise returns the old "otherwise" field's value of the Breed entity.
-// If the Breed object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *BreedMutation) OldOtherwise(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldOtherwise is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldOtherwise requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldOtherwise: %w", err)
-	}
-	return oldValue.Otherwise, nil
-}
-
-// ResetOtherwise resets all changes to the "otherwise" field.
-func (m *BreedMutation) ResetOtherwise() {
-	m.otherwise = nil
 }
 
 // SetGuts sets the "guts" field.
@@ -614,6 +614,9 @@ func (m *BreedMutation) Type() string {
 // AddedFields().
 func (m *BreedMutation) Fields() []string {
 	fields := make([]string, 0, 8)
+	if m.version != nil {
+		fields = append(fields, breed.FieldVersion)
+	}
 	if m.main_genus != nil {
 		fields = append(fields, breed.FieldMainGenus)
 	}
@@ -625,9 +628,6 @@ func (m *BreedMutation) Fields() []string {
 	}
 	if m.name != nil {
 		fields = append(fields, breed.FieldName)
-	}
-	if m.otherwise != nil {
-		fields = append(fields, breed.FieldOtherwise)
 	}
 	if m.guts != nil {
 		fields = append(fields, breed.FieldGuts)
@@ -646,6 +646,8 @@ func (m *BreedMutation) Fields() []string {
 // schema.
 func (m *BreedMutation) Field(name string) (ent.Value, bool) {
 	switch name {
+	case breed.FieldVersion:
+		return m.Version()
 	case breed.FieldMainGenus:
 		return m.MainGenus()
 	case breed.FieldSubGenus:
@@ -654,8 +656,6 @@ func (m *BreedMutation) Field(name string) (ent.Value, bool) {
 		return m.Seq()
 	case breed.FieldName:
 		return m.Name()
-	case breed.FieldOtherwise:
-		return m.Otherwise()
 	case breed.FieldGuts:
 		return m.Guts()
 	case breed.FieldMatchGuts:
@@ -671,6 +671,8 @@ func (m *BreedMutation) Field(name string) (ent.Value, bool) {
 // database failed.
 func (m *BreedMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
+	case breed.FieldVersion:
+		return m.OldVersion(ctx)
 	case breed.FieldMainGenus:
 		return m.OldMainGenus(ctx)
 	case breed.FieldSubGenus:
@@ -679,8 +681,6 @@ func (m *BreedMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldSeq(ctx)
 	case breed.FieldName:
 		return m.OldName(ctx)
-	case breed.FieldOtherwise:
-		return m.OldOtherwise(ctx)
 	case breed.FieldGuts:
 		return m.OldGuts(ctx)
 	case breed.FieldMatchGuts:
@@ -696,6 +696,13 @@ func (m *BreedMutation) OldField(ctx context.Context, name string) (ent.Value, e
 // type.
 func (m *BreedMutation) SetField(name string, value ent.Value) error {
 	switch name {
+	case breed.FieldVersion:
+		v, ok := value.(breed.Version)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetVersion(v)
+		return nil
 	case breed.FieldMainGenus:
 		v, ok := value.(int)
 		if !ok {
@@ -723,13 +730,6 @@ func (m *BreedMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetName(v)
-		return nil
-	case breed.FieldOtherwise:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetOtherwise(v)
 		return nil
 	case breed.FieldGuts:
 		v, ok := value.(int)
@@ -867,6 +867,9 @@ func (m *BreedMutation) ClearField(name string) error {
 // It returns an error if the field is not defined in the schema.
 func (m *BreedMutation) ResetField(name string) error {
 	switch name {
+	case breed.FieldVersion:
+		m.ResetVersion()
+		return nil
 	case breed.FieldMainGenus:
 		m.ResetMainGenus()
 		return nil
@@ -878,9 +881,6 @@ func (m *BreedMutation) ResetField(name string) error {
 		return nil
 	case breed.FieldName:
 		m.ResetName()
-		return nil
-	case breed.FieldOtherwise:
-		m.ResetOtherwise()
 		return nil
 	case breed.FieldGuts:
 		m.ResetGuts()
@@ -949,6 +949,7 @@ type CocoonMutation struct {
 	op            Op
 	typ           string
 	id            *int
+	version       *cocoon.Version
 	guts          *int
 	addguts       *int
 	growth        *[]int
@@ -1056,6 +1057,42 @@ func (m *CocoonMutation) IDs(ctx context.Context) ([]int, error) {
 	default:
 		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
 	}
+}
+
+// SetVersion sets the "version" field.
+func (m *CocoonMutation) SetVersion(c cocoon.Version) {
+	m.version = &c
+}
+
+// Version returns the value of the "version" field in the mutation.
+func (m *CocoonMutation) Version() (r cocoon.Version, exists bool) {
+	v := m.version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldVersion returns the old "version" field's value of the Cocoon entity.
+// If the Cocoon object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CocoonMutation) OldVersion(ctx context.Context) (v cocoon.Version, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldVersion is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldVersion requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldVersion: %w", err)
+	}
+	return oldValue.Version, nil
+}
+
+// ResetVersion resets all changes to the "version" field.
+func (m *CocoonMutation) ResetVersion() {
+	m.version = nil
 }
 
 // SetGuts sets the "guts" field.
@@ -1235,7 +1272,10 @@ func (m *CocoonMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *CocoonMutation) Fields() []string {
-	fields := make([]string, 0, 3)
+	fields := make([]string, 0, 4)
+	if m.version != nil {
+		fields = append(fields, cocoon.FieldVersion)
+	}
 	if m.guts != nil {
 		fields = append(fields, cocoon.FieldGuts)
 	}
@@ -1253,6 +1293,8 @@ func (m *CocoonMutation) Fields() []string {
 // schema.
 func (m *CocoonMutation) Field(name string) (ent.Value, bool) {
 	switch name {
+	case cocoon.FieldVersion:
+		return m.Version()
 	case cocoon.FieldGuts:
 		return m.Guts()
 	case cocoon.FieldGrowth:
@@ -1268,6 +1310,8 @@ func (m *CocoonMutation) Field(name string) (ent.Value, bool) {
 // database failed.
 func (m *CocoonMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
+	case cocoon.FieldVersion:
+		return m.OldVersion(ctx)
 	case cocoon.FieldGuts:
 		return m.OldGuts(ctx)
 	case cocoon.FieldGrowth:
@@ -1283,6 +1327,13 @@ func (m *CocoonMutation) OldField(ctx context.Context, name string) (ent.Value, 
 // type.
 func (m *CocoonMutation) SetField(name string, value ent.Value) error {
 	switch name {
+	case cocoon.FieldVersion:
+		v, ok := value.(cocoon.Version)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetVersion(v)
+		return nil
 	case cocoon.FieldGuts:
 		v, ok := value.(int)
 		if !ok {
@@ -1368,6 +1419,9 @@ func (m *CocoonMutation) ClearField(name string) error {
 // It returns an error if the field is not defined in the schema.
 func (m *CocoonMutation) ResetField(name string) error {
 	switch name {
+	case cocoon.FieldVersion:
+		m.ResetVersion()
+		return nil
 	case cocoon.FieldGuts:
 		m.ResetGuts()
 		return nil

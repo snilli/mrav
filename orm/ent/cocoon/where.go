@@ -63,6 +63,26 @@ func Name(v string) predicate.Cocoon {
 	return predicate.Cocoon(sql.FieldEQ(FieldName, v))
 }
 
+// VersionEQ applies the EQ predicate on the "version" field.
+func VersionEQ(v Version) predicate.Cocoon {
+	return predicate.Cocoon(sql.FieldEQ(FieldVersion, v))
+}
+
+// VersionNEQ applies the NEQ predicate on the "version" field.
+func VersionNEQ(v Version) predicate.Cocoon {
+	return predicate.Cocoon(sql.FieldNEQ(FieldVersion, v))
+}
+
+// VersionIn applies the In predicate on the "version" field.
+func VersionIn(vs ...Version) predicate.Cocoon {
+	return predicate.Cocoon(sql.FieldIn(FieldVersion, vs...))
+}
+
+// VersionNotIn applies the NotIn predicate on the "version" field.
+func VersionNotIn(vs ...Version) predicate.Cocoon {
+	return predicate.Cocoon(sql.FieldNotIn(FieldVersion, vs...))
+}
+
 // GutsEQ applies the EQ predicate on the "guts" field.
 func GutsEQ(v int) predicate.Cocoon {
 	return predicate.Cocoon(sql.FieldEQ(FieldGuts, v))

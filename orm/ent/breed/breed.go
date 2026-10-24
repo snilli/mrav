@@ -3,6 +3,8 @@
 package breed
 
 import (
+	"fmt"
+
 	"entgo.io/ent/dialect/sql"
 )
 
@@ -11,6 +13,8 @@ const (
 	Label = "breed"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
+	// FieldVersion holds the string denoting the version field in the database.
+	FieldVersion = "version"
 	// FieldMainGenus holds the string denoting the main_genus field in the database.
 	FieldMainGenus = "main_genus"
 	// FieldSubGenus holds the string denoting the sub_genus field in the database.
@@ -19,8 +23,6 @@ const (
 	FieldSeq = "seq"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
-	// FieldOtherwise holds the string denoting the otherwise field in the database.
-	FieldOtherwise = "otherwise"
 	// FieldGuts holds the string denoting the guts field in the database.
 	FieldGuts = "guts"
 	// FieldMatchGuts holds the string denoting the match_guts field in the database.
@@ -34,11 +36,11 @@ const (
 // Columns holds all SQL columns for breed fields.
 var Columns = []string{
 	FieldID,
+	FieldVersion,
 	FieldMainGenus,
 	FieldSubGenus,
 	FieldSeq,
 	FieldName,
-	FieldOtherwise,
 	FieldGuts,
 	FieldMatchGuts,
 	FieldGrowth,
@@ -63,13 +65,34 @@ var (
 	SeqValidator func(int) error
 	// NameValidator is a validator for the "name" field. It is called by the builders before save.
 	NameValidator func(string) error
-	// DefaultOtherwise holds the default value on creation for the "otherwise" field.
-	DefaultOtherwise string
 	// GutsValidator is a validator for the "guts" field. It is called by the builders before save.
 	GutsValidator func(int) error
 	// DefaultMatchGuts holds the default value on creation for the "match_guts" field.
 	DefaultMatchGuts bool
 )
+
+// Version defines the type for the "version" enum field.
+type Version string
+
+// Version values.
+const (
+	VersionMr2   Version = "mr2"
+	VersionMr2dx Version = "mr2dx"
+)
+
+func (v Version) String() string {
+	return string(v)
+}
+
+// VersionValidator is a validator for the "version" field enum values. It is called by the builders before save.
+func VersionValidator(v Version) error {
+	switch v {
+	case VersionMr2, VersionMr2dx:
+		return nil
+	default:
+		return fmt.Errorf("breed: invalid enum value for version field: %q", v)
+	}
+}
 
 // OrderOption defines the ordering options for the Breed queries.
 type OrderOption func(*sql.Selector)
@@ -77,6 +100,11 @@ type OrderOption func(*sql.Selector)
 // ByID orders the results by the id field.
 func ByID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// ByVersion orders the results by the version field.
+func ByVersion(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldVersion, opts...).ToFunc()
 }
 
 // ByMainGenus orders the results by the main_genus field.
@@ -97,11 +125,6 @@ func BySeq(opts ...sql.OrderTermOption) OrderOption {
 // ByName orders the results by the name field.
 func ByName(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldName, opts...).ToFunc()
-}
-
-// ByOtherwise orders the results by the otherwise field.
-func ByOtherwise(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldOtherwise, opts...).ToFunc()
 }
 
 // ByGuts orders the results by the guts field.

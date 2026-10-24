@@ -17,6 +17,8 @@ type Breed struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID int `json:"id,omitempty"`
+	// Version holds the value of the "version" field.
+	Version breed.Version `json:"version,omitempty"`
 	// MainGenus holds the value of the "main_genus" field.
 	MainGenus int `json:"main_genus,omitempty"`
 	// SubGenus holds the value of the "sub_genus" field.
@@ -25,8 +27,6 @@ type Breed struct {
 	Seq int `json:"seq,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
-	// Otherwise holds the value of the "otherwise" field.
-	Otherwise string `json:"otherwise,omitempty"`
 	// Guts holds the value of the "guts" field.
 	Guts *int `json:"guts,omitempty"`
 	// MatchGuts holds the value of the "match_guts" field.
@@ -47,7 +47,7 @@ func (*Breed) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case breed.FieldID, breed.FieldMainGenus, breed.FieldSubGenus, breed.FieldSeq, breed.FieldGuts:
 			values[i] = new(sql.NullInt64)
-		case breed.FieldName, breed.FieldOtherwise:
+		case breed.FieldVersion, breed.FieldName:
 			values[i] = new(sql.NullString)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -70,6 +70,12 @@ func (_m *Breed) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
 			_m.ID = int(value.Int64)
+		case breed.FieldVersion:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field version", values[i])
+			} else if value.Valid {
+				_m.Version = breed.Version(value.String)
+			}
 		case breed.FieldMainGenus:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field main_genus", values[i])
@@ -93,12 +99,6 @@ func (_m *Breed) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
 			} else if value.Valid {
 				_m.Name = value.String
-			}
-		case breed.FieldOtherwise:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field otherwise", values[i])
-			} else if value.Valid {
-				_m.Otherwise = value.String
 			}
 		case breed.FieldGuts:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -157,6 +157,9 @@ func (_m *Breed) String() string {
 	var builder strings.Builder
 	builder.WriteString("Breed(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
+	builder.WriteString("version=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Version))
+	builder.WriteString(", ")
 	builder.WriteString("main_genus=")
 	builder.WriteString(fmt.Sprintf("%v", _m.MainGenus))
 	builder.WriteString(", ")
@@ -168,9 +171,6 @@ func (_m *Breed) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("name=")
 	builder.WriteString(_m.Name)
-	builder.WriteString(", ")
-	builder.WriteString("otherwise=")
-	builder.WriteString(_m.Otherwise)
 	builder.WriteString(", ")
 	if v := _m.Guts; v != nil {
 		builder.WriteString("guts=")

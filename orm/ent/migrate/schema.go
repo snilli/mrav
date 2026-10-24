@@ -11,11 +11,11 @@ var (
 	// BreedsColumns holds the columns for the "breeds" table.
 	BreedsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "version", Type: field.TypeEnum, Enums: []string{"mr2", "mr2dx"}},
 		{Name: "main_genus", Type: field.TypeInt},
 		{Name: "sub_genus", Type: field.TypeInt},
 		{Name: "seq", Type: field.TypeInt},
 		{Name: "name", Type: field.TypeString},
-		{Name: "otherwise", Type: field.TypeString, Default: ""},
 		{Name: "guts", Type: field.TypeInt, Nullable: true},
 		{Name: "match_guts", Type: field.TypeBool, Default: false},
 		{Name: "growth", Type: field.TypeJSON, Nullable: true},
@@ -27,24 +27,32 @@ var (
 		PrimaryKey: []*schema.Column{BreedsColumns[0]},
 		Indexes: []*schema.Index{
 			{
-				Name:    "breed_main_genus_sub_genus_seq",
+				Name:    "breed_version_main_genus_sub_genus_seq",
 				Unique:  true,
-				Columns: []*schema.Column{BreedsColumns[1], BreedsColumns[2], BreedsColumns[3]},
+				Columns: []*schema.Column{BreedsColumns[1], BreedsColumns[2], BreedsColumns[3], BreedsColumns[4]},
 			},
 		},
 	}
 	// CocoonsColumns holds the columns for the "cocoons" table.
 	CocoonsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "version", Type: field.TypeEnum, Enums: []string{"mr2", "mr2dx"}},
 		{Name: "guts", Type: field.TypeInt},
 		{Name: "growth", Type: field.TypeJSON},
-		{Name: "name", Type: field.TypeString, Unique: true},
+		{Name: "name", Type: field.TypeString},
 	}
 	// CocoonsTable holds the schema information for the "cocoons" table.
 	CocoonsTable = &schema.Table{
 		Name:       "cocoons",
 		Columns:    CocoonsColumns,
 		PrimaryKey: []*schema.Column{CocoonsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "cocoon_version",
+				Unique:  false,
+				Columns: []*schema.Column{CocoonsColumns[1]},
+			},
+		},
 	}
 	// ExpeditionLocksColumns holds the columns for the "expedition_locks" table.
 	ExpeditionLocksColumns = []*schema.Column{

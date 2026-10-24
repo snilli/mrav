@@ -1,6 +1,7 @@
 package profilesvc
 
 import (
+	"cmp"
 	"context"
 
 	monster "app/internal/core/monster/domain"
@@ -32,11 +33,12 @@ func (s *Service) Current(ctx context.Context) (domain.Profile, error) {
 	if err != nil {
 		return domain.Profile{}, err
 	}
-	rules, err := s.repo.ListBreedRules(ctx, int(m.Genus))
+	version := cmp.Or(m.Version, monster.MR2DX)
+	rules, err := s.repo.ListBreedRules(ctx, int(m.Genus), version)
 	if err != nil {
 		return domain.Profile{}, err
 	}
-	cocoons, err := s.repo.ListCocoonRules(ctx)
+	cocoons, err := s.repo.ListCocoonRules(ctx, version)
 	if err != nil {
 		return domain.Profile{}, err
 	}

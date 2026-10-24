@@ -23,25 +23,21 @@ func init() {
 	breedFields := schema.Breed{}.Fields()
 	_ = breedFields
 	// breedDescMainGenus is the schema descriptor for main_genus field.
-	breedDescMainGenus := breedFields[0].Descriptor()
+	breedDescMainGenus := breedFields[1].Descriptor()
 	// breed.MainGenusValidator is a validator for the "main_genus" field. It is called by the builders before save.
 	breed.MainGenusValidator = breedDescMainGenus.Validators[0].(func(int) error)
 	// breedDescSubGenus is the schema descriptor for sub_genus field.
-	breedDescSubGenus := breedFields[1].Descriptor()
+	breedDescSubGenus := breedFields[2].Descriptor()
 	// breed.SubGenusValidator is a validator for the "sub_genus" field. It is called by the builders before save.
 	breed.SubGenusValidator = breedDescSubGenus.Validators[0].(func(int) error)
 	// breedDescSeq is the schema descriptor for seq field.
-	breedDescSeq := breedFields[2].Descriptor()
+	breedDescSeq := breedFields[3].Descriptor()
 	// breed.SeqValidator is a validator for the "seq" field. It is called by the builders before save.
 	breed.SeqValidator = breedDescSeq.Validators[0].(func(int) error)
 	// breedDescName is the schema descriptor for name field.
-	breedDescName := breedFields[3].Descriptor()
+	breedDescName := breedFields[4].Descriptor()
 	// breed.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	breed.NameValidator = breedDescName.Validators[0].(func(string) error)
-	// breedDescOtherwise is the schema descriptor for otherwise field.
-	breedDescOtherwise := breedFields[4].Descriptor()
-	// breed.DefaultOtherwise holds the default value on creation for the otherwise field.
-	breed.DefaultOtherwise = breedDescOtherwise.Default.(string)
 	// breedDescGuts is the schema descriptor for guts field.
 	breedDescGuts := breedFields[5].Descriptor()
 	// breed.GutsValidator is a validator for the "guts" field. It is called by the builders before save.
@@ -53,11 +49,11 @@ func init() {
 	cocoonFields := schema.Cocoon{}.Fields()
 	_ = cocoonFields
 	// cocoonDescGuts is the schema descriptor for guts field.
-	cocoonDescGuts := cocoonFields[0].Descriptor()
+	cocoonDescGuts := cocoonFields[1].Descriptor()
 	// cocoon.GutsValidator is a validator for the "guts" field. It is called by the builders before save.
 	cocoon.GutsValidator = cocoonDescGuts.Validators[0].(func(int) error)
 	// cocoonDescName is the schema descriptor for name field.
-	cocoonDescName := cocoonFields[2].Descriptor()
+	cocoonDescName := cocoonFields[3].Descriptor()
 	// cocoon.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	cocoon.NameValidator = cocoonDescName.Validators[0].(func(string) error)
 	expeditionlockFields := schema.ExpeditionLock{}.Fields()
