@@ -108,6 +108,32 @@ var _ = Describe("OpenShipped", Label("integration"), func() {
 		Entry("mr2dx Whirlwind", entmove.VersionMr2dx, 16, "Whirlwind", []int{1}, "POW (not a typo) should be over 450"),
 	)
 
+	DescribeTable("ships the seven healing moves with a force of nothing, the amount they heal being the extra row, as the game's own table has it",
+		func(version entmove.Version) {
+			ctx := context.Background()
+			client, err := testutil.OpenShipped(ctx)
+			if errors.Is(err, testutil.ErrNoShippedDB) {
+				Skip(err.Error())
+			}
+			Expect(err).NotTo(HaveOccurred())
+			DeferCleanup(client.Close)
+
+			moves, err := client.Move.Query().Where(entmove.VersionEQ(version)).All(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			healing := 0
+			for _, m := range moves {
+				if m.Extra != nil && m.Extra.Label == "Recovery:" {
+					healing++
+					Expect(m.Extra.Raw).To(BeNumerically(">", 0), m.Name)
+					Expect(m.Force).To(BeZero(), m.Name)
+				}
+			}
+			Expect(healing).To(Equal(7))
+		},
+		Entry("the PlayStation game, mr2", entmove.VersionMr2),
+		Entry("the Steam game, mr2dx", entmove.VersionMr2dx),
+	)
+
 	It("ships Kato's Oil Fire as a move with no way to learn on the PlayStation, and with the second place on Steam", func() {
 		ctx := context.Background()
 		client, err := testutil.OpenShipped(ctx)
