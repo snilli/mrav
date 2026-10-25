@@ -262,7 +262,7 @@ var _ = Describe("decode", func() {
 			got, err := decodePlayer(l, monsterImage(a, ps1Name, breeder))
 			Expect(err).NotTo(HaveOccurred())
 
-			want := player.Player{Money: 987654, NextSale: 7, ErrantryCD: 255, Breeder: wantBreeder, Input: 48, Ranch: wantRanch}
+			want := player.Player{Money: 987654, NextSale: 7, ErrantryCD: 255, Breeder: wantBreeder, Input: 48, Ranch: wantRanch, Version: l.Version}
 			for slot := range want.Items {
 				want.Items[slot] = slot * 9
 			}

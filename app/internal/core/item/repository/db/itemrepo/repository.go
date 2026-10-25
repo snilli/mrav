@@ -9,21 +9,22 @@ import (
 
 	"app/internal/core/item"
 	"app/internal/core/item/domain"
+	monster "app/internal/core/monster/domain"
 	"app/internal/infrastructure/memo"
 )
 
 type Repository struct {
 	client *orm.Client
-	items  memo.Cache[struct{}, []domain.Item]
+	items  memo.Cache[monster.Version, []domain.Item]
 }
 
 func New(client *orm.Client) item.ItemRepository {
 	return &Repository{client: client}
 }
 
-func (r *Repository) ListItems(ctx context.Context) ([]domain.Item, error) {
-	return r.items.Get(struct{}{}, func() ([]domain.Item, error) {
-		rows, err := r.client.Item.Query().Order(ent.Asc(entitem.FieldCode)).All(ctx)
+func (r *Repository) ListItems(ctx context.Context, version monster.Version) ([]domain.Item, error) {
+	return r.items.Get(version, func() ([]domain.Item, error) {
+		rows, err := r.client.Item.Query().Where(entitem.VersionEQ(entitem.Version(version))).Order(ent.Asc(entitem.FieldCode)).All(ctx)
 		if err != nil {
 			return nil, err
 		}

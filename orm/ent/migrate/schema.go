@@ -144,7 +144,8 @@ var (
 	// ItemsColumns holds the columns for the "items" table.
 	ItemsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
-		{Name: "code", Type: field.TypeInt, Unique: true},
+		{Name: "version", Type: field.TypeEnum, Enums: []string{"mr2", "mr2dx"}},
+		{Name: "code", Type: field.TypeInt},
 		{Name: "name", Type: field.TypeString},
 		{Name: "desire_name", Type: field.TypeString},
 		{Name: "kind", Type: field.TypeString},
@@ -158,6 +159,13 @@ var (
 		Name:       "items",
 		Columns:    ItemsColumns,
 		PrimaryKey: []*schema.Column{ItemsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "item_version_code",
+				Unique:  true,
+				Columns: []*schema.Column{ItemsColumns[1], ItemsColumns[2]},
+			},
+		},
 	}
 	// LootChancesColumns holds the columns for the "loot_chances" table.
 	LootChancesColumns = []*schema.Column{

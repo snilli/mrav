@@ -21,6 +21,12 @@ type ItemCreate struct {
 	conflict []sql.ConflictOption
 }
 
+// SetVersion sets the "version" field.
+func (_c *ItemCreate) SetVersion(v item.Version) *ItemCreate {
+	_c.mutation.SetVersion(v)
+	return _c
+}
+
 // SetCode sets the "code" field.
 func (_c *ItemCreate) SetCode(v int) *ItemCreate {
 	_c.mutation.SetCode(v)
@@ -103,6 +109,14 @@ func (_c *ItemCreate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (_c *ItemCreate) check() error {
+	if _, ok := _c.mutation.Version(); !ok {
+		return &ValidationError{Name: "version", err: errors.New(`ent: missing required field "Item.version"`)}
+	}
+	if v, ok := _c.mutation.Version(); ok {
+		if err := item.VersionValidator(v); err != nil {
+			return &ValidationError{Name: "version", err: fmt.Errorf(`ent: validator failed for field "Item.version": %w`, err)}
+		}
+	}
 	if _, ok := _c.mutation.Code(); !ok {
 		return &ValidationError{Name: "code", err: errors.New(`ent: missing required field "Item.code"`)}
 	}
@@ -184,6 +198,10 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 		_spec = sqlgraph.NewCreateSpec(item.Table, sqlgraph.NewFieldSpec(item.FieldID, field.TypeInt))
 	)
 	_spec.OnConflict = _c.conflict
+	if value, ok := _c.mutation.Version(); ok {
+		_spec.SetField(item.FieldVersion, field.TypeEnum, value)
+		_node.Version = value
+	}
 	if value, ok := _c.mutation.Code(); ok {
 		_spec.SetField(item.FieldCode, field.TypeInt, value)
 		_node.Code = value
@@ -223,7 +241,7 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 // of the `INSERT` statement. For example:
 //
 //	client.Item.Create().
-//		SetCode(v).
+//		SetVersion(v).
 //		OnConflict(
 //			// Update the row with the new values
 //			// the was proposed for insertion.
@@ -232,7 +250,7 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 //		// Override some of the fields with custom
 //		// update values.
 //		Update(func(u *ent.ItemUpsert) {
-//			SetCode(v+v).
+//			SetVersion(v+v).
 //		}).
 //		Exec(ctx)
 func (_c *ItemCreate) OnConflict(opts ...sql.ConflictOption) *ItemUpsertOne {
@@ -267,6 +285,18 @@ type (
 		*sql.UpdateSet
 	}
 )
+
+// SetVersion sets the "version" field.
+func (u *ItemUpsert) SetVersion(v item.Version) *ItemUpsert {
+	u.Set(item.FieldVersion, v)
+	return u
+}
+
+// UpdateVersion sets the "version" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateVersion() *ItemUpsert {
+	u.SetExcluded(item.FieldVersion)
+	return u
+}
 
 // SetName sets the "name" field.
 func (u *ItemUpsert) SetName(v string) *ItemUpsert {
@@ -395,6 +425,20 @@ func (u *ItemUpsertOne) Update(set func(*ItemUpsert)) *ItemUpsertOne {
 		set(&ItemUpsert{UpdateSet: update})
 	}))
 	return u
+}
+
+// SetVersion sets the "version" field.
+func (u *ItemUpsertOne) SetVersion(v item.Version) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetVersion(v)
+	})
+}
+
+// UpdateVersion sets the "version" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateVersion() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateVersion()
+	})
 }
 
 // SetName sets the "name" field.
@@ -629,7 +673,7 @@ func (_c *ItemCreateBulk) ExecX(ctx context.Context) {
 //		// Override some of the fields with custom
 //		// update values.
 //		Update(func(u *ent.ItemUpsert) {
-//			SetCode(v+v).
+//			SetVersion(v+v).
 //		}).
 //		Exec(ctx)
 func (_c *ItemCreateBulk) OnConflict(opts ...sql.ConflictOption) *ItemUpsertBulk {
@@ -703,6 +747,20 @@ func (u *ItemUpsertBulk) Update(set func(*ItemUpsert)) *ItemUpsertBulk {
 		set(&ItemUpsert{UpdateSet: update})
 	}))
 	return u
+}
+
+// SetVersion sets the "version" field.
+func (u *ItemUpsertBulk) SetVersion(v item.Version) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetVersion(v)
+	})
+}
+
+// UpdateVersion sets the "version" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateVersion() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateVersion()
+	})
 }
 
 // SetName sets the "name" field.

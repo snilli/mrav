@@ -3,6 +3,8 @@
 package item
 
 import (
+	"fmt"
+
 	"entgo.io/ent/dialect/sql"
 )
 
@@ -11,6 +13,8 @@ const (
 	Label = "item"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
+	// FieldVersion holds the string denoting the version field in the database.
+	FieldVersion = "version"
 	// FieldCode holds the string denoting the code field in the database.
 	FieldCode = "code"
 	// FieldName holds the string denoting the name field in the database.
@@ -34,6 +38,7 @@ const (
 // Columns holds all SQL columns for item fields.
 var Columns = []string{
 	FieldID,
+	FieldVersion,
 	FieldCode,
 	FieldName,
 	FieldDesireName,
@@ -69,12 +74,40 @@ var (
 	PurchasePriceValidator func(string) error
 )
 
+// Version defines the type for the "version" enum field.
+type Version string
+
+// Version values.
+const (
+	VersionMr2   Version = "mr2"
+	VersionMr2dx Version = "mr2dx"
+)
+
+func (v Version) String() string {
+	return string(v)
+}
+
+// VersionValidator is a validator for the "version" field enum values. It is called by the builders before save.
+func VersionValidator(v Version) error {
+	switch v {
+	case VersionMr2, VersionMr2dx:
+		return nil
+	default:
+		return fmt.Errorf("item: invalid enum value for version field: %q", v)
+	}
+}
+
 // OrderOption defines the ordering options for the Item queries.
 type OrderOption func(*sql.Selector)
 
 // ByID orders the results by the id field.
 func ByID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// ByVersion orders the results by the version field.
+func ByVersion(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldVersion, opts...).ToFunc()
 }
 
 // ByCode orders the results by the code field.

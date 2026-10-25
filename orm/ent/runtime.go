@@ -119,27 +119,27 @@ func init() {
 	itemFields := schema.Item{}.Fields()
 	_ = itemFields
 	// itemDescCode is the schema descriptor for code field.
-	itemDescCode := itemFields[0].Descriptor()
+	itemDescCode := itemFields[1].Descriptor()
 	// item.CodeValidator is a validator for the "code" field. It is called by the builders before save.
 	item.CodeValidator = itemDescCode.Validators[0].(func(int) error)
 	// itemDescName is the schema descriptor for name field.
-	itemDescName := itemFields[1].Descriptor()
+	itemDescName := itemFields[2].Descriptor()
 	// item.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	item.NameValidator = itemDescName.Validators[0].(func(string) error)
 	// itemDescDesireName is the schema descriptor for desire_name field.
-	itemDescDesireName := itemFields[2].Descriptor()
+	itemDescDesireName := itemFields[3].Descriptor()
 	// item.DesireNameValidator is a validator for the "desire_name" field. It is called by the builders before save.
 	item.DesireNameValidator = itemDescDesireName.Validators[0].(func(string) error)
 	// itemDescKind is the schema descriptor for kind field.
-	itemDescKind := itemFields[3].Descriptor()
+	itemDescKind := itemFields[4].Descriptor()
 	// item.KindValidator is a validator for the "kind" field. It is called by the builders before save.
 	item.KindValidator = itemDescKind.Validators[0].(func(string) error)
 	// itemDescSalePrice is the schema descriptor for sale_price field.
-	itemDescSalePrice := itemFields[6].Descriptor()
+	itemDescSalePrice := itemFields[7].Descriptor()
 	// item.SalePriceValidator is a validator for the "sale_price" field. It is called by the builders before save.
 	item.SalePriceValidator = itemDescSalePrice.Validators[0].(func(string) error)
 	// itemDescPurchasePrice is the schema descriptor for purchase_price field.
-	itemDescPurchasePrice := itemFields[7].Descriptor()
+	itemDescPurchasePrice := itemFields[8].Descriptor()
 	// item.PurchasePriceValidator is a validator for the "purchase_price" field. It is called by the builders before save.
 	item.PurchasePriceValidator = itemDescPurchasePrice.Validators[0].(func(string) error)
 	lootchanceFields := schema.LootChance{}.Fields()

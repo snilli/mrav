@@ -27,6 +27,20 @@ func (_u *ItemUpdate) Where(ps ...predicate.Item) *ItemUpdate {
 	return _u
 }
 
+// SetVersion sets the "version" field.
+func (_u *ItemUpdate) SetVersion(v item.Version) *ItemUpdate {
+	_u.mutation.SetVersion(v)
+	return _u
+}
+
+// SetNillableVersion sets the "version" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableVersion(v *item.Version) *ItemUpdate {
+	if v != nil {
+		_u.SetVersion(*v)
+	}
+	return _u
+}
+
 // SetName sets the "name" field.
 func (_u *ItemUpdate) SetName(v string) *ItemUpdate {
 	_u.mutation.SetName(v)
@@ -159,6 +173,11 @@ func (_u *ItemUpdate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *ItemUpdate) check() error {
+	if v, ok := _u.mutation.Version(); ok {
+		if err := item.VersionValidator(v); err != nil {
+			return &ValidationError{Name: "version", err: fmt.Errorf(`ent: validator failed for field "Item.version": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Name(); ok {
 		if err := item.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Item.name": %w`, err)}
@@ -199,6 +218,9 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			}
 		}
 	}
+	if value, ok := _u.mutation.Version(); ok {
+		_spec.SetField(item.FieldVersion, field.TypeEnum, value)
+	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(item.FieldName, field.TypeString, value)
 	}
@@ -238,6 +260,20 @@ type ItemUpdateOne struct {
 	fields   []string
 	hooks    []Hook
 	mutation *ItemMutation
+}
+
+// SetVersion sets the "version" field.
+func (_u *ItemUpdateOne) SetVersion(v item.Version) *ItemUpdateOne {
+	_u.mutation.SetVersion(v)
+	return _u
+}
+
+// SetNillableVersion sets the "version" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableVersion(v *item.Version) *ItemUpdateOne {
+	if v != nil {
+		_u.SetVersion(*v)
+	}
+	return _u
 }
 
 // SetName sets the "name" field.
@@ -385,6 +421,11 @@ func (_u *ItemUpdateOne) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *ItemUpdateOne) check() error {
+	if v, ok := _u.mutation.Version(); ok {
+		if err := item.VersionValidator(v); err != nil {
+			return &ValidationError{Name: "version", err: fmt.Errorf(`ent: validator failed for field "Item.version": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Name(); ok {
 		if err := item.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Item.name": %w`, err)}
@@ -441,6 +482,9 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := _u.mutation.Version(); ok {
+		_spec.SetField(item.FieldVersion, field.TypeEnum, value)
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(item.FieldName, field.TypeString, value)

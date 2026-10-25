@@ -5,7 +5,8 @@
 package mockitem
 
 import (
-	"app/internal/core/item/domain"
+	domain0 "app/internal/core/item/domain"
+	"app/internal/core/monster/domain"
 	"context"
 
 	mock "github.com/stretchr/testify/mock"
@@ -48,27 +49,27 @@ func (_m *MockItemRepository) EXPECT() *MockItemRepository_Expecter {
 }
 
 // ListItems provides a mock function for the type MockItemRepository
-func (_mock *MockItemRepository) ListItems(ctx context.Context) ([]domain.Item, error) {
-	ret := _mock.Called(ctx)
+func (_mock *MockItemRepository) ListItems(ctx context.Context, version domain.Version) ([]domain0.Item, error) {
+	ret := _mock.Called(ctx, version)
 
 	if len(ret) == 0 {
 		panic("no return value specified for ListItems")
 	}
 
-	var r0 []domain.Item
+	var r0 []domain0.Item
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context) ([]domain.Item, error)); ok {
-		return returnFunc(ctx)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, domain.Version) ([]domain0.Item, error)); ok {
+		return returnFunc(ctx, version)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context) []domain.Item); ok {
-		r0 = returnFunc(ctx)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, domain.Version) []domain0.Item); ok {
+		r0 = returnFunc(ctx, version)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]domain.Item)
+			r0 = ret.Get(0).([]domain0.Item)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = returnFunc(ctx)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, domain.Version) error); ok {
+		r1 = returnFunc(ctx, version)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -82,29 +83,35 @@ type MockItemRepository_ListItems_Call struct {
 
 // ListItems is a helper method to define mock.On call
 //   - ctx context.Context
-func (_e *MockItemRepository_Expecter) ListItems(ctx any) *MockItemRepository_ListItems_Call {
-	return &MockItemRepository_ListItems_Call{Call: _e.mock.On("ListItems", ctx)}
+//   - version domain.Version
+func (_e *MockItemRepository_Expecter) ListItems(ctx any, version any) *MockItemRepository_ListItems_Call {
+	return &MockItemRepository_ListItems_Call{Call: _e.mock.On("ListItems", ctx, version)}
 }
 
-func (_c *MockItemRepository_ListItems_Call) Run(run func(ctx context.Context)) *MockItemRepository_ListItems_Call {
+func (_c *MockItemRepository_ListItems_Call) Run(run func(ctx context.Context, version domain.Version)) *MockItemRepository_ListItems_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
+		var arg1 domain.Version
+		if args[1] != nil {
+			arg1 = args[1].(domain.Version)
+		}
 		run(
 			arg0,
+			arg1,
 		)
 	})
 	return _c
 }
 
-func (_c *MockItemRepository_ListItems_Call) Return(items []domain.Item, err error) *MockItemRepository_ListItems_Call {
+func (_c *MockItemRepository_ListItems_Call) Return(items []domain0.Item, err error) *MockItemRepository_ListItems_Call {
 	_c.Call.Return(items, err)
 	return _c
 }
 
-func (_c *MockItemRepository_ListItems_Call) RunAndReturn(run func(ctx context.Context) ([]domain.Item, error)) *MockItemRepository_ListItems_Call {
+func (_c *MockItemRepository_ListItems_Call) RunAndReturn(run func(ctx context.Context, version domain.Version) ([]domain0.Item, error)) *MockItemRepository_ListItems_Call {
 	_c.Call.Return(run)
 	return _c
 }

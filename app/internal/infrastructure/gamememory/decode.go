@@ -138,6 +138,7 @@ func decodePlayer(l Layout, mem Memory) (player.Player, error) {
 		ErrantryCD: r.u8(l.ErrantryCD),
 		Breeder:    readText(r, l.Breeder),
 		Input:      r.u16(l.Input),
+		Version:    l.Version,
 	}
 	for slot := range p.Items {
 		p.Items[slot] = r.u8(l.Items + 4*uint32(slot))

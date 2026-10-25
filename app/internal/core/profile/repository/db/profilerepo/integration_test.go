@@ -11,6 +11,7 @@ import (
 	"orm/ent"
 	entbreed "orm/ent/breed"
 	entcocoon "orm/ent/cocoon"
+	entitem "orm/ent/item"
 
 	monster "app/internal/core/monster/domain"
 	"app/internal/core/profile"
@@ -133,7 +134,7 @@ var _ = Describe("profilerepo", Label("integration"), func() {
 	})
 
 	It("lists what each item id is called when a monster wants it", func() {
-		client.Item.Create().SetCode(42).SetName("Tiger Chips").SetDesireName("Disc Chips").SetKind("Chips").
+		client.Item.Create().SetVersion(entitem.VersionMr2).SetCode(42).SetName("Tiger Chips").SetDesireName("Disc Chips").SetKind("Chips").
 			SetDescription("d").SetEffect("e").SetSalePrice("500").SetPurchasePrice("-----").SaveX(ctx)
 
 		got, err := repo.ListDesireNames(ctx)

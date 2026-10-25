@@ -1,10 +1,12 @@
 package itemsvc
 
 import (
+	"cmp"
 	"context"
 
 	"app/internal/core/item"
 	"app/internal/core/item/domain"
+	monster "app/internal/core/monster/domain"
 	"app/internal/port"
 )
 
@@ -22,7 +24,7 @@ func (s *Service) Inventory(ctx context.Context) ([]domain.Slot, error) {
 	if err != nil {
 		return nil, err
 	}
-	items, err := s.repo.ListItems(ctx)
+	items, err := s.repo.ListItems(ctx, cmp.Or(p.Version, monster.MR2DX))
 	if err != nil {
 		return nil, err
 	}

@@ -4272,6 +4272,7 @@ type ItemMutation struct {
 	op             Op
 	typ            string
 	id             *int
+	version        *item.Version
 	code           *int
 	addcode        *int
 	name           *string
@@ -4383,6 +4384,42 @@ func (m *ItemMutation) IDs(ctx context.Context) ([]int, error) {
 	default:
 		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
 	}
+}
+
+// SetVersion sets the "version" field.
+func (m *ItemMutation) SetVersion(i item.Version) {
+	m.version = &i
+}
+
+// Version returns the value of the "version" field in the mutation.
+func (m *ItemMutation) Version() (r item.Version, exists bool) {
+	v := m.version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldVersion returns the old "version" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldVersion(ctx context.Context) (v item.Version, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldVersion is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldVersion requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldVersion: %w", err)
+	}
+	return oldValue.Version, nil
+}
+
+// ResetVersion resets all changes to the "version" field.
+func (m *ItemMutation) ResetVersion() {
+	m.version = nil
 }
 
 // SetCode sets the "code" field.
@@ -4727,7 +4764,10 @@ func (m *ItemMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ItemMutation) Fields() []string {
-	fields := make([]string, 0, 8)
+	fields := make([]string, 0, 9)
+	if m.version != nil {
+		fields = append(fields, item.FieldVersion)
+	}
 	if m.code != nil {
 		fields = append(fields, item.FieldCode)
 	}
@@ -4760,6 +4800,8 @@ func (m *ItemMutation) Fields() []string {
 // schema.
 func (m *ItemMutation) Field(name string) (ent.Value, bool) {
 	switch name {
+	case item.FieldVersion:
+		return m.Version()
 	case item.FieldCode:
 		return m.Code()
 	case item.FieldName:
@@ -4785,6 +4827,8 @@ func (m *ItemMutation) Field(name string) (ent.Value, bool) {
 // database failed.
 func (m *ItemMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
+	case item.FieldVersion:
+		return m.OldVersion(ctx)
 	case item.FieldCode:
 		return m.OldCode(ctx)
 	case item.FieldName:
@@ -4810,6 +4854,13 @@ func (m *ItemMutation) OldField(ctx context.Context, name string) (ent.Value, er
 // type.
 func (m *ItemMutation) SetField(name string, value ent.Value) error {
 	switch name {
+	case item.FieldVersion:
+		v, ok := value.(item.Version)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetVersion(v)
+		return nil
 	case item.FieldCode:
 		v, ok := value.(int)
 		if !ok {
@@ -4930,6 +4981,9 @@ func (m *ItemMutation) ClearField(name string) error {
 // It returns an error if the field is not defined in the schema.
 func (m *ItemMutation) ResetField(name string) error {
 	switch name {
+	case item.FieldVersion:
+		m.ResetVersion()
+		return nil
 	case item.FieldCode:
 		m.ResetCode()
 		return nil

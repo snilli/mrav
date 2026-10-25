@@ -11,6 +11,7 @@ import (
 	"app/internal/core/item"
 	"app/internal/core/item/domain"
 	"app/internal/core/item/service/itemsvc"
+	monster "app/internal/core/monster/domain"
 	player "app/internal/core/player/domain"
 	mockitem "app/mock/core/item"
 	mockport "app/mock/port"
@@ -40,7 +41,7 @@ var _ = Describe("ItemService", func() {
 		}
 		p.Items[0], p.Items[3] = 29, 0
 		players.EXPECT().Player(ctx).Return(p, nil)
-		repo.EXPECT().ListItems(ctx).Return([]domain.Item{potato, banana}, nil)
+		repo.EXPECT().ListItems(ctx, monster.MR2DX).Return([]domain.Item{potato, banana}, nil)
 
 		slots, err := svc.Inventory(ctx)
 		Expect(err).NotTo(HaveOccurred())
@@ -50,9 +51,17 @@ var _ = Describe("ItemService", func() {
 		Expect(slots[1].Item).To(BeNil())
 	})
 
+	It("names the items as the game the player plays has them", func() {
+		players.EXPECT().Player(ctx).Return(player.Player{Version: monster.MR2}, nil)
+		repo.EXPECT().ListItems(ctx, monster.MR2).Return(nil, nil)
+
+		_, err := svc.Inventory(ctx)
+		Expect(err).NotTo(HaveOccurred())
+	})
+
 	It("locks the places the house has no room for, when the game says how far it is upgraded", func() {
 		players.EXPECT().Player(ctx).Return(player.Player{Ranch: player.Ranch{Known: true, House: 1}}, nil)
-		repo.EXPECT().ListItems(ctx).Return(nil, nil)
+		repo.EXPECT().ListItems(ctx, monster.MR2DX).Return(nil, nil)
 
 		slots, err := svc.Inventory(ctx)
 		Expect(err).NotTo(HaveOccurred())
@@ -62,7 +71,7 @@ var _ = Describe("ItemService", func() {
 
 	It("locks nothing when the game does not say", func() {
 		players.EXPECT().Player(ctx).Return(player.Player{}, nil)
-		repo.EXPECT().ListItems(ctx).Return(nil, nil)
+		repo.EXPECT().ListItems(ctx, monster.MR2DX).Return(nil, nil)
 
 		slots, err := svc.Inventory(ctx)
 		Expect(err).NotTo(HaveOccurred())
@@ -80,7 +89,7 @@ var _ = Describe("ItemService", func() {
 
 	It("returns the repository's error when it cannot list the items", func() {
 		players.EXPECT().Player(ctx).Return(player.Player{}, nil)
-		repo.EXPECT().ListItems(ctx).Return(nil, errors.New("disk gone"))
+		repo.EXPECT().ListItems(ctx, monster.MR2DX).Return(nil, errors.New("disk gone"))
 
 		_, err := svc.Inventory(ctx)
 		Expect(err).To(MatchError(ContainSubstring("disk gone")))

@@ -93,6 +93,26 @@ func PurchasePrice(v string) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldPurchasePrice, v))
 }
 
+// VersionEQ applies the EQ predicate on the "version" field.
+func VersionEQ(v Version) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldVersion, v))
+}
+
+// VersionNEQ applies the NEQ predicate on the "version" field.
+func VersionNEQ(v Version) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldVersion, v))
+}
+
+// VersionIn applies the In predicate on the "version" field.
+func VersionIn(vs ...Version) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldVersion, vs...))
+}
+
+// VersionNotIn applies the NotIn predicate on the "version" field.
+func VersionNotIn(vs ...Version) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldVersion, vs...))
+}
+
 // CodeEQ applies the EQ predicate on the "code" field.
 func CodeEQ(v int) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldCode, v))

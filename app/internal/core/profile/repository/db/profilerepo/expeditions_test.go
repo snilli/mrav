@@ -12,6 +12,7 @@ import (
 	"orm/ent"
 	entexpeditionmap "orm/ent/expeditionmap"
 	entexpeditionplace "orm/ent/expeditionplace"
+	entitem "orm/ent/item"
 
 	player "app/internal/core/player/domain"
 	"app/internal/core/profile"
@@ -28,7 +29,7 @@ var _ = Describe("profilerepo expedition maps", Label("integration"), func() {
 	)
 
 	item := func(code int, name, price string) *ent.Item {
-		return client.Item.Create().SetCode(code).SetName(name).SetDesireName(name).SetKind("Item").
+		return client.Item.Create().SetVersion(entitem.VersionMr2).SetCode(code).SetName(name).SetDesireName(name).SetKind("Item").
 			SetDescription("").SetEffect("").SetSalePrice(price).SetPurchasePrice("-----").SaveX(ctx)
 	}
 	slots := map[[3]int]int{}
@@ -341,7 +342,7 @@ var _ = Describe("profilerepo shipped expedition maps", Label("integration"), fu
 		by := domain.Searcher{Intelligence: 463, Skill: 690, GoodNature: true}
 		maps = load(by)
 		Expect(spot(maps[0], "A").Value).To(BeNumerically("~", 481.8, 1e-6))
-		Expect(spot(maps[0], "A").Building).To(Equal("Mamoth Statue"))
+		Expect(spot(maps[0], "A").Building).To(Equal("Mammoth Statue"))
 		Expect(spot(maps[1], "A").Value).To(BeNumerically("~", 471.78, 1e-6))
 		Expect(spot(maps[2], "F").Value).To(BeNumerically("~", 1672.5, 1e-6))
 

@@ -1,5 +1,7 @@
 package domain
 
+import monster "app/internal/core/monster/domain"
+
 const (
 	ItemSlots         = 20
 	ButtonCount       = 16
@@ -19,6 +21,7 @@ type Player struct {
 	Breeder    string
 	Input      int
 	Ranch      Ranch
+	Version    monster.Version
 }
 
 func (p Player) ErrantrySaleReady() bool { return p.ErrantryCD == errantrySaleReady }
