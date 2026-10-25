@@ -33,6 +33,33 @@ var (
 			},
 		},
 	}
+	// CalendarEventsColumns holds the columns for the "calendar_events" table.
+	CalendarEventsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "version", Type: field.TypeEnum, Enums: []string{"mr2", "mr2dx"}},
+		{Name: "month", Type: field.TypeInt},
+		{Name: "week", Type: field.TypeInt},
+		{Name: "name", Type: field.TypeString},
+		{Name: "kind", Type: field.TypeEnum, Enums: []string{"cup", "invite", "trip", "ranch", "visit"}},
+		{Name: "purse", Type: field.TypeInt, Default: 0},
+		{Name: "prize", Type: field.TypeString, Default: ""},
+		{Name: "unseen", Type: field.TypeString, Default: ""},
+		{Name: "note", Type: field.TypeString, Default: ""},
+		{Name: "conditions", Type: field.TypeJSON, Nullable: true},
+	}
+	// CalendarEventsTable holds the schema information for the "calendar_events" table.
+	CalendarEventsTable = &schema.Table{
+		Name:       "calendar_events",
+		Columns:    CalendarEventsColumns,
+		PrimaryKey: []*schema.Column{CalendarEventsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "calendarevent_version_month_week_name",
+				Unique:  true,
+				Columns: []*schema.Column{CalendarEventsColumns[1], CalendarEventsColumns[2], CalendarEventsColumns[3], CalendarEventsColumns[4]},
+			},
+		},
+	}
 	// CocoonsColumns holds the columns for the "cocoons" table.
 	CocoonsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -282,6 +309,7 @@ var (
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		BreedsTable,
+		CalendarEventsTable,
 		CocoonsTable,
 		ExpeditionLocksTable,
 		ExpeditionMapsTable,

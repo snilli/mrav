@@ -50,6 +50,10 @@ func (s *Service) Current(ctx context.Context) (domain.Profile, error) {
 	if err != nil {
 		return domain.Profile{}, err
 	}
+	calendar, err := s.repo.ListCalendar(ctx, version)
+	if err != nil {
+		return domain.Profile{}, err
+	}
 	by := domain.Searcher{Intelligence: m.Stats[monster.Int], Skill: m.Stats[monster.Skill], GoodNature: m.Nature > 0}
 	var maps []domain.ExpeditionMap
 	for _, sm := range shared {
@@ -67,6 +71,7 @@ func (s *Service) Current(ctx context.Context) (domain.Profile, error) {
 	return domain.Profile{
 		Breeds:    breeds,
 		Maps:      maps,
+		Calendar:  calendar,
 		Monster:   m,
 		Player:    p,
 		Breed:     domain.ResolveBreed(rules, cocoons, m),

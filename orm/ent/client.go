@@ -12,6 +12,7 @@ import (
 	"orm/ent/migrate"
 
 	"orm/ent/breed"
+	"orm/ent/calendarevent"
 	"orm/ent/cocoon"
 	"orm/ent/expeditionlock"
 	"orm/ent/expeditionmap"
@@ -35,6 +36,8 @@ type Client struct {
 	Schema *migrate.Schema
 	// Breed is the client for interacting with the Breed builders.
 	Breed *BreedClient
+	// CalendarEvent is the client for interacting with the CalendarEvent builders.
+	CalendarEvent *CalendarEventClient
 	// Cocoon is the client for interacting with the Cocoon builders.
 	Cocoon *CocoonClient
 	// ExpeditionLock is the client for interacting with the ExpeditionLock builders.
@@ -65,6 +68,7 @@ func NewClient(opts ...Option) *Client {
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.Breed = NewBreedClient(c.config)
+	c.CalendarEvent = NewCalendarEventClient(c.config)
 	c.Cocoon = NewCocoonClient(c.config)
 	c.ExpeditionLock = NewExpeditionLockClient(c.config)
 	c.ExpeditionMap = NewExpeditionMapClient(c.config)
@@ -167,6 +171,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		ctx:             ctx,
 		config:          cfg,
 		Breed:           NewBreedClient(cfg),
+		CalendarEvent:   NewCalendarEventClient(cfg),
 		Cocoon:          NewCocoonClient(cfg),
 		ExpeditionLock:  NewExpeditionLockClient(cfg),
 		ExpeditionMap:   NewExpeditionMapClient(cfg),
@@ -196,6 +201,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		ctx:             ctx,
 		config:          cfg,
 		Breed:           NewBreedClient(cfg),
+		CalendarEvent:   NewCalendarEventClient(cfg),
 		Cocoon:          NewCocoonClient(cfg),
 		ExpeditionLock:  NewExpeditionLockClient(cfg),
 		ExpeditionMap:   NewExpeditionMapClient(cfg),
@@ -234,8 +240,8 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.Breed, c.Cocoon, c.ExpeditionLock, c.ExpeditionMap, c.ExpeditionPlace,
-		c.Genus, c.Item, c.LootChance, c.Move, c.TrainingGain,
+		c.Breed, c.CalendarEvent, c.Cocoon, c.ExpeditionLock, c.ExpeditionMap,
+		c.ExpeditionPlace, c.Genus, c.Item, c.LootChance, c.Move, c.TrainingGain,
 	} {
 		n.Use(hooks...)
 	}
@@ -245,8 +251,8 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.Breed, c.Cocoon, c.ExpeditionLock, c.ExpeditionMap, c.ExpeditionPlace,
-		c.Genus, c.Item, c.LootChance, c.Move, c.TrainingGain,
+		c.Breed, c.CalendarEvent, c.Cocoon, c.ExpeditionLock, c.ExpeditionMap,
+		c.ExpeditionPlace, c.Genus, c.Item, c.LootChance, c.Move, c.TrainingGain,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -257,6 +263,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 	switch m := m.(type) {
 	case *BreedMutation:
 		return c.Breed.mutate(ctx, m)
+	case *CalendarEventMutation:
+		return c.CalendarEvent.mutate(ctx, m)
 	case *CocoonMutation:
 		return c.Cocoon.mutate(ctx, m)
 	case *ExpeditionLockMutation:
@@ -410,6 +418,139 @@ func (c *BreedClient) mutate(ctx context.Context, m *BreedMutation) (Value, erro
 		return (&BreedDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Breed mutation op: %q", m.Op())
+	}
+}
+
+// CalendarEventClient is a client for the CalendarEvent schema.
+type CalendarEventClient struct {
+	config
+}
+
+// NewCalendarEventClient returns a client for the CalendarEvent from the given config.
+func NewCalendarEventClient(c config) *CalendarEventClient {
+	return &CalendarEventClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `calendarevent.Hooks(f(g(h())))`.
+func (c *CalendarEventClient) Use(hooks ...Hook) {
+	c.hooks.CalendarEvent = append(c.hooks.CalendarEvent, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `calendarevent.Intercept(f(g(h())))`.
+func (c *CalendarEventClient) Intercept(interceptors ...Interceptor) {
+	c.inters.CalendarEvent = append(c.inters.CalendarEvent, interceptors...)
+}
+
+// Create returns a builder for creating a CalendarEvent entity.
+func (c *CalendarEventClient) Create() *CalendarEventCreate {
+	mutation := newCalendarEventMutation(c.config, OpCreate)
+	return &CalendarEventCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of CalendarEvent entities.
+func (c *CalendarEventClient) CreateBulk(builders ...*CalendarEventCreate) *CalendarEventCreateBulk {
+	return &CalendarEventCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *CalendarEventClient) MapCreateBulk(slice any, setFunc func(*CalendarEventCreate, int)) *CalendarEventCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &CalendarEventCreateBulk{err: fmt.Errorf("calling to CalendarEventClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*CalendarEventCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &CalendarEventCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for CalendarEvent.
+func (c *CalendarEventClient) Update() *CalendarEventUpdate {
+	mutation := newCalendarEventMutation(c.config, OpUpdate)
+	return &CalendarEventUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *CalendarEventClient) UpdateOne(_m *CalendarEvent) *CalendarEventUpdateOne {
+	mutation := newCalendarEventMutation(c.config, OpUpdateOne, withCalendarEvent(_m))
+	return &CalendarEventUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *CalendarEventClient) UpdateOneID(id int) *CalendarEventUpdateOne {
+	mutation := newCalendarEventMutation(c.config, OpUpdateOne, withCalendarEventID(id))
+	return &CalendarEventUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for CalendarEvent.
+func (c *CalendarEventClient) Delete() *CalendarEventDelete {
+	mutation := newCalendarEventMutation(c.config, OpDelete)
+	return &CalendarEventDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *CalendarEventClient) DeleteOne(_m *CalendarEvent) *CalendarEventDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *CalendarEventClient) DeleteOneID(id int) *CalendarEventDeleteOne {
+	builder := c.Delete().Where(calendarevent.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &CalendarEventDeleteOne{builder}
+}
+
+// Query returns a query builder for CalendarEvent.
+func (c *CalendarEventClient) Query() *CalendarEventQuery {
+	return &CalendarEventQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeCalendarEvent},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a CalendarEvent entity by its id.
+func (c *CalendarEventClient) Get(ctx context.Context, id int) (*CalendarEvent, error) {
+	return c.Query().Where(calendarevent.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *CalendarEventClient) GetX(ctx context.Context, id int) *CalendarEvent {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *CalendarEventClient) Hooks() []Hook {
+	return c.hooks.CalendarEvent
+}
+
+// Interceptors returns the client interceptors.
+func (c *CalendarEventClient) Interceptors() []Interceptor {
+	return c.inters.CalendarEvent
+}
+
+func (c *CalendarEventClient) mutate(ctx context.Context, m *CalendarEventMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&CalendarEventCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&CalendarEventUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&CalendarEventUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&CalendarEventDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown CalendarEvent mutation op: %q", m.Op())
 	}
 }
 
@@ -1757,11 +1898,11 @@ func (c *TrainingGainClient) mutate(ctx context.Context, m *TrainingGainMutation
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Breed, Cocoon, ExpeditionLock, ExpeditionMap, ExpeditionPlace, Genus, Item,
-		LootChance, Move, TrainingGain []ent.Hook
+		Breed, CalendarEvent, Cocoon, ExpeditionLock, ExpeditionMap, ExpeditionPlace,
+		Genus, Item, LootChance, Move, TrainingGain []ent.Hook
 	}
 	inters struct {
-		Breed, Cocoon, ExpeditionLock, ExpeditionMap, ExpeditionPlace, Genus, Item,
-		LootChance, Move, TrainingGain []ent.Interceptor
+		Breed, CalendarEvent, Cocoon, ExpeditionLock, ExpeditionMap, ExpeditionPlace,
+		Genus, Item, LootChance, Move, TrainingGain []ent.Interceptor
 	}
 )

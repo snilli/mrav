@@ -13,4 +13,5 @@ type ProfileRepository interface {
 	ListCocoonRules(ctx context.Context, version monster.Version) ([]domain.CocoonRule, error)
 	ListDesireNames(ctx context.Context) (map[int]string, error)
 	ListExpeditionMaps(ctx context.Context) ([]domain.ExpeditionMap, error)
+	ListCalendar(ctx context.Context, version monster.Version) ([]domain.CalendarEntry, error)
 }

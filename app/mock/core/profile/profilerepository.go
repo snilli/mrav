@@ -122,6 +122,74 @@ func (_c *MockProfileRepository_ListBreedRules_Call) RunAndReturn(run func(ctx c
 	return _c
 }
 
+// ListCalendar provides a mock function for the type MockProfileRepository
+func (_mock *MockProfileRepository) ListCalendar(ctx context.Context, version domain.Version) ([]domain0.CalendarEntry, error) {
+	ret := _mock.Called(ctx, version)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListCalendar")
+	}
+
+	var r0 []domain0.CalendarEntry
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, domain.Version) ([]domain0.CalendarEntry, error)); ok {
+		return returnFunc(ctx, version)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, domain.Version) []domain0.CalendarEntry); ok {
+		r0 = returnFunc(ctx, version)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]domain0.CalendarEntry)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, domain.Version) error); ok {
+		r1 = returnFunc(ctx, version)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockProfileRepository_ListCalendar_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ListCalendar'
+type MockProfileRepository_ListCalendar_Call struct {
+	*mock.Call
+}
+
+// ListCalendar is a helper method to define mock.On call
+//   - ctx context.Context
+//   - version domain.Version
+func (_e *MockProfileRepository_Expecter) ListCalendar(ctx any, version any) *MockProfileRepository_ListCalendar_Call {
+	return &MockProfileRepository_ListCalendar_Call{Call: _e.mock.On("ListCalendar", ctx, version)}
+}
+
+func (_c *MockProfileRepository_ListCalendar_Call) Run(run func(ctx context.Context, version domain.Version)) *MockProfileRepository_ListCalendar_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 domain.Version
+		if args[1] != nil {
+			arg1 = args[1].(domain.Version)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockProfileRepository_ListCalendar_Call) Return(calendarEntrys []domain0.CalendarEntry, err error) *MockProfileRepository_ListCalendar_Call {
+	_c.Call.Return(calendarEntrys, err)
+	return _c
+}
+
+func (_c *MockProfileRepository_ListCalendar_Call) RunAndReturn(run func(ctx context.Context, version domain.Version) ([]domain0.CalendarEntry, error)) *MockProfileRepository_ListCalendar_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // ListCocoonRules provides a mock function for the type MockProfileRepository
 func (_mock *MockProfileRepository) ListCocoonRules(ctx context.Context, version domain.Version) ([]domain0.CocoonRule, error) {
 	ret := _mock.Called(ctx, version)

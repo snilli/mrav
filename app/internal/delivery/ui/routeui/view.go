@@ -23,9 +23,14 @@ type View struct {
 	Standing     []profileui.Box
 	Map          domain.ExpeditionMap
 	Route        domain.Route
+	Got          map[string][]int
+	Rank         map[string]int
+	Order        map[string]int
+	Shown        string
+	Ways         map[string]domain.Way
 }
 
-func NewView(p domain.Profile, m domain.ExpeditionMap) (View, error) {
+func NewView(p domain.Profile, m domain.ExpeditionMap, got map[string][]int) (View, error) {
 	mon := p.Monster
 	trip, _ := m.Trip()
 	walker := domain.Walker{
@@ -48,10 +53,14 @@ func NewView(p domain.Profile, m domain.ExpeditionMap) (View, error) {
 	if err != nil {
 		return View{}, err
 	}
+	by := domain.Searcher{Intelligence: mon.Stats[monster.Int], Skill: mon.Stats[monster.Skill], GoodNature: mon.Nature > 0}
 	v := View{
-		Name: m.Name, Intelligence: walker.Intelligence, Marker: marker, Map: m, Route: route,
-		Places: placeViews(m, route), Teleports: teleports(m),
+		Name: m.Name, Intelligence: walker.Intelligence, Marker: marker, Map: m, Route: route, Got: got,
+		Places: placeViews(m, route, got, by), Teleports: teleports(m),
 	}
+	here := walker
+	here.At = marker
+	v.Ways = m.WaysTo(here)
 	if marker != nil {
 		v.Standing = standing(ranch, m)
 	}
@@ -72,6 +81,8 @@ type PlaceView struct {
 	Building string
 	Stop     int
 	Worth    string
+	Need     string
+	Got      []string
 	Loot     []DropView
 }
 
@@ -85,25 +96,57 @@ var storyItems = map[string]bool{
 	"Old Sheath": true, "Mask": true, "Big Footstep": true, "Fire Feather": true, "Strong Glue": true, "Gold Peach": true,
 }
 
-func placeViews(m domain.ExpeditionMap, route domain.Route) []PlaceView {
+func placeViews(m domain.ExpeditionMap, route domain.Route, got map[string][]int, by domain.Searcher) []PlaceView {
 	stop := make(map[string]int, len(route.Spots))
 	var out []PlaceView
 	for i, s := range route.Spots {
 		stop[s.Name] = i + 1
-		out = append(out, placeView(s, i+1))
+		p := placeView(s, i+1, by)
+		p.Got = itemNames(s, got[s.Name])
+		out = append(out, p)
 	}
-	var rest []PlaceView
+	var searched, rest []PlaceView
 	for _, s := range m.Spots {
-		if stop[s.Name] == 0 {
-			rest = append(rest, placeView(s, 0))
+		switch codes := got[s.Name]; {
+		case stop[s.Name] == 0 && len(codes) > 0:
+			p := placeView(s, 0, by)
+			p.Got, p.Worth, p.Need = itemNames(s, codes), "", ""
+			searched = append(searched, p)
+		case stop[s.Name] == 0:
+			rest = append(rest, placeView(s, 0, by))
 		}
 	}
-	slices.SortStableFunc(rest, func(a, b PlaceView) int { return strings.Compare(a.Name, b.Name) })
-	return append(out, rest...)
+	byName := func(a, b PlaceView) int { return strings.Compare(a.Name, b.Name) }
+	slices.SortStableFunc(searched, byName)
+	slices.SortStableFunc(rest, byName)
+	return append(append(out, searched...), rest...)
 }
 
-func placeView(s domain.Spot, stop int) PlaceView {
+func itemNames(s domain.Spot, codes []int) []string {
+	var out []string
+	for _, c := range codes {
+		out = append(out, itemName(s, c))
+	}
+	return out
+}
+
+func itemName(s domain.Spot, code int) string {
+	for _, c := range s.Chances {
+		if c.Code == code {
+			return c.Item
+		}
+	}
+	return fmt.Sprintf("item #%d", code)
+}
+
+func placeView(s domain.Spot, stop int, by domain.Searcher) PlaceView {
 	p := PlaceView{Name: s.Name, Building: s.Building, Stop: stop}
+	if stat, need, ok := s.NextTier(by); ok {
+		p.Need = fmt.Sprintf("%s %d for more", stat, need)
+		if len(s.Loot) == 0 {
+			p.Need = fmt.Sprintf("needs %s %d", stat, need)
+		}
+	}
 	if round(s.Value) > 0 {
 		p.Worth = "about " + profileui.Gold(round(s.Value))
 	}

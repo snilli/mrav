@@ -7,6 +7,19 @@ const (
 	NatureAtMost  = "nature_at_most"
 	SubGenusIn    = "sub_genus_in"
 	SubGenusNotIn = "sub_genus_not_in"
+
+	RankAtLeast        = "rank_at_least"
+	RankExactly        = "rank_exactly"
+	CupGrade           = "cup_grade"
+	TrainerRankAtLeast = "trainer_rank_at_least"
+	YearAtLeast        = "year_at_least"
+	AgeUnder           = "age_under"
+	AgeAtLeast         = "age_at_least"
+	Expedition         = "expedition"
+	PhoenixOpen        = "phoenix_open"
+	PhoenixDone        = "phoenix_done"
+	IMaYear            = "ima_year"
+	FacilityNext       = "facility_next"
 )
 
 type Condition struct {

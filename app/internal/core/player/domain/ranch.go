@@ -41,6 +41,9 @@ type Ranch struct {
 	OffsetKnown      bool
 
 	PhoenixDone, PhoenixKnown bool
+
+	Found      int
+	FoundKnown bool
 }
 
 const (

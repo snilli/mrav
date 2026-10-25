@@ -9,6 +9,9 @@ import (
 // Breed is the predicate function for breed builders.
 type Breed func(*sql.Selector)
 
+// CalendarEvent is the predicate function for calendarevent builders.
+type CalendarEvent func(*sql.Selector)
+
 // Cocoon is the predicate function for cocoon builders.
 type Cocoon func(*sql.Selector)
 

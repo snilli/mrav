@@ -116,4 +116,22 @@ var _ = Describe("what a search of a place turns up", func() {
 			Expect(names).To(Equal([]string{"B", "A", "C"}))
 		})
 	})
+
+	It("keeps the item's code on what it turns up", func() {
+		spot := domain.Spot{Chances: []domain.Chance{{Code: 46, Item: "Suezo Chips", Pct: 100}}}
+		_, loot := spot.Searched(domain.Searcher{})
+		Expect(loot).To(Equal([]domain.Drop{{Code: 46, Item: "Suezo Chips", Pct: 100}}))
+	})
+
+	DescribeTable("says what the stat that the place goes by must reach for its next table of chances",
+		func(spot domain.Spot, by domain.Searcher, stat string, need int, ok bool) {
+			gotStat, gotNeed, gotOK := spot.NextTier(by)
+			Expect([]any{gotStat, gotNeed, gotOK}).To(Equal([]any{stat, need, ok}))
+		},
+		Entry("below the second table", mine(), domain.Searcher{Intelligence: 50}, "INT", 100, true),
+		Entry("at the top table", mine(), domain.Searcher{Intelligence: 150}, "", 0, false),
+		Entry("a place that goes by skill, below its first table", domain.Spot{BySkill: true, Chances: []domain.Chance{{MinStat: 200, Item: "Gem", Pct: 100}}},
+			domain.Searcher{Skill: 10}, "SKI", 200, true),
+		Entry("only the tables of the monster's nature", mine(), domain.Searcher{Intelligence: 50, GoodNature: true}, "INT", 100, true),
+	)
 })

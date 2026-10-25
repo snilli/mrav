@@ -76,6 +76,7 @@ func New(win fyne.Window, p Parts) *Shell {
 		{"Training", scrolled(p.Training.Content())},
 		{"Errantry", p.Errantry.Content()},
 		{"Ranch", scrolled(p.Dashboard.Ranch())},
+		{"Calendar", p.Dashboard.Calendar()},
 		{"Route", scrolled(p.Route.Content())},
 		{"Items", scrolled(p.Items.Content())},
 	}

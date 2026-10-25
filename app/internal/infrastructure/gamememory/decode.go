@@ -175,6 +175,9 @@ func decodePlayer(l Layout, mem Memory) (player.Player, error) {
 			if energy, ok := word(l.Energy); ok {
 				p.Ranch.Energy, p.Ranch.EnergyKnown = int(int16(energy)), true
 			}
+			if found, ok := word(l.Found); ok {
+				p.Ranch.Found, p.Ranch.FoundKnown = int(found), true
+			}
 			if tile, ok := word(l.Tile); ok {
 				p.Ranch.Tile, p.Ranch.WalkKnown = int(tile), true
 			}

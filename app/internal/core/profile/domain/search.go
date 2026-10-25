@@ -9,6 +9,7 @@ type Chance struct {
 	Good    bool
 	MinStat int
 	Slot    int
+	Code    int
 	Item    string
 	Pct     float64
 	Price   int
@@ -41,10 +42,27 @@ func (s Spot) Searched(by Searcher) (value float64, loot []Drop) {
 	})
 	for _, c := range rows {
 		if c.Pct > 0 {
-			loot = append(loot, Drop{Item: c.Item, Pct: c.Pct, Price: c.Price})
+			loot = append(loot, Drop{Code: c.Code, Item: c.Item, Pct: c.Pct, Price: c.Price})
 		}
 	}
 	return value, loot
+}
+
+func (s Spot) NextTier(by Searcher) (stat string, need int, ok bool) {
+	have := by.Intelligence
+	stat = "INT"
+	if s.BySkill {
+		have, stat = by.Skill, "SKI"
+	}
+	for _, c := range s.Chances {
+		if c.Good == by.GoodNature && c.MinStat > have && (!ok || c.MinStat < need) {
+			need, ok = c.MinStat, true
+		}
+	}
+	if !ok {
+		return "", 0, false
+	}
+	return stat, need, true
 }
 
 func (m ExpeditionMap) For(by Searcher) ExpeditionMap {

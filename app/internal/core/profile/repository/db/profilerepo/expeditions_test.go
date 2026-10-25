@@ -129,18 +129,18 @@ var _ = Describe("profilerepo expedition maps", Label("integration"), func() {
 		Expect(maps[1].Locks).To(BeEmpty())
 	})
 
-	It("gives each place every table of chances that it has, whichever the nature and the tier, with the item and what it sells for", func() {
+	It("gives each place every table of chances that it has, whichever the nature and the tier, with the item, its code and what it sells for", func() {
 		Expect(chancesOf("Cave", "A")).To(ConsistOf(
-			domain.Chance{MinStat: 0, Slot: 0, Item: "Gem", Pct: 10, Price: 1000},
-			domain.Chance{MinStat: 0, Slot: 1, Item: "Nuts", Pct: 90, Price: 100},
-			domain.Chance{MinStat: 100, Slot: 0, Item: "Gem", Pct: 20, Price: 1000},
-			domain.Chance{MinStat: 100, Slot: 1, Item: "Nuts", Pct: 80, Price: 100},
-			domain.Chance{Good: true, MinStat: 0, Slot: 0, Item: "Gem", Pct: 50, Price: 1000},
-			domain.Chance{Good: true, MinStat: 100, Slot: 0, Item: "Gem", Pct: 60, Price: 1000},
+			domain.Chance{MinStat: 0, Slot: 0, Code: 900, Item: "Gem", Pct: 10, Price: 1000},
+			domain.Chance{MinStat: 0, Slot: 1, Code: 901, Item: "Nuts", Pct: 90, Price: 100},
+			domain.Chance{MinStat: 100, Slot: 0, Code: 900, Item: "Gem", Pct: 20, Price: 1000},
+			domain.Chance{MinStat: 100, Slot: 1, Code: 901, Item: "Nuts", Pct: 80, Price: 100},
+			domain.Chance{Good: true, MinStat: 0, Slot: 0, Code: 900, Item: "Gem", Pct: 50, Price: 1000},
+			domain.Chance{Good: true, MinStat: 100, Slot: 0, Code: 900, Item: "Gem", Pct: 60, Price: 1000},
 		))
 		Expect(chancesOf("Cave", "B")).To(ConsistOf(
-			domain.Chance{MinStat: 0, Slot: 0, Item: "Glue", Pct: 100, Price: 0},
-			domain.Chance{MinStat: 200, Slot: 0, Item: "Gem", Pct: 100, Price: 1000},
+			domain.Chance{MinStat: 0, Slot: 0, Code: 903, Item: "Glue", Pct: 100, Price: 0},
+			domain.Chance{MinStat: 200, Slot: 0, Code: 900, Item: "Gem", Pct: 100, Price: 1000},
 		))
 	})
 
@@ -148,7 +148,7 @@ var _ = Describe("profilerepo expedition maps", Label("integration"), func() {
 		a := client.ExpeditionPlace.Query().Where(entexpeditionplace.Name("A")).OnlyX(ctx)
 		dear := item(904, "Nuts", "300")
 		chance(a, false, 0, 0, dear, 5)
-		Expect(chancesOf("Cave", "A")).To(ContainElement(domain.Chance{MinStat: 0, Slot: 2, Item: "Nuts", Pct: 5, Price: 300}))
+		Expect(chancesOf("Cave", "A")).To(ContainElement(domain.Chance{MinStat: 0, Slot: 2, Code: 904, Item: "Nuts", Pct: 5, Price: 300}))
 	})
 
 	It("lists a place that has no chances at all, with none", func() {
@@ -263,16 +263,16 @@ var _ = Describe("profilerepo shipped expedition maps", Label("integration"), fu
 			Expect(m.Tiles[9*m.Width+last]).To(Equal(domain.Wall))
 		})
 
-		It("has a route to the cave and back for a monster with the energy for it, which costs 118: 44 steps each way, two of them rocks at 6 each, and a search of 10", func() {
+		It("has a route to the cave and back for a monster with the energy for it, which costs 111: 54 back from the cave over its two rocks at 6 each, 7 less going out as the search is made from the tile before it, and a search of 10", func() {
 			r, err := domain.PlanRoute(maps[3], domain.Walker{Energy: 700, BreakChance: 1, Intelligence: 999})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(r.Spots).To(HaveLen(1))
 			Expect(r.Spots[0].Name).To(Equal("A"))
-			Expect(r.Cost).To(BeNumerically("~", 118, 1e-9))
+			Expect(r.Cost).To(BeNumerically("~", 111, 1e-9))
 		})
 
-		It("has no route for a monster that starts with 130 and breaks half its rocks, which is not enough for the round", func() {
-			r, err := domain.PlanRoute(maps[3], domain.Walker{Energy: 130, BreakChance: 0.5, Intelligence: 999})
+		It("has no route for a monster that starts with 110, one short of the round", func() {
+			r, err := domain.PlanRoute(maps[3], domain.Walker{Energy: 110, BreakChance: 1, Intelligence: 999})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(r.Spots).To(BeEmpty())
 		})
@@ -353,21 +353,21 @@ var _ = Describe("profilerepo shipped expedition maps", Label("integration"), fu
 	It("lists what a search of a place may turn up, with its chance, at the tier of the monster, the likeliest first, and leaves out what it never turns up", func() {
 		good := spot(load(domain.Searcher{Intelligence: 150, GoodNature: true})[0], "A")
 		Expect(good.Loot).To(Equal([]domain.Drop{
-			{Item: "Mint Leaf", Pct: 25, Price: 100},
-			{Item: "Magic Banana", Pct: 25, Price: 100},
-			{Item: "Nuts Oil", Pct: 18.8, Price: 100},
-			{Item: "Griever", Pct: 18.8, Price: 50},
-			{Item: "Zuum Chips", Pct: 12.5, Price: 500},
+			{Code: 18, Item: "Mint Leaf", Pct: 25, Price: 100},
+			{Code: 28, Item: "Magic Banana", Pct: 25, Price: 100},
+			{Code: 23, Item: "Nuts Oil", Pct: 18.8, Price: 100},
+			{Code: 33, Item: "Griever", Pct: 18.8, Price: 50},
+			{Code: 54, Item: "Zuum Chips", Pct: 12.5, Price: 500},
 		}))
 
 		bad := spot(load(domain.Searcher{Intelligence: 150})[0], "A")
 		Expect(bad.Loot).To(Equal([]domain.Drop{
-			{Item: "Pixie Chips", Pct: 18.8, Price: 1000},
-			{Item: "Golem Chips", Pct: 18.8, Price: 500},
-			{Item: "Zuum Chips", Pct: 18.8, Price: 500},
-			{Item: "Magic Banana", Pct: 18.8, Price: 100},
-			{Item: "Mint Leaf", Pct: 12.5, Price: 100},
-			{Item: "Griever", Pct: 12.5, Price: 50},
+			{Code: 146, Item: "Pixie Chips", Pct: 18.8, Price: 1000},
+			{Code: 153, Item: "Golem Chips", Pct: 18.8, Price: 500},
+			{Code: 54, Item: "Zuum Chips", Pct: 18.8, Price: 500},
+			{Code: 28, Item: "Magic Banana", Pct: 18.8, Price: 100},
+			{Code: 18, Item: "Mint Leaf", Pct: 12.5, Price: 100},
+			{Code: 33, Item: "Griever", Pct: 12.5, Price: 50},
 		}))
 	})
 

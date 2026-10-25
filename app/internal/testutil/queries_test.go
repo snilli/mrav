@@ -50,6 +50,8 @@ var _ = Describe("the queries of the viewer", Label("integration"), func() {
 				Expect(err).NotTo(HaveOccurred())
 				_, err = items.ListItems(ctx, version)
 				Expect(err).NotTo(HaveOccurred())
+				_, err = profiles.ListCalendar(ctx, version)
+				Expect(err).NotTo(HaveOccurred())
 			}
 			_, err = gains.ListGains(ctx)
 			Expect(err).NotTo(HaveOccurred())

@@ -137,8 +137,8 @@ var _ = Describe("Shell", func() {
 		It("offers each column the pages that no other column shows, and its own", func() {
 			test.Tap(s.columns[0].add)
 
-			Expect(s.columns[0].choice.Options).To(ConsistOf("Vitals", "Training", "Errantry", "Ranch", "Route", "Items"))
-			Expect(s.columns[1].choice.Options).To(ConsistOf("Moves", "Training", "Errantry", "Ranch", "Route", "Items"))
+			Expect(s.columns[0].choice.Options).To(ConsistOf("Vitals", "Training", "Errantry", "Ranch", "Calendar", "Route", "Items"))
+			Expect(s.columns[1].choice.Options).To(ConsistOf("Moves", "Training", "Errantry", "Ranch", "Calendar", "Route", "Items"))
 		})
 
 		It("shows the page that a column is told to choose, and offers the one that it showed to the others", func() {

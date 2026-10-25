@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"orm/ent/breed"
+	"orm/ent/calendarevent"
 	"orm/ent/cocoon"
 	"orm/ent/expeditionlock"
 	"orm/ent/expeditionmap"
@@ -83,6 +84,7 @@ func checkColumn(t, c string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
 			breed.Table:           breed.ValidColumn,
+			calendarevent.Table:   calendarevent.ValidColumn,
 			cocoon.Table:          cocoon.ValidColumn,
 			expeditionlock.Table:  expeditionlock.ValidColumn,
 			expeditionmap.Table:   expeditionmap.ValidColumn,

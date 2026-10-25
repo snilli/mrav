@@ -16,6 +16,7 @@ type Profile struct {
 	Drug      string
 	Breeds    []BreedUnlock
 	Maps      []ExpeditionMap
+	Calendar  []CalendarEntry
 }
 
 func DesireName(names map[int]string, id int) string {

@@ -14,6 +14,8 @@ type Tx struct {
 	config
 	// Breed is the client for interacting with the Breed builders.
 	Breed *BreedClient
+	// CalendarEvent is the client for interacting with the CalendarEvent builders.
+	CalendarEvent *CalendarEventClient
 	// Cocoon is the client for interacting with the Cocoon builders.
 	Cocoon *CocoonClient
 	// ExpeditionLock is the client for interacting with the ExpeditionLock builders.
@@ -164,6 +166,7 @@ func (tx *Tx) Client() *Client {
 
 func (tx *Tx) init() {
 	tx.Breed = NewBreedClient(tx.config)
+	tx.CalendarEvent = NewCalendarEventClient(tx.config)
 	tx.Cocoon = NewCocoonClient(tx.config)
 	tx.ExpeditionLock = NewExpeditionLockClient(tx.config)
 	tx.ExpeditionMap = NewExpeditionMapClient(tx.config)

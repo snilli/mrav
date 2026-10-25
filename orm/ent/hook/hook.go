@@ -20,6 +20,18 @@ func (f BreedFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.BreedMutation", m)
 }
 
+// The CalendarEventFunc type is an adapter to allow the use of ordinary
+// function as CalendarEvent mutator.
+type CalendarEventFunc func(context.Context, *ent.CalendarEventMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f CalendarEventFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.CalendarEventMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.CalendarEventMutation", m)
+}
+
 // The CocoonFunc type is an adapter to allow the use of ordinary
 // function as Cocoon mutator.
 type CocoonFunc func(context.Context, *ent.CocoonMutation) (ent.Value, error)

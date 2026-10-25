@@ -89,6 +89,7 @@ type Dashboard struct {
 	breedFlags                   [player.BreedCount]*Flag
 
 	ranchBox        fyne.CanvasObject
+	calendar        *CalendarPage
 	expeditionsBody fyne.CanvasObject
 	noTrips         *widget.Label
 	tripNote        *widget.Label
@@ -151,6 +152,7 @@ func NewDashboard(svc profile.ProfileService) *Dashboard {
 	d.expeditionsBody = d.buildExpeditions()
 	d.buildBreeds()
 	d.ranchBox = container.NewVBox(d.ranchBody, d.breeds, d.expeditionsBody)
+	d.calendar = NewCalendarPage()
 
 	d.headerBody = d.buildHeader()
 	d.vitalsBody = d.buildVitals()
@@ -306,6 +308,8 @@ func (d *Dashboard) buildExpeditions() fyne.CanvasObject {
 
 func (d *Dashboard) Ranch() fyne.CanvasObject { return d.ranchBox }
 
+func (d *Dashboard) Calendar() fyne.CanvasObject { return d.calendar.Content() }
+
 func (d *Dashboard) Header() fyne.CanvasObject { return d.header }
 
 func (d *Dashboard) Vitals() fyne.CanvasObject { return d.vitals }
@@ -328,6 +332,7 @@ func (d *Dashboard) apply(p domain.Profile, err error) {
 		d.vitalsBody.Hide()
 		d.ranchBody.Hide()
 		d.expeditionsBody.Hide()
+		d.calendar.Set(nil)
 		return
 	}
 	d.last = &p
@@ -336,6 +341,7 @@ func (d *Dashboard) apply(p domain.Profile, err error) {
 	d.vitalsBody.Show()
 	d.expeditionsBody.Show()
 	d.show(NewMonsterView(p, d.opts))
+	d.calendar.Set(&p)
 }
 
 func (d *Dashboard) redraw() {

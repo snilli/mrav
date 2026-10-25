@@ -37,6 +37,7 @@ type Spot struct {
 }
 
 type Drop struct {
+	Code  int
 	Item  string
 	Pct   float64
 	Price int
@@ -92,15 +93,21 @@ func PlanRoute(m ExpeditionMap, w Walker) (Route, error) {
 	if w.At != nil {
 		origin = *w.At
 	}
-	points := append(append([]Point{origin}, spotPoints(m.Spots)...), m.Start)
+	points := []Point{origin}
+	stands := [][]Point{{origin}}
+	for _, s := range m.Spots {
+		points, stands = append(points, s.At), append(stands, m.beside(s.At, steps))
+	}
+	points, stands = append(points, m.Start), append(stands, []Point{m.Start})
 	base := n + 1
-	dist := make([][]float64, len(points))
-	prev := make([][]int, len(points))
+	dist := make([][]float64, len(stands))
+	land := make([][]Point, len(stands))
+	prev := make([][]int, len(stands))
 	for i, p := range points {
 		d, from := m.walk(p, steps)
-		dist[i], prev[i] = make([]float64, len(points)), from
-		for j, q := range points {
-			dist[i][j] = d[m.index(q)]
+		dist[i], land[i], prev[i] = make([]float64, len(stands)), make([]Point, len(stands)), from
+		for j := range stands {
+			dist[i][j], land[i][j] = m.nearest(d, stands[j])
 		}
 	}
 
@@ -164,19 +171,75 @@ func PlanRoute(m ExpeditionMap, w Walker) (Route, error) {
 	at := 0
 	for _, o := range slices.Backward(order) {
 		r.Spots = append(r.Spots, m.Spots[o])
-		r.Path = append(r.Path, m.trail(prev[at], points[at], points[o+1])...)
+		r.Path = append(r.Path, m.trail(prev[at], points[at], land[at][o+1])...)
 		at = o + 1
 	}
-	r.Path = append(r.Path, m.trail(prev[at], points[at], points[base])...)
+	r.Path = append(r.Path, m.trail(prev[at], points[at], land[at][base])...)
 	return r, nil
 }
 
-func spotPoints(spots []Spot) []Point {
-	out := make([]Point, len(spots))
-	for i, s := range spots {
-		out[i] = s.At
+type Way struct {
+	Steps int
+	Rocks int
+	Gates int
+	Cost  float64
+}
+
+func (m ExpeditionMap) WaysTo(w Walker) map[string]Way {
+	if m.check() != nil {
+		return nil
+	}
+	origin := m.Start
+	if w.At != nil && m.inside(*w.At) {
+		origin = *w.At
+	}
+	steps := m.stepCosts(w)
+	dist, from := m.walk(origin, steps)
+	out := map[string]Way{}
+	for _, s := range m.Spots {
+		d, at := m.nearest(dist, m.beside(s.At, steps))
+		if math.IsInf(d, 1) {
+			continue
+		}
+		way := Way{Cost: d + SearchCost}
+		for _, p := range m.trail(from, origin, at) {
+			way.Steps++
+			switch m.Tiles[m.index(p)] {
+			case Rock:
+				way.Rocks++
+			case Gate:
+				way.Gates++
+			}
+		}
+		out[s.Name] = way
 	}
 	return out
+}
+
+func Near(a, b Point) bool {
+	return max(a.X-b.X, b.X-a.X) <= 1 && max(a.Y-b.Y, b.Y-a.Y) <= 1
+}
+
+func (m ExpeditionMap) beside(p Point, steps []float64) []Point {
+	var out []Point
+	for y := p.Y - 1; y <= p.Y+1; y++ {
+		for x := p.X - 1; x <= p.X+1; x++ {
+			if q := (Point{X: x, Y: y}); m.inside(q) && !math.IsInf(steps[m.index(q)], 1) {
+				out = append(out, q)
+			}
+		}
+	}
+	return out
+}
+
+func (m ExpeditionMap) nearest(dist []float64, at []Point) (float64, Point) {
+	best, where := math.Inf(1), Point{}
+	for _, p := range at {
+		if d := dist[m.index(p)]; d < best {
+			best, where = d, p
+		}
+	}
+	return best, where
 }
 
 func (m ExpeditionMap) Here(r player.Ranch) bool {

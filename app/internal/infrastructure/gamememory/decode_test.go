@@ -26,7 +26,7 @@ type addresses struct {
 	record                                                             uint32
 	date, tournament, grade, house, barn, altar                        uint32
 	unlocks, phoenix                                                   uint32
-	energy, tile, position                                             uint32
+	energy, tile, position, found                                      uint32
 }
 
 var (
@@ -62,7 +62,7 @@ var (
 		record: 0x97A5E,
 		date:   0x9A7D8, tournament: 0x9A62C, grade: 0x9A56C, house: 0x9A56D, barn: 0x9A56E, altar: 0x9A5FC,
 		unlocks: 0x9A936, phoenix: 0x9A97E,
-		energy: 0x1DE8B84, tile: 0x1DE8B7E, position: 0x1DE8B88,
+		energy: 0x1DE8B84, tile: 0x1DE8B7E, position: 0x1DE8B88, found: 0x1DE8BAC,
 	}
 )
 
@@ -203,6 +203,9 @@ func monsterImage(a addresses, name, breeder []byte) *image {
 		img.i16module(a.tile, 911)
 		img.i16module(a.position, -3)
 		img.i16module(a.position+2, 2)
+		if a.found != 0 {
+			img.i16module(a.found, 46)
+		}
 	}
 	if a.energy != 0 && a.energy < ramSize {
 		img.i16(a.energy, 485)
@@ -281,7 +284,7 @@ var _ = Describe("decode", func() {
 				Known: true, Date: 155, Tournament: 1003, Grade: 6, House: 2, Barn: 1, Altar: 3,
 				Unlocked: [player.BreedCount]bool{0: true, 1: true, 36: true}, Energy: -5, EnergyKnown: true,
 				Tile: 911, WalkKnown: true, OffsetX: -3, OffsetY: 2, OffsetKnown: true,
-				PhoenixKnown: true, PhoenixDone: true,
+				PhoenixKnown: true, PhoenixDone: true, Found: 46, FoundKnown: true,
 			}),
 	)
 

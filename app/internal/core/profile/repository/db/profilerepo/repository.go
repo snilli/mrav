@@ -22,12 +22,13 @@ import (
 )
 
 type Repository struct {
-	client  *orm.Client
-	genera  memo.Cache[struct{}, map[monster.Genus]string]
-	breeds  memo.Cache[breedsKey, []domain.BreedRule]
-	cocoons memo.Cache[monster.Version, []domain.CocoonRule]
-	desires memo.Cache[struct{}, map[int]string]
-	maps    memo.Cache[struct{}, []domain.ExpeditionMap]
+	client   *orm.Client
+	genera   memo.Cache[struct{}, map[monster.Genus]string]
+	breeds   memo.Cache[breedsKey, []domain.BreedRule]
+	cocoons  memo.Cache[monster.Version, []domain.CocoonRule]
+	desires  memo.Cache[struct{}, map[int]string]
+	maps     memo.Cache[struct{}, []domain.ExpeditionMap]
+	calendar memo.Cache[monster.Version, []domain.CalendarEntry]
 }
 
 type breedsKey struct {
@@ -150,7 +151,7 @@ func (r *Repository) loadExpeditionMaps(ctx context.Context) ([]domain.Expeditio
 	chances := make(map[int][]domain.Chance, len(places))
 	for _, c := range rules {
 		chances[c.PlaceID] = append(chances[c.PlaceID], domain.Chance{
-			Good: c.Good, MinStat: c.MinStat, Slot: c.Slot, Item: c.Edges.Item.Name, Pct: c.Pct, Price: price(c.Edges.Item.SalePrice),
+			Good: c.Good, MinStat: c.MinStat, Slot: c.Slot, Code: c.Edges.Item.Code, Item: c.Edges.Item.Name, Pct: c.Pct, Price: price(c.Edges.Item.SalePrice),
 		})
 	}
 	placesOf := make(map[int][]*ent.ExpeditionPlace, len(rows))

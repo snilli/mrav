@@ -39,6 +39,7 @@ var _ = Describe("ProfileService", func() {
 		repo.EXPECT().ListCocoonRules(ctx, monster.MR2DX).Return(nil, nil)
 		repo.EXPECT().ListDesireNames(ctx).Return(desires, nil)
 		repo.EXPECT().ListExpeditionMaps(ctx).Return(nil, nil)
+		repo.EXPECT().ListCalendar(ctx, monster.MR2DX).Return(nil, nil)
 	}
 
 	BeforeEach(func() {
@@ -75,10 +76,12 @@ var _ = Describe("ProfileService", func() {
 		repo.EXPECT().ListCocoonRules(ctx, monster.MR2).Return(nil, nil)
 		repo.EXPECT().ListDesireNames(ctx).Return(desires, nil)
 		repo.EXPECT().ListExpeditionMaps(ctx).Return(nil, nil)
+		repo.EXPECT().ListCalendar(ctx, monster.MR2).Return([]domain.CalendarEntry{{Name: "Sirius Cup (B)"}}, nil)
 
 		got, err := svc.Current(ctx)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(got.Breed.Name).To(Equal("Hengerdina"))
+		Expect(got.Calendar).To(Equal([]domain.CalendarEntry{{Name: "Sirius Cup (B)"}}))
 	})
 
 	It("lists the main breeds with whether each is unlocked, when the game says", func() {
@@ -90,6 +93,7 @@ var _ = Describe("ProfileService", func() {
 		repo.EXPECT().ListCocoonRules(ctx, monster.MR2DX).Return(nil, nil)
 		repo.EXPECT().ListDesireNames(ctx).Return(desires, nil)
 		repo.EXPECT().ListExpeditionMaps(ctx).Return(nil, nil)
+		repo.EXPECT().ListCalendar(ctx, monster.MR2DX).Return(nil, nil)
 
 		got, err := svc.Current(ctx)
 		Expect(err).NotTo(HaveOccurred())
@@ -116,6 +120,7 @@ var _ = Describe("ProfileService", func() {
 		repo.EXPECT().ListCocoonRules(ctx, monster.MR2DX).Return(nil, nil)
 		repo.EXPECT().ListDesireNames(ctx).Return(desires, nil)
 		repo.EXPECT().ListExpeditionMaps(ctx).Return(maps, nil)
+		repo.EXPECT().ListCalendar(ctx, monster.MR2DX).Return(nil, nil)
 	}
 
 	It("gives the maps of the trips as the monster would search them, by its skill where the building goes by skill and whether its nature is good", func() {
@@ -153,6 +158,7 @@ var _ = Describe("ProfileService", func() {
 		repo.EXPECT().ListCocoonRules(ctx, monster.MR2DX).Return(nil, nil)
 		repo.EXPECT().ListDesireNames(ctx).Return(desires, nil)
 		repo.EXPECT().ListExpeditionMaps(ctx).Return(nil, nil)
+		repo.EXPECT().ListCalendar(ctx, monster.MR2DX).Return(nil, nil)
 
 		got, err := svc.Current(ctx)
 		Expect(err).NotTo(HaveOccurred())
@@ -208,6 +214,14 @@ var _ = Describe("ProfileService", func() {
 			repo.EXPECT().ListCocoonRules(ctx, monster.MR2DX).Return(nil, nil)
 			repo.EXPECT().ListDesireNames(ctx).Return(nil, nil)
 			repo.EXPECT().ListExpeditionMaps(ctx).Return(nil, errors.New("disk gone"))
+		}),
+		Entry("the calendar", func() {
+			repo.EXPECT().ListGenusNames(ctx).Return(names, nil)
+			repo.EXPECT().ListBreedRules(ctx, 5, monster.MR2DX).Return(nil, nil)
+			repo.EXPECT().ListCocoonRules(ctx, monster.MR2DX).Return(nil, nil)
+			repo.EXPECT().ListDesireNames(ctx).Return(nil, nil)
+			repo.EXPECT().ListExpeditionMaps(ctx).Return(nil, nil)
+			repo.EXPECT().ListCalendar(ctx, monster.MR2DX).Return(nil, errors.New("disk gone"))
 		}),
 	)
 })

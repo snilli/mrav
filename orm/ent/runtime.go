@@ -4,6 +4,7 @@ package ent
 
 import (
 	"orm/ent/breed"
+	"orm/ent/calendarevent"
 	"orm/ent/cocoon"
 	"orm/ent/expeditionlock"
 	"orm/ent/expeditionmap"
@@ -46,6 +47,66 @@ func init() {
 	breedDescMatchGuts := breedFields[6].Descriptor()
 	// breed.DefaultMatchGuts holds the default value on creation for the match_guts field.
 	breed.DefaultMatchGuts = breedDescMatchGuts.Default.(bool)
+	calendareventFields := schema.CalendarEvent{}.Fields()
+	_ = calendareventFields
+	// calendareventDescMonth is the schema descriptor for month field.
+	calendareventDescMonth := calendareventFields[1].Descriptor()
+	// calendarevent.MonthValidator is a validator for the "month" field. It is called by the builders before save.
+	calendarevent.MonthValidator = func() func(int) error {
+		validators := calendareventDescMonth.Validators
+		fns := [...]func(int) error{
+			validators[0].(func(int) error),
+			validators[1].(func(int) error),
+		}
+		return func(month int) error {
+			for _, fn := range fns {
+				if err := fn(month); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// calendareventDescWeek is the schema descriptor for week field.
+	calendareventDescWeek := calendareventFields[2].Descriptor()
+	// calendarevent.WeekValidator is a validator for the "week" field. It is called by the builders before save.
+	calendarevent.WeekValidator = func() func(int) error {
+		validators := calendareventDescWeek.Validators
+		fns := [...]func(int) error{
+			validators[0].(func(int) error),
+			validators[1].(func(int) error),
+		}
+		return func(week int) error {
+			for _, fn := range fns {
+				if err := fn(week); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// calendareventDescName is the schema descriptor for name field.
+	calendareventDescName := calendareventFields[3].Descriptor()
+	// calendarevent.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	calendarevent.NameValidator = calendareventDescName.Validators[0].(func(string) error)
+	// calendareventDescPurse is the schema descriptor for purse field.
+	calendareventDescPurse := calendareventFields[5].Descriptor()
+	// calendarevent.DefaultPurse holds the default value on creation for the purse field.
+	calendarevent.DefaultPurse = calendareventDescPurse.Default.(int)
+	// calendarevent.PurseValidator is a validator for the "purse" field. It is called by the builders before save.
+	calendarevent.PurseValidator = calendareventDescPurse.Validators[0].(func(int) error)
+	// calendareventDescPrize is the schema descriptor for prize field.
+	calendareventDescPrize := calendareventFields[6].Descriptor()
+	// calendarevent.DefaultPrize holds the default value on creation for the prize field.
+	calendarevent.DefaultPrize = calendareventDescPrize.Default.(string)
+	// calendareventDescUnseen is the schema descriptor for unseen field.
+	calendareventDescUnseen := calendareventFields[7].Descriptor()
+	// calendarevent.DefaultUnseen holds the default value on creation for the unseen field.
+	calendarevent.DefaultUnseen = calendareventDescUnseen.Default.(string)
+	// calendareventDescNote is the schema descriptor for note field.
+	calendareventDescNote := calendareventFields[8].Descriptor()
+	// calendarevent.DefaultNote holds the default value on creation for the note field.
+	calendarevent.DefaultNote = calendareventDescNote.Default.(string)
 	cocoonFields := schema.Cocoon{}.Fields()
 	_ = cocoonFields
 	// cocoonDescGuts is the schema descriptor for guts field.
