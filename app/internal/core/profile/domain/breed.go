@@ -10,9 +10,8 @@ const (
 	NoMonster        = "No Monster"
 	UndefinedMonster = "Undefined Monster"
 
-	protomessiah = "Protomessiah"
-	notStandard  = " (N/S)"
-	wormSub      = 36
+	notStandard = " (N/S)"
+	wormSub     = 36
 )
 
 var realBeaclon = [monster.StatCount]int{3, 3, 0, 1, 1, 3}
@@ -44,11 +43,7 @@ type Breed struct {
 }
 
 func ResolveBreed(rules []BreedRule, cocoons []CocoonRule, m monster.Monster) Breed {
-	main, sub := int(m.Genus), int(m.SubGenus)
-	if main == 5 && sub == 15 {
-		return Breed{Name: protomessiah, GutsOK: true}
-	}
-	if PossibleCocoon(main, sub, m.Growth) {
+	if PossibleCocoon(int(m.Genus), int(m.SubGenus), m.Growth) {
 		for _, c := range cocoons {
 			if c.Guts == m.GutsRate && c.Growth == m.Growth {
 				return Breed{Name: c.Name, GutsOK: true}

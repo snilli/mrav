@@ -96,8 +96,10 @@ var _ = Describe("ResolveBreed", func() {
 		Expect(domain.ResolveBreed(hare, nil, mon(13, 0, 12, growth{1, 3, 2, 2, 4, 0})).Name).To(Equal("Fairy Hare (N/S)"))
 	})
 
-	It("names a revived Henger and Gali the Protomessiah, whatever the rules say", func() {
-		Expect(domain.ResolveBreed(nil, nil, mon(5, 15, 9, growth{})).Name).To(Equal("Protomessiah"))
+	It("takes every name from the rules, a Henger and Gali too, and has none of its own", func() {
+		henger := []domain.BreedRule{{Main: 5, Sub: 5, Name: "Henger"}}
+		Expect(domain.ResolveBreed(henger, nil, mon(5, 15, 9, growth{})).Name).To(Equal(domain.UndefinedMonster))
+		Expect(domain.ResolveBreed(append(henger, domain.BreedRule{Main: 5, Sub: 15, Name: "Gali Henger"}), nil, mon(5, 15, 9, growth{})).Name).To(Equal("Gali Henger"))
 	})
 
 	Describe("a cocoon", func() {

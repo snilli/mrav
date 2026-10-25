@@ -153,7 +153,7 @@ var _ = Describe("profilerepo", Label("integration"), func() {
 
 		for version, want := range map[monster.Version]struct{ breeds, cocoons int }{
 			monster.MR2:   {428, 12},
-			monster.MR2DX: {497, 14},
+			monster.MR2DX: {498, 14},
 		} {
 			total := 0
 			for main := range 50 {
@@ -217,6 +217,8 @@ var _ = Describe("profilerepo", Label("integration"), func() {
 			{monster.MR2DX, 18, 38, "Gym Bajarl"},
 			{monster.MR2DX, 18, 41, "Boxer Bajarl"},
 			{monster.MR2, 1, 39, "[E] Magma Heart"},
+			{monster.MR2DX, 1, 39, "Magma Heart"},
+			{monster.MR2DX, 5, 15, "Proto"},
 			{monster.MR2, 0, 18, "Jinnee"},
 			{monster.MR2DX, 7, 33, "Ecologuardia"},
 			{monster.MR2, 8, 33, "AlohaSaurian"},
@@ -229,6 +231,14 @@ var _ = Describe("profilerepo", Label("integration"), func() {
 			Expect(err).NotTo(HaveOccurred())
 			m := monster.Monster{Genus: monster.Genus(c.main), SubGenus: monster.Genus(c.sub), GutsRate: 9}
 			Expect(domain.ResolveBreed(rules, nil, m).Name).To(HavePrefix(c.name), string(c.version))
+		}
+
+		for main := range 38 {
+			rules, err := repo.ListBreedRules(ctx, main, monster.MR2DX)
+			Expect(err).NotTo(HaveOccurred())
+			for _, r := range rules {
+				Expect(r.Name).NotTo(ContainSubstring("[E]"), "DX raises the enemy monsters like any other")
+			}
 		}
 
 		for _, c := range []struct {
