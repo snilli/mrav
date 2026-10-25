@@ -61,8 +61,8 @@ var (
 		money: 0x9A568, items: 0x9A7EC, nextSale: 0x9A88E, errantry: 0x9A899, input: 0x938AE,
 		record: 0x97A5E,
 		date:   0x9A7D8, tournament: 0x9A62C, grade: 0x9A56C, house: 0x9A56D, barn: 0x9A56E, altar: 0x9A5FC,
-		unlocks: 0x9A936,
-		energy:  0x1DE8B84, tile: 0x1DE8B7E, position: 0x1DE8B88,
+		unlocks: 0x9A936, phoenix: 0x9A97E,
+		energy: 0x1DE8B84, tile: 0x1DE8B7E, position: 0x1DE8B88,
 	}
 )
 
@@ -281,6 +281,7 @@ var _ = Describe("decode", func() {
 				Known: true, Date: 155, Tournament: 1003, Grade: 6, House: 2, Barn: 1, Altar: 3,
 				Unlocked: [player.BreedCount]bool{0: true, 1: true, 36: true}, Energy: -5, EnergyKnown: true,
 				Tile: 911, WalkKnown: true, OffsetX: -3, OffsetY: 2, OffsetKnown: true,
+				PhoenixKnown: true, PhoenixDone: true,
 			}),
 	)
 
@@ -297,15 +298,23 @@ var _ = Describe("decode", func() {
 		Entry("a year set as a whole word", []byte{0xEB, 0x03, 0x00, 0x00}, 1003),
 	)
 
-	It("says the Phoenix adventure is not done when its word is 0, and that it is not known where the game has no such word", func() {
-		img := monsterImage(ps1MR2AV, ps1Name, nil)
-		img.i16(ps1MR2AV.phoenix, 0)
-		got, err := decodePlayer(ps1, img)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(got.Ranch.PhoenixKnown).To(BeTrue())
-		Expect(got.Ranch.PhoenixDone).To(BeFalse())
+	DescribeTable("says the Phoenix adventure is not done when its word is 0",
+		func(l Layout, a addresses, name, breeder []byte) {
+			img := monsterImage(a, name, breeder)
+			img.i16(a.phoenix, 0)
+			got, err := decodePlayer(l, img)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(got.Ranch.PhoenixKnown).To(BeTrue())
+			Expect(got.Ranch.PhoenixDone).To(BeFalse())
+		},
+		Entry("on the PlayStation", ps1, ps1MR2AV, ps1Name, []byte(nil)),
+		Entry("on Steam", steam, steamMR2AV, steamName, steamBreeds),
+	)
 
-		got, err = decodePlayer(steam, monsterImage(steamMR2AV, steamName, steamBreeds))
+	It("says it is not known whether the Phoenix adventure is done where the game has no such word", func() {
+		l := steam
+		l.Phoenix = 0
+		got, err := decodePlayer(l, monsterImage(steamMR2AV, steamName, steamBreeds))
 		Expect(err).NotTo(HaveOccurred())
 		Expect(got.Ranch.PhoenixKnown).To(BeFalse())
 		Expect(got.Ranch.PhoenixDone).To(BeFalse())

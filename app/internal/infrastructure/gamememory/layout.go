@@ -104,7 +104,7 @@ var (
 		Breeder: Text{Addr: 0x9A54A, Len: 24, Steam: true},
 		Record:  0x97A5E,
 		Date:    0x9A7D8, Tournament: 0x9A62C, Grade: 0x9A56C, House: 0x9A56D, Barn: 0x9A56E, Altar: 0x9A5FC,
-		Unlocks: 0x9A936, Energy: 0x1DE8B84, Tile: 0x1DE8B7E, Position: 0x1DE8B88,
+		Unlocks: 0x9A936, Phoenix: 0x9A97E, Energy: 0x1DE8B84, Tile: 0x1DE8B7E, Position: 0x1DE8B88,
 		Version: monster.MR2DX,
 	}
 )
