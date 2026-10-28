@@ -5,7 +5,7 @@ cd "$(dirname "$0")"
 out=../dist
 db=internal/infrastructure/database/mrav.sqlite
 
-version=$(git describe --tags --always --dirty 2>/dev/null || echo dev)
+version=${VERSION:-$(git describe --tags --always --dirty 2>/dev/null || echo dev)}
 
 mkdir -p "$out"
 cp ../data/mrav.sqlite "$db"
