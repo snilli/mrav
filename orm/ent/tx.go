@@ -18,22 +18,30 @@ type Tx struct {
 	CalendarEvent *CalendarEventClient
 	// Cocoon is the client for interacting with the Cocoon builders.
 	Cocoon *CocoonClient
+	// DrillGain is the client for interacting with the DrillGain builders.
+	DrillGain *DrillGainClient
+	// Effect is the client for interacting with the Effect builders.
+	Effect *EffectClient
 	// ExpeditionLock is the client for interacting with the ExpeditionLock builders.
 	ExpeditionLock *ExpeditionLockClient
 	// ExpeditionMap is the client for interacting with the ExpeditionMap builders.
 	ExpeditionMap *ExpeditionMapClient
 	// ExpeditionPlace is the client for interacting with the ExpeditionPlace builders.
 	ExpeditionPlace *ExpeditionPlaceClient
+	// FoodReaction is the client for interacting with the FoodReaction builders.
+	FoodReaction *FoodReactionClient
 	// Genus is the client for interacting with the Genus builders.
 	Genus *GenusClient
 	// Item is the client for interacting with the Item builders.
 	Item *ItemClient
+	// LifeStage is the client for interacting with the LifeStage builders.
+	LifeStage *LifeStageClient
 	// LootChance is the client for interacting with the LootChance builders.
 	LootChance *LootChanceClient
 	// Move is the client for interacting with the Move builders.
 	Move *MoveClient
-	// TrainingGain is the client for interacting with the TrainingGain builders.
-	TrainingGain *TrainingGainClient
+	// Song is the client for interacting with the Song builders.
+	Song *SongClient
 
 	// lazily loaded.
 	client     *Client
@@ -168,14 +176,18 @@ func (tx *Tx) init() {
 	tx.Breed = NewBreedClient(tx.config)
 	tx.CalendarEvent = NewCalendarEventClient(tx.config)
 	tx.Cocoon = NewCocoonClient(tx.config)
+	tx.DrillGain = NewDrillGainClient(tx.config)
+	tx.Effect = NewEffectClient(tx.config)
 	tx.ExpeditionLock = NewExpeditionLockClient(tx.config)
 	tx.ExpeditionMap = NewExpeditionMapClient(tx.config)
 	tx.ExpeditionPlace = NewExpeditionPlaceClient(tx.config)
+	tx.FoodReaction = NewFoodReactionClient(tx.config)
 	tx.Genus = NewGenusClient(tx.config)
 	tx.Item = NewItemClient(tx.config)
+	tx.LifeStage = NewLifeStageClient(tx.config)
 	tx.LootChance = NewLootChanceClient(tx.config)
 	tx.Move = NewMoveClient(tx.config)
-	tx.TrainingGain = NewTrainingGainClient(tx.config)
+	tx.Song = NewSongClient(tx.config)
 }
 
 // txDriver wraps the given dialect.Tx with a nop dialect.Driver implementation.

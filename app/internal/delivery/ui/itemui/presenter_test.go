@@ -11,7 +11,7 @@ import (
 var _ = Describe("itemui presenter", func() {
 	banana := domain.Item{
 		Code: 29, Name: "Magic Banana", Kind: "Mysterious Banana", Description: "Its effect differs each time.",
-		Effect: "[effect]", SalePrice: "100", PurchasePrice: "200",
+		Effect: "[effect]", SalePrice: new(100), PurchasePrice: new(200),
 	}
 
 	It("labels a slot with the name of its item, and a blank slot with dashes", func() {
@@ -23,6 +23,17 @@ var _ = Describe("itemui presenter", func() {
 		Expect(itemui.NewDetailView(&domain.Slot{Index: 3, Item: &banana})).To(Equal(itemui.DetailView{
 			Name: "Magic Banana", Kind: "Mysterious Banana", Description: "Its effect differs each time.",
 			Effect: "[effect]", Sale: "100", Purchase: "200",
+		}))
+	})
+
+	It("shows dashes for the price an item has none of, as the game does, and the number for the one it has", func() {
+		sculpture := domain.Item{Code: 6, Name: "Sculpture", SalePrice: new(1500)}
+		Expect(itemui.NewDetailView(&domain.Slot{Item: &sculpture})).To(Equal(itemui.DetailView{
+			Name: "Sculpture", Sale: "1500", Purchase: "-----",
+		}))
+		potato := domain.Item{Code: 0, Name: "Potato", PurchasePrice: new(10)}
+		Expect(itemui.NewDetailView(&domain.Slot{Item: &potato})).To(Equal(itemui.DetailView{
+			Name: "Potato", Sale: "-----", Purchase: "10",
 		}))
 	})
 

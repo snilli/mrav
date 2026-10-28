@@ -81,6 +81,56 @@ var (
 			},
 		},
 	}
+	// DrillGainsColumns holds the columns for the "drill_gains" table.
+	DrillGainsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "result", Type: field.TypeEnum, Enums: []string{"cheat", "success", "great"}},
+		{Name: "role", Type: field.TypeEnum, Enums: []string{"light", "primary", "secondary", "drop"}},
+		{Name: "bonus", Type: field.TypeBool},
+		{Name: "life_stage", Type: field.TypeInt},
+		{Name: "growth_rate", Type: field.TypeInt},
+		{Name: "slots", Type: field.TypeJSON},
+	}
+	// DrillGainsTable holds the schema information for the "drill_gains" table.
+	DrillGainsTable = &schema.Table{
+		Name:       "drill_gains",
+		Columns:    DrillGainsColumns,
+		PrimaryKey: []*schema.Column{DrillGainsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "drillgain_result_role_bonus_life_stage_growth_rate",
+				Unique:  true,
+				Columns: []*schema.Column{DrillGainsColumns[1], DrillGainsColumns[2], DrillGainsColumns[3], DrillGainsColumns[4], DrillGainsColumns[5]},
+			},
+		},
+	}
+	// EffectsColumns holds the columns for the "effects" table.
+	EffectsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "subject", Type: field.TypeString},
+		{Name: "version", Type: field.TypeEnum, Enums: []string{"mr2", "mr2dx"}},
+		{Name: "genus", Type: field.TypeInt, Nullable: true},
+		{Name: "life_stage", Type: field.TypeInt, Nullable: true},
+		{Name: "stress_factor", Type: field.TypeFloat64, Nullable: true},
+		{Name: "fatigue", Type: field.TypeInt},
+		{Name: "stress", Type: field.TypeInt},
+		{Name: "form_divisor", Type: field.TypeInt, Nullable: true},
+		{Name: "lost", Type: field.TypeInt},
+		{Name: "form", Type: field.TypeInt},
+	}
+	// EffectsTable holds the schema information for the "effects" table.
+	EffectsTable = &schema.Table{
+		Name:       "effects",
+		Columns:    EffectsColumns,
+		PrimaryKey: []*schema.Column{EffectsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "effect_subject_version_genus_life_stage",
+				Unique:  true,
+				Columns: []*schema.Column{EffectsColumns[1], EffectsColumns[2], EffectsColumns[3], EffectsColumns[4]},
+			},
+		},
+	}
 	// ExpeditionLocksColumns holds the columns for the "expedition_locks" table.
 	ExpeditionLocksColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -156,6 +206,27 @@ var (
 			},
 		},
 	}
+	// FoodReactionsColumns holds the columns for the "food_reactions" table.
+	FoodReactionsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "genus", Type: field.TypeInt},
+		{Name: "food", Type: field.TypeEnum, Enums: []string{"potato", "fish", "meat", "milk", "cup_jelly", "tablet"}},
+		{Name: "stage", Type: field.TypeEnum, Enums: []string{"any", "baby", "grown"}},
+		{Name: "reaction", Type: field.TypeEnum, Enums: []string{"like", "neutral", "dislike"}},
+	}
+	// FoodReactionsTable holds the schema information for the "food_reactions" table.
+	FoodReactionsTable = &schema.Table{
+		Name:       "food_reactions",
+		Columns:    FoodReactionsColumns,
+		PrimaryKey: []*schema.Column{FoodReactionsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "foodreaction_genus_food_stage",
+				Unique:  true,
+				Columns: []*schema.Column{FoodReactionsColumns[1], FoodReactionsColumns[2], FoodReactionsColumns[3]},
+			},
+		},
+	}
 	// GenusColumns holds the columns for the "genus" table.
 	GenusColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -178,8 +249,8 @@ var (
 		{Name: "kind", Type: field.TypeString},
 		{Name: "description", Type: field.TypeString, Size: 2147483647},
 		{Name: "effect", Type: field.TypeString, Size: 2147483647},
-		{Name: "sale_price", Type: field.TypeString},
-		{Name: "purchase_price", Type: field.TypeString},
+		{Name: "sale_price", Type: field.TypeInt, Nullable: true},
+		{Name: "purchase_price", Type: field.TypeInt, Nullable: true},
 	}
 	// ItemsTable holds the schema information for the "items" table.
 	ItemsTable = &schema.Table{
@@ -191,6 +262,26 @@ var (
 				Name:    "item_version_code",
 				Unique:  true,
 				Columns: []*schema.Column{ItemsColumns[1], ItemsColumns[2]},
+			},
+		},
+	}
+	// LifeStagesColumns holds the columns for the "life_stages" table.
+	LifeStagesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "life_type", Type: field.TypeInt},
+		{Name: "stage", Type: field.TypeInt},
+		{Name: "share", Type: field.TypeInt},
+	}
+	// LifeStagesTable holds the schema information for the "life_stages" table.
+	LifeStagesTable = &schema.Table{
+		Name:       "life_stages",
+		Columns:    LifeStagesColumns,
+		PrimaryKey: []*schema.Column{LifeStagesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "lifestage_life_type_stage",
+				Unique:  true,
+				Columns: []*schema.Column{LifeStagesColumns[1], LifeStagesColumns[2]},
 			},
 		},
 	}
@@ -285,24 +376,42 @@ var (
 			},
 		},
 	}
-	// TrainingGainsColumns holds the columns for the "training_gains" table.
-	TrainingGainsColumns = []*schema.Column{
+	// SongsColumns holds the columns for the "songs" table.
+	SongsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
-		{Name: "life_stage", Type: field.TypeInt},
-		{Name: "growth_rate", Type: field.TypeInt},
-		{Name: "kind", Type: field.TypeInt},
-		{Name: "text", Type: field.TypeString},
+		{Name: "monster_id", Type: field.TypeInt},
+		{Name: "main_genus", Type: field.TypeInt},
+		{Name: "sub_genus", Type: field.TypeInt},
+		{Name: "title", Type: field.TypeString},
+		{Name: "artist", Type: field.TypeString},
+		{Name: "has_offset", Type: field.TypeBool},
+		{Name: "stats", Type: field.TypeJSON},
+		{Name: "gains", Type: field.TypeJSON},
+		{Name: "lifespan", Type: field.TypeInt},
+		{Name: "nature", Type: field.TypeInt},
+		{Name: "life_type", Type: field.TypeInt},
+		{Name: "guts", Type: field.TypeInt},
+		{Name: "arena", Type: field.TypeString},
+		{Name: "training_bonus", Type: field.TypeString},
+		{Name: "extra_techs", Type: field.TypeString},
+		{Name: "battle_specials", Type: field.TypeString},
+		{Name: "enemy", Type: field.TypeBool},
 	}
-	// TrainingGainsTable holds the schema information for the "training_gains" table.
-	TrainingGainsTable = &schema.Table{
-		Name:       "training_gains",
-		Columns:    TrainingGainsColumns,
-		PrimaryKey: []*schema.Column{TrainingGainsColumns[0]},
+	// SongsTable holds the schema information for the "songs" table.
+	SongsTable = &schema.Table{
+		Name:       "songs",
+		Columns:    SongsColumns,
+		PrimaryKey: []*schema.Column{SongsColumns[0]},
 		Indexes: []*schema.Index{
 			{
-				Name:    "traininggain_life_stage_growth_rate_kind",
+				Name:    "song_monster_id",
 				Unique:  true,
-				Columns: []*schema.Column{TrainingGainsColumns[1], TrainingGainsColumns[2], TrainingGainsColumns[3]},
+				Columns: []*schema.Column{SongsColumns[1]},
+			},
+			{
+				Name:    "song_main_genus_sub_genus",
+				Unique:  false,
+				Columns: []*schema.Column{SongsColumns[2], SongsColumns[3]},
 			},
 		},
 	}
@@ -311,14 +420,18 @@ var (
 		BreedsTable,
 		CalendarEventsTable,
 		CocoonsTable,
+		DrillGainsTable,
+		EffectsTable,
 		ExpeditionLocksTable,
 		ExpeditionMapsTable,
 		ExpeditionPlacesTable,
+		FoodReactionsTable,
 		GenusTable,
 		ItemsTable,
+		LifeStagesTable,
 		LootChancesTable,
 		MovesTable,
-		TrainingGainsTable,
+		SongsTable,
 	}
 )
 

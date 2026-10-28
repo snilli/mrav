@@ -31,9 +31,9 @@ type Item struct {
 	// Effect holds the value of the "effect" field.
 	Effect string `json:"effect,omitempty"`
 	// SalePrice holds the value of the "sale_price" field.
-	SalePrice string `json:"sale_price,omitempty"`
+	SalePrice *int `json:"sale_price,omitempty"`
 	// PurchasePrice holds the value of the "purchase_price" field.
-	PurchasePrice string `json:"purchase_price,omitempty"`
+	PurchasePrice *int `json:"purchase_price,omitempty"`
 	selectValues  sql.SelectValues
 }
 
@@ -42,9 +42,9 @@ func (*Item) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case item.FieldID, item.FieldCode:
+		case item.FieldID, item.FieldCode, item.FieldSalePrice, item.FieldPurchasePrice:
 			values[i] = new(sql.NullInt64)
-		case item.FieldVersion, item.FieldName, item.FieldDesireName, item.FieldKind, item.FieldDescription, item.FieldEffect, item.FieldSalePrice, item.FieldPurchasePrice:
+		case item.FieldVersion, item.FieldName, item.FieldDesireName, item.FieldKind, item.FieldDescription, item.FieldEffect:
 			values[i] = new(sql.NullString)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -110,16 +110,18 @@ func (_m *Item) assignValues(columns []string, values []any) error {
 				_m.Effect = value.String
 			}
 		case item.FieldSalePrice:
-			if value, ok := values[i].(*sql.NullString); !ok {
+			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field sale_price", values[i])
 			} else if value.Valid {
-				_m.SalePrice = value.String
+				_m.SalePrice = new(int)
+				*_m.SalePrice = int(value.Int64)
 			}
 		case item.FieldPurchasePrice:
-			if value, ok := values[i].(*sql.NullString); !ok {
+			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field purchase_price", values[i])
 			} else if value.Valid {
-				_m.PurchasePrice = value.String
+				_m.PurchasePrice = new(int)
+				*_m.PurchasePrice = int(value.Int64)
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -178,11 +180,15 @@ func (_m *Item) String() string {
 	builder.WriteString("effect=")
 	builder.WriteString(_m.Effect)
 	builder.WriteString(", ")
-	builder.WriteString("sale_price=")
-	builder.WriteString(_m.SalePrice)
+	if v := _m.SalePrice; v != nil {
+		builder.WriteString("sale_price=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteString(", ")
-	builder.WriteString("purchase_price=")
-	builder.WriteString(_m.PurchasePrice)
+	if v := _m.PurchasePrice; v != nil {
+		builder.WriteString("purchase_price=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteByte(')')
 	return builder.String()
 }

@@ -37,7 +37,7 @@ var _ = Describe("ProfileService", func() {
 		repo.EXPECT().ListGenusNames(ctx).Return(names, nil)
 		repo.EXPECT().ListBreedRules(ctx, 5, monster.MR2DX).Return([]domain.BreedRule{rule}, nil)
 		repo.EXPECT().ListCocoonRules(ctx, monster.MR2DX).Return(nil, nil)
-		repo.EXPECT().ListDesireNames(ctx).Return(desires, nil)
+		repo.EXPECT().ListDesireNames(ctx, monster.MR2DX).Return(desires, nil)
 		repo.EXPECT().ListExpeditionMaps(ctx).Return(nil, nil)
 		repo.EXPECT().ListCalendar(ctx, monster.MR2DX).Return(nil, nil)
 	}
@@ -74,7 +74,7 @@ var _ = Describe("ProfileService", func() {
 		repo.EXPECT().ListGenusNames(ctx).Return(names, nil)
 		repo.EXPECT().ListBreedRules(ctx, 5, monster.MR2).Return([]domain.BreedRule{rule}, nil)
 		repo.EXPECT().ListCocoonRules(ctx, monster.MR2).Return(nil, nil)
-		repo.EXPECT().ListDesireNames(ctx).Return(desires, nil)
+		repo.EXPECT().ListDesireNames(ctx, monster.MR2).Return(desires, nil)
 		repo.EXPECT().ListExpeditionMaps(ctx).Return(nil, nil)
 		repo.EXPECT().ListCalendar(ctx, monster.MR2).Return([]domain.CalendarEntry{{Name: "Sirius Cup (B)"}}, nil)
 
@@ -91,7 +91,7 @@ var _ = Describe("ProfileService", func() {
 		repo.EXPECT().ListGenusNames(ctx).Return(names, nil)
 		repo.EXPECT().ListBreedRules(ctx, 5, monster.MR2DX).Return([]domain.BreedRule{rule}, nil)
 		repo.EXPECT().ListCocoonRules(ctx, monster.MR2DX).Return(nil, nil)
-		repo.EXPECT().ListDesireNames(ctx).Return(desires, nil)
+		repo.EXPECT().ListDesireNames(ctx, monster.MR2DX).Return(desires, nil)
 		repo.EXPECT().ListExpeditionMaps(ctx).Return(nil, nil)
 		repo.EXPECT().ListCalendar(ctx, monster.MR2DX).Return(nil, nil)
 
@@ -118,7 +118,7 @@ var _ = Describe("ProfileService", func() {
 		repo.EXPECT().ListGenusNames(ctx).Return(names, nil)
 		repo.EXPECT().ListBreedRules(ctx, 5, monster.MR2DX).Return([]domain.BreedRule{rule}, nil)
 		repo.EXPECT().ListCocoonRules(ctx, monster.MR2DX).Return(nil, nil)
-		repo.EXPECT().ListDesireNames(ctx).Return(desires, nil)
+		repo.EXPECT().ListDesireNames(ctx, monster.MR2DX).Return(desires, nil)
 		repo.EXPECT().ListExpeditionMaps(ctx).Return(maps, nil)
 		repo.EXPECT().ListCalendar(ctx, monster.MR2DX).Return(nil, nil)
 	}
@@ -156,7 +156,7 @@ var _ = Describe("ProfileService", func() {
 		repo.EXPECT().ListGenusNames(ctx).Return(names, nil)
 		repo.EXPECT().ListBreedRules(ctx, 5, monster.MR2DX).Return([]domain.BreedRule{rule}, nil)
 		repo.EXPECT().ListCocoonRules(ctx, monster.MR2DX).Return(nil, nil)
-		repo.EXPECT().ListDesireNames(ctx).Return(desires, nil)
+		repo.EXPECT().ListDesireNames(ctx, monster.MR2DX).Return(desires, nil)
 		repo.EXPECT().ListExpeditionMaps(ctx).Return(nil, nil)
 		repo.EXPECT().ListCalendar(ctx, monster.MR2DX).Return(nil, nil)
 
@@ -206,20 +206,20 @@ var _ = Describe("ProfileService", func() {
 			repo.EXPECT().ListGenusNames(ctx).Return(names, nil)
 			repo.EXPECT().ListBreedRules(ctx, 5, monster.MR2DX).Return(nil, nil)
 			repo.EXPECT().ListCocoonRules(ctx, monster.MR2DX).Return(nil, nil)
-			repo.EXPECT().ListDesireNames(ctx).Return(nil, errors.New("disk gone"))
+			repo.EXPECT().ListDesireNames(ctx, monster.MR2DX).Return(nil, errors.New("disk gone"))
 		}),
 		Entry("the maps of the trips", func() {
 			repo.EXPECT().ListGenusNames(ctx).Return(names, nil)
 			repo.EXPECT().ListBreedRules(ctx, 5, monster.MR2DX).Return(nil, nil)
 			repo.EXPECT().ListCocoonRules(ctx, monster.MR2DX).Return(nil, nil)
-			repo.EXPECT().ListDesireNames(ctx).Return(nil, nil)
+			repo.EXPECT().ListDesireNames(ctx, monster.MR2DX).Return(nil, nil)
 			repo.EXPECT().ListExpeditionMaps(ctx).Return(nil, errors.New("disk gone"))
 		}),
 		Entry("the calendar", func() {
 			repo.EXPECT().ListGenusNames(ctx).Return(names, nil)
 			repo.EXPECT().ListBreedRules(ctx, 5, monster.MR2DX).Return(nil, nil)
 			repo.EXPECT().ListCocoonRules(ctx, monster.MR2DX).Return(nil, nil)
-			repo.EXPECT().ListDesireNames(ctx).Return(nil, nil)
+			repo.EXPECT().ListDesireNames(ctx, monster.MR2DX).Return(nil, nil)
 			repo.EXPECT().ListExpeditionMaps(ctx).Return(nil, nil)
 			repo.EXPECT().ListCalendar(ctx, monster.MR2DX).Return(nil, errors.New("disk gone"))
 		}),

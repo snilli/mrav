@@ -6,15 +6,19 @@ import (
 	"orm/ent/breed"
 	"orm/ent/calendarevent"
 	"orm/ent/cocoon"
+	"orm/ent/drillgain"
+	"orm/ent/effect"
 	"orm/ent/expeditionlock"
 	"orm/ent/expeditionmap"
 	"orm/ent/expeditionplace"
+	"orm/ent/foodreaction"
 	"orm/ent/genus"
 	"orm/ent/item"
+	"orm/ent/lifestage"
 	"orm/ent/lootchance"
 	"orm/ent/move"
 	"orm/ent/schema"
-	"orm/ent/traininggain"
+	"orm/ent/song"
 )
 
 // The init function reads all schema descriptors with runtime code
@@ -117,6 +121,50 @@ func init() {
 	cocoonDescName := cocoonFields[3].Descriptor()
 	// cocoon.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	cocoon.NameValidator = cocoonDescName.Validators[0].(func(string) error)
+	drillgainFields := schema.DrillGain{}.Fields()
+	_ = drillgainFields
+	// drillgainDescLifeStage is the schema descriptor for life_stage field.
+	drillgainDescLifeStage := drillgainFields[3].Descriptor()
+	// drillgain.LifeStageValidator is a validator for the "life_stage" field. It is called by the builders before save.
+	drillgain.LifeStageValidator = func() func(int) error {
+		validators := drillgainDescLifeStage.Validators
+		fns := [...]func(int) error{
+			validators[0].(func(int) error),
+			validators[1].(func(int) error),
+		}
+		return func(life_stage int) error {
+			for _, fn := range fns {
+				if err := fn(life_stage); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// drillgainDescGrowthRate is the schema descriptor for growth_rate field.
+	drillgainDescGrowthRate := drillgainFields[4].Descriptor()
+	// drillgain.GrowthRateValidator is a validator for the "growth_rate" field. It is called by the builders before save.
+	drillgain.GrowthRateValidator = func() func(int) error {
+		validators := drillgainDescGrowthRate.Validators
+		fns := [...]func(int) error{
+			validators[0].(func(int) error),
+			validators[1].(func(int) error),
+		}
+		return func(growth_rate int) error {
+			for _, fn := range fns {
+				if err := fn(growth_rate); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	effectFields := schema.Effect{}.Fields()
+	_ = effectFields
+	// effectDescSubject is the schema descriptor for subject field.
+	effectDescSubject := effectFields[0].Descriptor()
+	// effect.SubjectValidator is a validator for the "subject" field. It is called by the builders before save.
+	effect.SubjectValidator = effectDescSubject.Validators[0].(func(string) error)
 	expeditionlockFields := schema.ExpeditionLock{}.Fields()
 	_ = expeditionlockFields
 	// expeditionlockDescX is the schema descriptor for x field.
@@ -167,6 +215,12 @@ func init() {
 	expeditionplaceDescBuilding := expeditionplaceFields[4].Descriptor()
 	// expeditionplace.BuildingValidator is a validator for the "building" field. It is called by the builders before save.
 	expeditionplace.BuildingValidator = expeditionplaceDescBuilding.Validators[0].(func(string) error)
+	foodreactionFields := schema.FoodReaction{}.Fields()
+	_ = foodreactionFields
+	// foodreactionDescGenus is the schema descriptor for genus field.
+	foodreactionDescGenus := foodreactionFields[0].Descriptor()
+	// foodreaction.GenusValidator is a validator for the "genus" field. It is called by the builders before save.
+	foodreaction.GenusValidator = foodreactionDescGenus.Validators[0].(func(int) error)
 	genusFields := schema.Genus{}.Fields()
 	_ = genusFields
 	// genusDescCode is the schema descriptor for code field.
@@ -198,11 +252,67 @@ func init() {
 	// itemDescSalePrice is the schema descriptor for sale_price field.
 	itemDescSalePrice := itemFields[7].Descriptor()
 	// item.SalePriceValidator is a validator for the "sale_price" field. It is called by the builders before save.
-	item.SalePriceValidator = itemDescSalePrice.Validators[0].(func(string) error)
+	item.SalePriceValidator = itemDescSalePrice.Validators[0].(func(int) error)
 	// itemDescPurchasePrice is the schema descriptor for purchase_price field.
 	itemDescPurchasePrice := itemFields[8].Descriptor()
 	// item.PurchasePriceValidator is a validator for the "purchase_price" field. It is called by the builders before save.
-	item.PurchasePriceValidator = itemDescPurchasePrice.Validators[0].(func(string) error)
+	item.PurchasePriceValidator = itemDescPurchasePrice.Validators[0].(func(int) error)
+	lifestageFields := schema.LifeStage{}.Fields()
+	_ = lifestageFields
+	// lifestageDescLifeType is the schema descriptor for life_type field.
+	lifestageDescLifeType := lifestageFields[0].Descriptor()
+	// lifestage.LifeTypeValidator is a validator for the "life_type" field. It is called by the builders before save.
+	lifestage.LifeTypeValidator = func() func(int) error {
+		validators := lifestageDescLifeType.Validators
+		fns := [...]func(int) error{
+			validators[0].(func(int) error),
+			validators[1].(func(int) error),
+		}
+		return func(life_type int) error {
+			for _, fn := range fns {
+				if err := fn(life_type); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// lifestageDescStage is the schema descriptor for stage field.
+	lifestageDescStage := lifestageFields[1].Descriptor()
+	// lifestage.StageValidator is a validator for the "stage" field. It is called by the builders before save.
+	lifestage.StageValidator = func() func(int) error {
+		validators := lifestageDescStage.Validators
+		fns := [...]func(int) error{
+			validators[0].(func(int) error),
+			validators[1].(func(int) error),
+		}
+		return func(stage int) error {
+			for _, fn := range fns {
+				if err := fn(stage); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// lifestageDescShare is the schema descriptor for share field.
+	lifestageDescShare := lifestageFields[2].Descriptor()
+	// lifestage.ShareValidator is a validator for the "share" field. It is called by the builders before save.
+	lifestage.ShareValidator = func() func(int) error {
+		validators := lifestageDescShare.Validators
+		fns := [...]func(int) error{
+			validators[0].(func(int) error),
+			validators[1].(func(int) error),
+		}
+		return func(share int) error {
+			for _, fn := range fns {
+				if err := fn(share); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
 	lootchanceFields := schema.LootChance{}.Fields()
 	_ = lootchanceFields
 	// lootchanceDescTier is the schema descriptor for tier field.
@@ -299,64 +409,56 @@ func init() {
 	moveDescIcon := moveFields[17].Descriptor()
 	// move.IconValidator is a validator for the "icon" field. It is called by the builders before save.
 	move.IconValidator = moveDescIcon.Validators[0].(func(string) error)
-	traininggainFields := schema.TrainingGain{}.Fields()
-	_ = traininggainFields
-	// traininggainDescLifeStage is the schema descriptor for life_stage field.
-	traininggainDescLifeStage := traininggainFields[0].Descriptor()
-	// traininggain.LifeStageValidator is a validator for the "life_stage" field. It is called by the builders before save.
-	traininggain.LifeStageValidator = func() func(int) error {
-		validators := traininggainDescLifeStage.Validators
+	songFields := schema.Song{}.Fields()
+	_ = songFields
+	// songDescMonsterID is the schema descriptor for monster_id field.
+	songDescMonsterID := songFields[0].Descriptor()
+	// song.MonsterIDValidator is a validator for the "monster_id" field. It is called by the builders before save.
+	song.MonsterIDValidator = songDescMonsterID.Validators[0].(func(int) error)
+	// songDescMainGenus is the schema descriptor for main_genus field.
+	songDescMainGenus := songFields[1].Descriptor()
+	// song.MainGenusValidator is a validator for the "main_genus" field. It is called by the builders before save.
+	song.MainGenusValidator = songDescMainGenus.Validators[0].(func(int) error)
+	// songDescSubGenus is the schema descriptor for sub_genus field.
+	songDescSubGenus := songFields[2].Descriptor()
+	// song.SubGenusValidator is a validator for the "sub_genus" field. It is called by the builders before save.
+	song.SubGenusValidator = songDescSubGenus.Validators[0].(func(int) error)
+	// songDescTitle is the schema descriptor for title field.
+	songDescTitle := songFields[3].Descriptor()
+	// song.TitleValidator is a validator for the "title" field. It is called by the builders before save.
+	song.TitleValidator = songDescTitle.Validators[0].(func(string) error)
+	// songDescArtist is the schema descriptor for artist field.
+	songDescArtist := songFields[4].Descriptor()
+	// song.ArtistValidator is a validator for the "artist" field. It is called by the builders before save.
+	song.ArtistValidator = songDescArtist.Validators[0].(func(string) error)
+	// songDescLifespan is the schema descriptor for lifespan field.
+	songDescLifespan := songFields[8].Descriptor()
+	// song.LifespanValidator is a validator for the "lifespan" field. It is called by the builders before save.
+	song.LifespanValidator = songDescLifespan.Validators[0].(func(int) error)
+	// songDescLifeType is the schema descriptor for life_type field.
+	songDescLifeType := songFields[10].Descriptor()
+	// song.LifeTypeValidator is a validator for the "life_type" field. It is called by the builders before save.
+	song.LifeTypeValidator = func() func(int) error {
+		validators := songDescLifeType.Validators
 		fns := [...]func(int) error{
 			validators[0].(func(int) error),
 			validators[1].(func(int) error),
 		}
-		return func(life_stage int) error {
+		return func(life_type int) error {
 			for _, fn := range fns {
-				if err := fn(life_stage); err != nil {
+				if err := fn(life_type); err != nil {
 					return err
 				}
 			}
 			return nil
 		}
 	}()
-	// traininggainDescGrowthRate is the schema descriptor for growth_rate field.
-	traininggainDescGrowthRate := traininggainFields[1].Descriptor()
-	// traininggain.GrowthRateValidator is a validator for the "growth_rate" field. It is called by the builders before save.
-	traininggain.GrowthRateValidator = func() func(int) error {
-		validators := traininggainDescGrowthRate.Validators
-		fns := [...]func(int) error{
-			validators[0].(func(int) error),
-			validators[1].(func(int) error),
-		}
-		return func(growth_rate int) error {
-			for _, fn := range fns {
-				if err := fn(growth_rate); err != nil {
-					return err
-				}
-			}
-			return nil
-		}
-	}()
-	// traininggainDescKind is the schema descriptor for kind field.
-	traininggainDescKind := traininggainFields[2].Descriptor()
-	// traininggain.KindValidator is a validator for the "kind" field. It is called by the builders before save.
-	traininggain.KindValidator = func() func(int) error {
-		validators := traininggainDescKind.Validators
-		fns := [...]func(int) error{
-			validators[0].(func(int) error),
-			validators[1].(func(int) error),
-		}
-		return func(kind int) error {
-			for _, fn := range fns {
-				if err := fn(kind); err != nil {
-					return err
-				}
-			}
-			return nil
-		}
-	}()
-	// traininggainDescText is the schema descriptor for text field.
-	traininggainDescText := traininggainFields[3].Descriptor()
-	// traininggain.TextValidator is a validator for the "text" field. It is called by the builders before save.
-	traininggain.TextValidator = traininggainDescText.Validators[0].(func(string) error)
+	// songDescGuts is the schema descriptor for guts field.
+	songDescGuts := songFields[11].Descriptor()
+	// song.GutsValidator is a validator for the "guts" field. It is called by the builders before save.
+	song.GutsValidator = songDescGuts.Validators[0].(func(int) error)
+	// songDescArena is the schema descriptor for arena field.
+	songDescArena := songFields[12].Descriptor()
+	// song.ArenaValidator is a validator for the "arena" field. It is called by the builders before save.
+	song.ArenaValidator = songDescArena.Validators[0].(func(string) error)
 }

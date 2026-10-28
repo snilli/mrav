@@ -9,8 +9,8 @@ type Item struct {
 	Kind          string
 	Description   string
 	Effect        string
-	SalePrice     string
-	PurchasePrice string
+	SalePrice     *int
+	PurchasePrice *int
 }
 
 type Slot struct {

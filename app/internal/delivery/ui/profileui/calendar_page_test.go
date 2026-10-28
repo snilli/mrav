@@ -74,4 +74,25 @@ var _ = Describe("CalendarPage", func() {
 		}
 		Expect(months).To(Equal([]string{"▾ Jun (0)", "▾ Jul (0)", "▸ Aug (0)"}))
 	})
+
+	It("opens the new month and the next when the date moves on, and keeps a head the viewer folded", func() {
+		c := NewCalendarPage()
+		p := domain.Profile{Player: player.Player{NextSale: 99, Ranch: player.Ranch{Known: true, Date: 0}}}
+		c.Set(&p)
+		p.Player.Ranch.Date = 8
+		c.Set(&p)
+		Expect(heads(c)[0].Text).To(HavePrefix("▾ "))
+		Expect(heads(c)[1].Text).To(HavePrefix("▾ "))
+		Expect(heads(c)[2].Text).To(HavePrefix("▾ "))
+
+		p.Player.Ranch.Date = 44
+		c.Set(&p)
+		Expect(heads(c)[0].Text).To(HavePrefix("▾ "))
+		Expect(heads(c)[1].Text).To(HavePrefix("▾ "))
+
+		test.Tap(heads(c)[1])
+		p.Player.NextSale = 3
+		c.Set(&p)
+		Expect(heads(c)[1].Text).To(HavePrefix("▸ "))
+	})
 })

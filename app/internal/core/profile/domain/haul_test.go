@@ -44,6 +44,15 @@ var _ = Describe("Haul", func() {
 		Expect(h.Got).To(Equal(map[string][]int{"A": {46}}))
 	})
 
+	It("gives the find to the place the monster stands on rather than to one before it in the list that is only next to it, as on E of Kawrea with D beside it", func() {
+		m := chart(nil, "S.DE")
+		m.Name = kawrea
+		var h domain.Haul
+		h.Note(m, at(0, 0, 0))
+		h.Note(m, at(3, 0, 46))
+		Expect(h.Got).To(Equal(map[string][]int{"E": {46}}))
+	})
+
 	It("records nothing new while the item stays the same, and the next item at the next place", func() {
 		var h domain.Haul
 		h.Note(m, at(0, 0, 0))

@@ -1,0 +1,1598 @@
+[
+ {
+  "genus": 0,
+  "food": "cup_jelly",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 0,
+  "food": "fish",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 0,
+  "food": "meat",
+  "stage": "any",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 0,
+  "food": "milk",
+  "stage": "baby",
+  "reaction": "like"
+ },
+ {
+  "genus": 0,
+  "food": "milk",
+  "stage": "grown",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 0,
+  "food": "potato",
+  "stage": "any",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 0,
+  "food": "tablet",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 1,
+  "food": "cup_jelly",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 1,
+  "food": "fish",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 1,
+  "food": "meat",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 1,
+  "food": "milk",
+  "stage": "baby",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 1,
+  "food": "milk",
+  "stage": "grown",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 1,
+  "food": "potato",
+  "stage": "any",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 1,
+  "food": "tablet",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 2,
+  "food": "cup_jelly",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 2,
+  "food": "fish",
+  "stage": "any",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 2,
+  "food": "meat",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 2,
+  "food": "milk",
+  "stage": "baby",
+  "reaction": "like"
+ },
+ {
+  "genus": 2,
+  "food": "milk",
+  "stage": "grown",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 2,
+  "food": "potato",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 2,
+  "food": "tablet",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 3,
+  "food": "cup_jelly",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 3,
+  "food": "fish",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 3,
+  "food": "meat",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 3,
+  "food": "milk",
+  "stage": "baby",
+  "reaction": "like"
+ },
+ {
+  "genus": 3,
+  "food": "milk",
+  "stage": "grown",
+  "reaction": "like"
+ },
+ {
+  "genus": 3,
+  "food": "potato",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 3,
+  "food": "tablet",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 4,
+  "food": "cup_jelly",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 4,
+  "food": "fish",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 4,
+  "food": "meat",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 4,
+  "food": "milk",
+  "stage": "baby",
+  "reaction": "like"
+ },
+ {
+  "genus": 4,
+  "food": "milk",
+  "stage": "grown",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 4,
+  "food": "potato",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 4,
+  "food": "tablet",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 5,
+  "food": "cup_jelly",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 5,
+  "food": "fish",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 5,
+  "food": "meat",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 5,
+  "food": "milk",
+  "stage": "baby",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 5,
+  "food": "milk",
+  "stage": "grown",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 5,
+  "food": "potato",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 5,
+  "food": "tablet",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 6,
+  "food": "cup_jelly",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 6,
+  "food": "fish",
+  "stage": "any",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 6,
+  "food": "meat",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 6,
+  "food": "milk",
+  "stage": "baby",
+  "reaction": "like"
+ },
+ {
+  "genus": 6,
+  "food": "milk",
+  "stage": "grown",
+  "reaction": "like"
+ },
+ {
+  "genus": 6,
+  "food": "potato",
+  "stage": "any",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 6,
+  "food": "tablet",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 7,
+  "food": "cup_jelly",
+  "stage": "any",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 7,
+  "food": "fish",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 7,
+  "food": "meat",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 7,
+  "food": "milk",
+  "stage": "baby",
+  "reaction": "like"
+ },
+ {
+  "genus": 7,
+  "food": "milk",
+  "stage": "grown",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 7,
+  "food": "potato",
+  "stage": "any",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 7,
+  "food": "tablet",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 8,
+  "food": "cup_jelly",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 8,
+  "food": "fish",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 8,
+  "food": "meat",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 8,
+  "food": "milk",
+  "stage": "baby",
+  "reaction": "like"
+ },
+ {
+  "genus": 8,
+  "food": "milk",
+  "stage": "grown",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 8,
+  "food": "potato",
+  "stage": "any",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 8,
+  "food": "tablet",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 9,
+  "food": "cup_jelly",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 9,
+  "food": "fish",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 9,
+  "food": "meat",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 9,
+  "food": "milk",
+  "stage": "baby",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 9,
+  "food": "milk",
+  "stage": "grown",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 9,
+  "food": "potato",
+  "stage": "any",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 9,
+  "food": "tablet",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 10,
+  "food": "cup_jelly",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 10,
+  "food": "fish",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 10,
+  "food": "meat",
+  "stage": "any",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 10,
+  "food": "milk",
+  "stage": "baby",
+  "reaction": "like"
+ },
+ {
+  "genus": 10,
+  "food": "milk",
+  "stage": "grown",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 10,
+  "food": "potato",
+  "stage": "any",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 10,
+  "food": "tablet",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 11,
+  "food": "cup_jelly",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 11,
+  "food": "fish",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 11,
+  "food": "meat",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 11,
+  "food": "milk",
+  "stage": "baby",
+  "reaction": "like"
+ },
+ {
+  "genus": 11,
+  "food": "milk",
+  "stage": "grown",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 11,
+  "food": "potato",
+  "stage": "any",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 11,
+  "food": "tablet",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 12,
+  "food": "cup_jelly",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 12,
+  "food": "fish",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 12,
+  "food": "meat",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 12,
+  "food": "milk",
+  "stage": "baby",
+  "reaction": "like"
+ },
+ {
+  "genus": 12,
+  "food": "milk",
+  "stage": "grown",
+  "reaction": "like"
+ },
+ {
+  "genus": 12,
+  "food": "potato",
+  "stage": "any",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 12,
+  "food": "tablet",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 13,
+  "food": "cup_jelly",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 13,
+  "food": "fish",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 13,
+  "food": "meat",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 13,
+  "food": "milk",
+  "stage": "baby",
+  "reaction": "like"
+ },
+ {
+  "genus": 13,
+  "food": "milk",
+  "stage": "grown",
+  "reaction": "like"
+ },
+ {
+  "genus": 13,
+  "food": "potato",
+  "stage": "any",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 13,
+  "food": "tablet",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 14,
+  "food": "cup_jelly",
+  "stage": "any",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 14,
+  "food": "fish",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 14,
+  "food": "meat",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 14,
+  "food": "milk",
+  "stage": "baby",
+  "reaction": "like"
+ },
+ {
+  "genus": 14,
+  "food": "milk",
+  "stage": "grown",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 14,
+  "food": "potato",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 14,
+  "food": "tablet",
+  "stage": "any",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 15,
+  "food": "cup_jelly",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 15,
+  "food": "fish",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 15,
+  "food": "meat",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 15,
+  "food": "milk",
+  "stage": "baby",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 15,
+  "food": "milk",
+  "stage": "grown",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 15,
+  "food": "potato",
+  "stage": "any",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 15,
+  "food": "tablet",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 16,
+  "food": "cup_jelly",
+  "stage": "any",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 16,
+  "food": "fish",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 16,
+  "food": "meat",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 16,
+  "food": "milk",
+  "stage": "baby",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 16,
+  "food": "milk",
+  "stage": "grown",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 16,
+  "food": "potato",
+  "stage": "any",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 16,
+  "food": "tablet",
+  "stage": "any",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 17,
+  "food": "cup_jelly",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 17,
+  "food": "fish",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 17,
+  "food": "meat",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 17,
+  "food": "milk",
+  "stage": "baby",
+  "reaction": "like"
+ },
+ {
+  "genus": 17,
+  "food": "milk",
+  "stage": "grown",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 17,
+  "food": "potato",
+  "stage": "any",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 17,
+  "food": "tablet",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 18,
+  "food": "cup_jelly",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 18,
+  "food": "fish",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 18,
+  "food": "meat",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 18,
+  "food": "milk",
+  "stage": "baby",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 18,
+  "food": "milk",
+  "stage": "grown",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 18,
+  "food": "potato",
+  "stage": "any",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 18,
+  "food": "tablet",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 19,
+  "food": "cup_jelly",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 19,
+  "food": "fish",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 19,
+  "food": "meat",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 19,
+  "food": "milk",
+  "stage": "baby",
+  "reaction": "like"
+ },
+ {
+  "genus": 19,
+  "food": "milk",
+  "stage": "grown",
+  "reaction": "like"
+ },
+ {
+  "genus": 19,
+  "food": "potato",
+  "stage": "any",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 19,
+  "food": "tablet",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 20,
+  "food": "cup_jelly",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 20,
+  "food": "fish",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 20,
+  "food": "meat",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 20,
+  "food": "milk",
+  "stage": "baby",
+  "reaction": "like"
+ },
+ {
+  "genus": 20,
+  "food": "milk",
+  "stage": "grown",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 20,
+  "food": "potato",
+  "stage": "any",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 20,
+  "food": "tablet",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 21,
+  "food": "cup_jelly",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 21,
+  "food": "fish",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 21,
+  "food": "meat",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 21,
+  "food": "milk",
+  "stage": "baby",
+  "reaction": "like"
+ },
+ {
+  "genus": 21,
+  "food": "milk",
+  "stage": "grown",
+  "reaction": "like"
+ },
+ {
+  "genus": 21,
+  "food": "potato",
+  "stage": "any",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 21,
+  "food": "tablet",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 22,
+  "food": "cup_jelly",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 22,
+  "food": "fish",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 22,
+  "food": "meat",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 22,
+  "food": "milk",
+  "stage": "baby",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 22,
+  "food": "milk",
+  "stage": "grown",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 22,
+  "food": "potato",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 22,
+  "food": "tablet",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 23,
+  "food": "cup_jelly",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 23,
+  "food": "fish",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 23,
+  "food": "meat",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 23,
+  "food": "milk",
+  "stage": "baby",
+  "reaction": "like"
+ },
+ {
+  "genus": 23,
+  "food": "milk",
+  "stage": "grown",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 23,
+  "food": "potato",
+  "stage": "any",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 23,
+  "food": "tablet",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 24,
+  "food": "cup_jelly",
+  "stage": "any",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 24,
+  "food": "fish",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 24,
+  "food": "meat",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 24,
+  "food": "milk",
+  "stage": "baby",
+  "reaction": "like"
+ },
+ {
+  "genus": 24,
+  "food": "milk",
+  "stage": "grown",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 24,
+  "food": "potato",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 24,
+  "food": "tablet",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 25,
+  "food": "cup_jelly",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 25,
+  "food": "fish",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 25,
+  "food": "meat",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 25,
+  "food": "milk",
+  "stage": "baby",
+  "reaction": "like"
+ },
+ {
+  "genus": 25,
+  "food": "milk",
+  "stage": "grown",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 25,
+  "food": "potato",
+  "stage": "any",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 25,
+  "food": "tablet",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 26,
+  "food": "cup_jelly",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 26,
+  "food": "fish",
+  "stage": "any",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 26,
+  "food": "meat",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 26,
+  "food": "milk",
+  "stage": "baby",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 26,
+  "food": "milk",
+  "stage": "grown",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 26,
+  "food": "potato",
+  "stage": "any",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 26,
+  "food": "tablet",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 27,
+  "food": "cup_jelly",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 27,
+  "food": "fish",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 27,
+  "food": "meat",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 27,
+  "food": "milk",
+  "stage": "baby",
+  "reaction": "like"
+ },
+ {
+  "genus": 27,
+  "food": "milk",
+  "stage": "grown",
+  "reaction": "like"
+ },
+ {
+  "genus": 27,
+  "food": "potato",
+  "stage": "any",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 27,
+  "food": "tablet",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 28,
+  "food": "cup_jelly",
+  "stage": "any",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 28,
+  "food": "fish",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 28,
+  "food": "meat",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 28,
+  "food": "milk",
+  "stage": "baby",
+  "reaction": "like"
+ },
+ {
+  "genus": 28,
+  "food": "milk",
+  "stage": "grown",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 28,
+  "food": "potato",
+  "stage": "any",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 28,
+  "food": "tablet",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 29,
+  "food": "cup_jelly",
+  "stage": "any",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 29,
+  "food": "fish",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 29,
+  "food": "meat",
+  "stage": "any",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 29,
+  "food": "milk",
+  "stage": "baby",
+  "reaction": "like"
+ },
+ {
+  "genus": 29,
+  "food": "milk",
+  "stage": "grown",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 29,
+  "food": "potato",
+  "stage": "any",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 29,
+  "food": "tablet",
+  "stage": "any",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 30,
+  "food": "cup_jelly",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 30,
+  "food": "fish",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 30,
+  "food": "meat",
+  "stage": "any",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 30,
+  "food": "milk",
+  "stage": "baby",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 30,
+  "food": "milk",
+  "stage": "grown",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 30,
+  "food": "potato",
+  "stage": "any",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 30,
+  "food": "tablet",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 31,
+  "food": "cup_jelly",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 31,
+  "food": "fish",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 31,
+  "food": "meat",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 31,
+  "food": "milk",
+  "stage": "baby",
+  "reaction": "like"
+ },
+ {
+  "genus": 31,
+  "food": "milk",
+  "stage": "grown",
+  "reaction": "like"
+ },
+ {
+  "genus": 31,
+  "food": "potato",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 31,
+  "food": "tablet",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 32,
+  "food": "cup_jelly",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 32,
+  "food": "fish",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 32,
+  "food": "meat",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 32,
+  "food": "milk",
+  "stage": "baby",
+  "reaction": "like"
+ },
+ {
+  "genus": 32,
+  "food": "milk",
+  "stage": "grown",
+  "reaction": "like"
+ },
+ {
+  "genus": 32,
+  "food": "potato",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 32,
+  "food": "tablet",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 33,
+  "food": "cup_jelly",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 33,
+  "food": "fish",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 33,
+  "food": "meat",
+  "stage": "any",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 33,
+  "food": "milk",
+  "stage": "baby",
+  "reaction": "like"
+ },
+ {
+  "genus": 33,
+  "food": "milk",
+  "stage": "grown",
+  "reaction": "like"
+ },
+ {
+  "genus": 33,
+  "food": "potato",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 33,
+  "food": "tablet",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 34,
+  "food": "cup_jelly",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 34,
+  "food": "fish",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 34,
+  "food": "meat",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 34,
+  "food": "milk",
+  "stage": "baby",
+  "reaction": "like"
+ },
+ {
+  "genus": 34,
+  "food": "milk",
+  "stage": "grown",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 34,
+  "food": "potato",
+  "stage": "any",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 34,
+  "food": "tablet",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 35,
+  "food": "cup_jelly",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 35,
+  "food": "fish",
+  "stage": "any",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 35,
+  "food": "meat",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 35,
+  "food": "milk",
+  "stage": "baby",
+  "reaction": "like"
+ },
+ {
+  "genus": 35,
+  "food": "milk",
+  "stage": "grown",
+  "reaction": "like"
+ },
+ {
+  "genus": 35,
+  "food": "potato",
+  "stage": "any",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 35,
+  "food": "tablet",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 36,
+  "food": "cup_jelly",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 36,
+  "food": "fish",
+  "stage": "any",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 36,
+  "food": "meat",
+  "stage": "any",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 36,
+  "food": "milk",
+  "stage": "baby",
+  "reaction": "like"
+ },
+ {
+  "genus": 36,
+  "food": "milk",
+  "stage": "grown",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 36,
+  "food": "potato",
+  "stage": "any",
+  "reaction": "neutral"
+ },
+ {
+  "genus": 36,
+  "food": "tablet",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 37,
+  "food": "cup_jelly",
+  "stage": "any",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 37,
+  "food": "fish",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 37,
+  "food": "meat",
+  "stage": "any",
+  "reaction": "like"
+ },
+ {
+  "genus": 37,
+  "food": "milk",
+  "stage": "baby",
+  "reaction": "like"
+ },
+ {
+  "genus": 37,
+  "food": "milk",
+  "stage": "grown",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 37,
+  "food": "potato",
+  "stage": "any",
+  "reaction": "dislike"
+ },
+ {
+  "genus": 37,
+  "food": "tablet",
+  "stage": "any",
+  "reaction": "like"
+ }
+]

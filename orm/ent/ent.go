@@ -9,14 +9,18 @@ import (
 	"orm/ent/breed"
 	"orm/ent/calendarevent"
 	"orm/ent/cocoon"
+	"orm/ent/drillgain"
+	"orm/ent/effect"
 	"orm/ent/expeditionlock"
 	"orm/ent/expeditionmap"
 	"orm/ent/expeditionplace"
+	"orm/ent/foodreaction"
 	"orm/ent/genus"
 	"orm/ent/item"
+	"orm/ent/lifestage"
 	"orm/ent/lootchance"
 	"orm/ent/move"
-	"orm/ent/traininggain"
+	"orm/ent/song"
 	"reflect"
 	"sync"
 
@@ -86,14 +90,18 @@ func checkColumn(t, c string) error {
 			breed.Table:           breed.ValidColumn,
 			calendarevent.Table:   calendarevent.ValidColumn,
 			cocoon.Table:          cocoon.ValidColumn,
+			drillgain.Table:       drillgain.ValidColumn,
+			effect.Table:          effect.ValidColumn,
 			expeditionlock.Table:  expeditionlock.ValidColumn,
 			expeditionmap.Table:   expeditionmap.ValidColumn,
 			expeditionplace.Table: expeditionplace.ValidColumn,
+			foodreaction.Table:    foodreaction.ValidColumn,
 			genus.Table:           genus.ValidColumn,
 			item.Table:            item.ValidColumn,
+			lifestage.Table:       lifestage.ValidColumn,
 			lootchance.Table:      lootchance.ValidColumn,
 			move.Table:            move.ValidColumn,
-			traininggain.Table:    traininggain.ValidColumn,
+			song.Table:            song.ValidColumn,
 		})
 	})
 	return columnCheck(t, c)

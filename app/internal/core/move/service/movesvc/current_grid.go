@@ -45,14 +45,16 @@ func keepToErrantry(g *domain.Grid, m monster.Monster, moves []domain.Move) {
 	first := map[int]string{}
 	locales := profile.ErrantryLocales()
 	for i, place := range profile.LearnChances(m, moves) {
+		taken := 0.0
 		for j, l := range place {
 			slot := l.Move.MemorySlot
 			if l.Shown() && l.Chance > best[slot].learn.Chance {
 				best[slot] = teach{l, locales[i].Name}
 			}
-			if !l.Shown() && j > 0 && first[slot] == "" {
+			if !l.Shown() && j > 0 && taken >= 99.95 && first[slot] == "" {
 				first[slot] = fmt.Sprintf("%s teaches %s first", locales[i].Name, place[0].Move.Name)
 			}
+			taken += l.Chance
 		}
 	}
 	for c := range g.Cells {

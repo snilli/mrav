@@ -64,14 +64,30 @@ func (_c *ItemCreate) SetEffect(v string) *ItemCreate {
 }
 
 // SetSalePrice sets the "sale_price" field.
-func (_c *ItemCreate) SetSalePrice(v string) *ItemCreate {
+func (_c *ItemCreate) SetSalePrice(v int) *ItemCreate {
 	_c.mutation.SetSalePrice(v)
 	return _c
 }
 
+// SetNillableSalePrice sets the "sale_price" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableSalePrice(v *int) *ItemCreate {
+	if v != nil {
+		_c.SetSalePrice(*v)
+	}
+	return _c
+}
+
 // SetPurchasePrice sets the "purchase_price" field.
-func (_c *ItemCreate) SetPurchasePrice(v string) *ItemCreate {
+func (_c *ItemCreate) SetPurchasePrice(v int) *ItemCreate {
 	_c.mutation.SetPurchasePrice(v)
+	return _c
+}
+
+// SetNillablePurchasePrice sets the "purchase_price" field if the given value is not nil.
+func (_c *ItemCreate) SetNillablePurchasePrice(v *int) *ItemCreate {
+	if v != nil {
+		_c.SetPurchasePrice(*v)
+	}
 	return _c
 }
 
@@ -155,16 +171,10 @@ func (_c *ItemCreate) check() error {
 	if _, ok := _c.mutation.Effect(); !ok {
 		return &ValidationError{Name: "effect", err: errors.New(`ent: missing required field "Item.effect"`)}
 	}
-	if _, ok := _c.mutation.SalePrice(); !ok {
-		return &ValidationError{Name: "sale_price", err: errors.New(`ent: missing required field "Item.sale_price"`)}
-	}
 	if v, ok := _c.mutation.SalePrice(); ok {
 		if err := item.SalePriceValidator(v); err != nil {
 			return &ValidationError{Name: "sale_price", err: fmt.Errorf(`ent: validator failed for field "Item.sale_price": %w`, err)}
 		}
-	}
-	if _, ok := _c.mutation.PurchasePrice(); !ok {
-		return &ValidationError{Name: "purchase_price", err: errors.New(`ent: missing required field "Item.purchase_price"`)}
 	}
 	if v, ok := _c.mutation.PurchasePrice(); ok {
 		if err := item.PurchasePriceValidator(v); err != nil {
@@ -227,12 +237,12 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 		_node.Effect = value
 	}
 	if value, ok := _c.mutation.SalePrice(); ok {
-		_spec.SetField(item.FieldSalePrice, field.TypeString, value)
-		_node.SalePrice = value
+		_spec.SetField(item.FieldSalePrice, field.TypeInt, value)
+		_node.SalePrice = &value
 	}
 	if value, ok := _c.mutation.PurchasePrice(); ok {
-		_spec.SetField(item.FieldPurchasePrice, field.TypeString, value)
-		_node.PurchasePrice = value
+		_spec.SetField(item.FieldPurchasePrice, field.TypeInt, value)
+		_node.PurchasePrice = &value
 	}
 	return _node, _spec
 }
@@ -359,7 +369,7 @@ func (u *ItemUpsert) UpdateEffect() *ItemUpsert {
 }
 
 // SetSalePrice sets the "sale_price" field.
-func (u *ItemUpsert) SetSalePrice(v string) *ItemUpsert {
+func (u *ItemUpsert) SetSalePrice(v int) *ItemUpsert {
 	u.Set(item.FieldSalePrice, v)
 	return u
 }
@@ -370,8 +380,20 @@ func (u *ItemUpsert) UpdateSalePrice() *ItemUpsert {
 	return u
 }
 
+// AddSalePrice adds v to the "sale_price" field.
+func (u *ItemUpsert) AddSalePrice(v int) *ItemUpsert {
+	u.Add(item.FieldSalePrice, v)
+	return u
+}
+
+// ClearSalePrice clears the value of the "sale_price" field.
+func (u *ItemUpsert) ClearSalePrice() *ItemUpsert {
+	u.SetNull(item.FieldSalePrice)
+	return u
+}
+
 // SetPurchasePrice sets the "purchase_price" field.
-func (u *ItemUpsert) SetPurchasePrice(v string) *ItemUpsert {
+func (u *ItemUpsert) SetPurchasePrice(v int) *ItemUpsert {
 	u.Set(item.FieldPurchasePrice, v)
 	return u
 }
@@ -379,6 +401,18 @@ func (u *ItemUpsert) SetPurchasePrice(v string) *ItemUpsert {
 // UpdatePurchasePrice sets the "purchase_price" field to the value that was provided on create.
 func (u *ItemUpsert) UpdatePurchasePrice() *ItemUpsert {
 	u.SetExcluded(item.FieldPurchasePrice)
+	return u
+}
+
+// AddPurchasePrice adds v to the "purchase_price" field.
+func (u *ItemUpsert) AddPurchasePrice(v int) *ItemUpsert {
+	u.Add(item.FieldPurchasePrice, v)
+	return u
+}
+
+// ClearPurchasePrice clears the value of the "purchase_price" field.
+func (u *ItemUpsert) ClearPurchasePrice() *ItemUpsert {
+	u.SetNull(item.FieldPurchasePrice)
 	return u
 }
 
@@ -512,9 +546,16 @@ func (u *ItemUpsertOne) UpdateEffect() *ItemUpsertOne {
 }
 
 // SetSalePrice sets the "sale_price" field.
-func (u *ItemUpsertOne) SetSalePrice(v string) *ItemUpsertOne {
+func (u *ItemUpsertOne) SetSalePrice(v int) *ItemUpsertOne {
 	return u.Update(func(s *ItemUpsert) {
 		s.SetSalePrice(v)
+	})
+}
+
+// AddSalePrice adds v to the "sale_price" field.
+func (u *ItemUpsertOne) AddSalePrice(v int) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddSalePrice(v)
 	})
 }
 
@@ -525,10 +566,24 @@ func (u *ItemUpsertOne) UpdateSalePrice() *ItemUpsertOne {
 	})
 }
 
+// ClearSalePrice clears the value of the "sale_price" field.
+func (u *ItemUpsertOne) ClearSalePrice() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearSalePrice()
+	})
+}
+
 // SetPurchasePrice sets the "purchase_price" field.
-func (u *ItemUpsertOne) SetPurchasePrice(v string) *ItemUpsertOne {
+func (u *ItemUpsertOne) SetPurchasePrice(v int) *ItemUpsertOne {
 	return u.Update(func(s *ItemUpsert) {
 		s.SetPurchasePrice(v)
+	})
+}
+
+// AddPurchasePrice adds v to the "purchase_price" field.
+func (u *ItemUpsertOne) AddPurchasePrice(v int) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddPurchasePrice(v)
 	})
 }
 
@@ -536,6 +591,13 @@ func (u *ItemUpsertOne) SetPurchasePrice(v string) *ItemUpsertOne {
 func (u *ItemUpsertOne) UpdatePurchasePrice() *ItemUpsertOne {
 	return u.Update(func(s *ItemUpsert) {
 		s.UpdatePurchasePrice()
+	})
+}
+
+// ClearPurchasePrice clears the value of the "purchase_price" field.
+func (u *ItemUpsertOne) ClearPurchasePrice() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearPurchasePrice()
 	})
 }
 
@@ -834,9 +896,16 @@ func (u *ItemUpsertBulk) UpdateEffect() *ItemUpsertBulk {
 }
 
 // SetSalePrice sets the "sale_price" field.
-func (u *ItemUpsertBulk) SetSalePrice(v string) *ItemUpsertBulk {
+func (u *ItemUpsertBulk) SetSalePrice(v int) *ItemUpsertBulk {
 	return u.Update(func(s *ItemUpsert) {
 		s.SetSalePrice(v)
+	})
+}
+
+// AddSalePrice adds v to the "sale_price" field.
+func (u *ItemUpsertBulk) AddSalePrice(v int) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddSalePrice(v)
 	})
 }
 
@@ -847,10 +916,24 @@ func (u *ItemUpsertBulk) UpdateSalePrice() *ItemUpsertBulk {
 	})
 }
 
+// ClearSalePrice clears the value of the "sale_price" field.
+func (u *ItemUpsertBulk) ClearSalePrice() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearSalePrice()
+	})
+}
+
 // SetPurchasePrice sets the "purchase_price" field.
-func (u *ItemUpsertBulk) SetPurchasePrice(v string) *ItemUpsertBulk {
+func (u *ItemUpsertBulk) SetPurchasePrice(v int) *ItemUpsertBulk {
 	return u.Update(func(s *ItemUpsert) {
 		s.SetPurchasePrice(v)
+	})
+}
+
+// AddPurchasePrice adds v to the "purchase_price" field.
+func (u *ItemUpsertBulk) AddPurchasePrice(v int) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddPurchasePrice(v)
 	})
 }
 
@@ -858,6 +941,13 @@ func (u *ItemUpsertBulk) SetPurchasePrice(v string) *ItemUpsertBulk {
 func (u *ItemUpsertBulk) UpdatePurchasePrice() *ItemUpsertBulk {
 	return u.Update(func(s *ItemUpsert) {
 		s.UpdatePurchasePrice()
+	})
+}
+
+// ClearPurchasePrice clears the value of the "purchase_price" field.
+func (u *ItemUpsertBulk) ClearPurchasePrice() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearPurchasePrice()
 	})
 }
 

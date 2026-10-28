@@ -133,13 +133,18 @@ var _ = Describe("profilerepo", Label("integration"), func() {
 		Expect(err).To(MatchError(ContainSubstring("Cocooned Worm/Bad")))
 	})
 
-	It("lists what each item id is called when a monster wants it", func() {
+	It("lists what each item id is called when a monster wants it, in the game version asked for", func() {
 		client.Item.Create().SetVersion(entitem.VersionMr2).SetCode(42).SetName("Tiger Chips").SetDesireName("Disc Chips").SetKind("Chips").
-			SetDescription("d").SetEffect("e").SetSalePrice("500").SetPurchasePrice("-----").SaveX(ctx)
+			SetDescription("d").SetEffect("e").SetSalePrice(500).SaveX(ctx)
+		client.Item.Create().SetVersion(entitem.VersionMr2dx).SetCode(42).SetName("Tiger Chips").SetDesireName("DX Chips").SetKind("Chips").
+			SetDescription("d").SetEffect("e").SetSalePrice(500).SaveX(ctx)
 
-		got, err := repo.ListDesireNames(ctx)
+		ps1, err := repo.ListDesireNames(ctx, monster.MR2)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(got).To(Equal(map[int]string{42: "Disc Chips"}))
+		steam, err := repo.ListDesireNames(ctx, monster.MR2DX)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(ps1).To(Equal(map[int]string{42: "Disc Chips"}))
+		Expect(steam).To(Equal(map[int]string{42: "DX Chips"}))
 	})
 
 	It("reads the shipped database, and names a standard Pixie and a cocooned Worm from it", func() {
@@ -176,10 +181,12 @@ var _ = Describe("profilerepo", Label("integration"), func() {
 		Expect(genera).To(HaveLen(38))
 		Expect(genera[0]).To(Equal("Pixie"))
 
-		desires, err := repo.ListDesireNames(ctx)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(desires).To(HaveLen(179))
-		Expect(desires[131]).To(Equal("Battle"))
+		for _, version := range []monster.Version{monster.MR2, monster.MR2DX} {
+			desires, err := repo.ListDesireNames(ctx, version)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(desires).To(HaveLen(179), string(version))
+			Expect(desires[131]).To(Equal("Battle"), string(version))
+		}
 
 		rules, err := repo.ListBreedRules(ctx, 0, monster.MR2DX)
 		Expect(err).NotTo(HaveOccurred())

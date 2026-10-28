@@ -15,6 +15,12 @@ type CalendarEvent func(*sql.Selector)
 // Cocoon is the predicate function for cocoon builders.
 type Cocoon func(*sql.Selector)
 
+// DrillGain is the predicate function for drillgain builders.
+type DrillGain func(*sql.Selector)
+
+// Effect is the predicate function for effect builders.
+type Effect func(*sql.Selector)
+
 // ExpeditionLock is the predicate function for expeditionlock builders.
 type ExpeditionLock func(*sql.Selector)
 
@@ -24,11 +30,17 @@ type ExpeditionMap func(*sql.Selector)
 // ExpeditionPlace is the predicate function for expeditionplace builders.
 type ExpeditionPlace func(*sql.Selector)
 
+// FoodReaction is the predicate function for foodreaction builders.
+type FoodReaction func(*sql.Selector)
+
 // Genus is the predicate function for genus builders.
 type Genus func(*sql.Selector)
 
 // Item is the predicate function for item builders.
 type Item func(*sql.Selector)
+
+// LifeStage is the predicate function for lifestage builders.
+type LifeStage func(*sql.Selector)
 
 // LootChance is the predicate function for lootchance builders.
 type LootChance func(*sql.Selector)
@@ -36,5 +48,5 @@ type LootChance func(*sql.Selector)
 // Move is the predicate function for move builders.
 type Move func(*sql.Selector)
 
-// TrainingGain is the predicate function for traininggain builders.
-type TrainingGain func(*sql.Selector)
+// Song is the predicate function for song builders.
+type Song func(*sql.Selector)

@@ -22,14 +22,18 @@ type process struct {
 	path   string
 }
 
-func openProcess(prefix, name string) (*process, error) {
-	pid, found, err := findPID(prefix)
+func findRunning(prefix, name string) ([]uint32, error) {
+	pids, err := findPIDs(prefix)
 	if err != nil {
 		return nil, fmt.Errorf("cannot list the running programs: %w", err)
 	}
-	if !found {
+	if len(pids) == 0 {
 		return nil, fmt.Errorf("%s is not running", name)
 	}
+	return pids, nil
+}
+
+func openProcess(pid uint32, name string) (*process, error) {
 	base, path, err := mainModule(pid)
 	if err != nil {
 		return nil, fmt.Errorf("cannot look into %s: %w", name, err)
@@ -41,23 +45,23 @@ func openProcess(prefix, name string) (*process, error) {
 	return &process{handle: handle, base: base, path: path}, nil
 }
 
-func findPID(prefix string) (pid uint32, found bool, err error) {
+func findPIDs(prefix string) (pids []uint32, err error) {
 	snap, err := windows.CreateToolhelp32Snapshot(windows.TH32CS_SNAPPROCESS, 0)
 	if err != nil {
-		return 0, false, err
+		return nil, err
 	}
 	defer windows.CloseHandle(snap)
 
 	e := windows.ProcessEntry32{Size: uint32(unsafe.Sizeof(windows.ProcessEntry32{}))}
 	for err = windows.Process32First(snap, &e); err == nil; err = windows.Process32Next(snap, &e) {
 		if strings.HasPrefix(strings.ToLower(windows.UTF16ToString(e.ExeFile[:])), prefix) {
-			return e.ProcessID, true, nil
+			pids = append(pids, e.ProcessID)
 		}
 	}
 	if errors.Is(err, windows.ERROR_NO_MORE_FILES) {
 		err = nil
 	}
-	return 0, false, err
+	return pids, err
 }
 
 func mainModule(pid uint32) (base uintptr, path string, err error) {
@@ -101,15 +105,27 @@ func (m processMemory) ReadModule(offset uint32, p []byte) error {
 func (m processMemory) Close() error { return windows.CloseHandle(m.handle) }
 
 func attachMR2DX() (Memory, error) {
-	p, err := openProcess("mf2", "Monster Rancher 1&2 DX")
+	pids, err := findRunning("mf2", "Monster Rancher 1&2 DX")
+	if err != nil {
+		return nil, err
+	}
+	p, err := openProcess(pids[0], "Monster Rancher 1&2 DX")
 	if err != nil {
 		return nil, err
 	}
 	return processMemory{p, p.base + steamRAMOffset}, nil
 }
 
-func attachDuckStation() (_ Memory, err error) {
-	p, err := openProcess("duckstation", "DuckStation")
+func attachDuckStation() (Memory, error) {
+	pids, err := findRunning("duckstation", "DuckStation")
+	if err != nil {
+		return nil, err
+	}
+	return attachFirst(pids, attachDuckStationPID)
+}
+
+func attachDuckStationPID(pid uint32) (_ Memory, err error) {
+	p, err := openProcess(pid, "DuckStation")
 	if err != nil {
 		return nil, err
 	}

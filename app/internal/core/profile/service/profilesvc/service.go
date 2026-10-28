@@ -42,7 +42,7 @@ func (s *Service) Current(ctx context.Context) (domain.Profile, error) {
 	if err != nil {
 		return domain.Profile{}, err
 	}
-	desires, err := s.repo.ListDesireNames(ctx)
+	desires, err := s.repo.ListDesireNames(ctx, version)
 	if err != nil {
 		return domain.Profile{}, err
 	}

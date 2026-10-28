@@ -198,7 +198,6 @@ func (c *CalendarPage) fold(key, label string, bold, open bool, body fyne.Canvas
 	head.Alignment = widget.ButtonAlignLeading
 	head.Importance = widget.LowImportance
 	set := func(on bool) {
-		c.open[key] = on
 		mark := "▸ "
 		if on {
 			mark = "▾ "
@@ -209,7 +208,11 @@ func (c *CalendarPage) fold(key, label string, bold, open bool, body fyne.Canvas
 		c.years.Refresh()
 		c.content.Refresh()
 	}
-	head.OnTapped = func() { set(!c.open[key]) }
+	head.OnTapped = func() {
+		open = !open
+		c.open[key] = open
+		set(open)
+	}
 	if bold {
 		head.Importance = widget.MediumImportance
 	}

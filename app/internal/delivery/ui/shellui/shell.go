@@ -12,12 +12,13 @@ import (
 	"fyne.io/fyne/v2/widget"
 
 	"app/internal/delivery/ui/demoui"
+	"app/internal/delivery/ui/drillui"
 	"app/internal/delivery/ui/errantryui"
 	"app/internal/delivery/ui/itemui"
 	"app/internal/delivery/ui/moveui"
+	"app/internal/delivery/ui/plannerui"
 	"app/internal/delivery/ui/profileui"
 	"app/internal/delivery/ui/routeui"
-	"app/internal/delivery/ui/trainingui"
 )
 
 const (
@@ -27,7 +28,8 @@ const (
 
 type Parts struct {
 	Dashboard *profileui.Dashboard
-	Training  *trainingui.Screen
+	Drills    *drillui.Screen
+	Planner   *plannerui.Screen
 	Moves     *moveui.Screen
 	Items     *itemui.Screen
 	Route     *routeui.Screen
@@ -73,12 +75,13 @@ func New(win fyne.Window, p Parts) *Shell {
 	s.options = []*option{
 		{"Vitals", p.Dashboard.Vitals()},
 		{"Moves", p.Moves.Content()},
-		{"Training", scrolled(p.Training.Content())},
+		{"Drills", scrolled(p.Drills.Content())},
 		{"Errantry", p.Errantry.Content()},
 		{"Ranch", scrolled(p.Dashboard.Ranch())},
 		{"Calendar", p.Dashboard.Calendar()},
 		{"Route", scrolled(p.Route.Content())},
 		{"Items", scrolled(p.Items.Content())},
+		{"Planner", scrolled(p.Planner.Content())},
 	}
 	s.columns = []*column{s.newColumn(s.options[0])}
 	s.sync()

@@ -8,11 +8,12 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	"app/internal/core/drill/repository/db/drillrepo"
 	"app/internal/core/item/repository/db/itemrepo"
 	monster "app/internal/core/monster/domain"
 	"app/internal/core/move/repository/db/moverepo"
+	"app/internal/core/planner/repository/db/plannerrepo"
 	"app/internal/core/profile/repository/db/profilerepo"
-	"app/internal/core/training/repository/db/trainingrepo"
 	"app/internal/testutil"
 )
 
@@ -34,7 +35,7 @@ var _ = Describe("the queries of the viewer", Label("integration"), func() {
 		Expect(err).NotTo(HaveOccurred())
 		DeferCleanup(client.Close)
 
-		moves, items, gains, profiles := moverepo.New(client), itemrepo.New(client), trainingrepo.New(client), profilerepo.New(client)
+		moves, items, profiles, drills, planners := moverepo.New(client), itemrepo.New(client), profilerepo.New(client), drillrepo.New(client), plannerrepo.New(client)
 		askAll := func() {
 			genera, err := moves.ListGenera(ctx)
 			Expect(err).NotTo(HaveOccurred())
@@ -52,12 +53,16 @@ var _ = Describe("the queries of the viewer", Label("integration"), func() {
 				Expect(err).NotTo(HaveOccurred())
 				_, err = profiles.ListCalendar(ctx, version)
 				Expect(err).NotTo(HaveOccurred())
+				_, err = profiles.ListDesireNames(ctx, version)
+				Expect(err).NotTo(HaveOccurred())
 			}
-			_, err = gains.ListGains(ctx)
+			_, err = drills.ListGains(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			_, err = planners.ListFoodReactions(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			_, err = planners.ListEffects(ctx)
 			Expect(err).NotTo(HaveOccurred())
 			_, err = profiles.ListGenusNames(ctx)
-			Expect(err).NotTo(HaveOccurred())
-			_, err = profiles.ListDesireNames(ctx)
 			Expect(err).NotTo(HaveOccurred())
 			maps, err := profiles.ListExpeditionMaps(ctx)
 			Expect(err).NotTo(HaveOccurred())

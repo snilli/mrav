@@ -3,7 +3,6 @@ package profilerepo
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"strings"
 
 	"orm"
@@ -13,6 +12,7 @@ import (
 	entexpeditionlock "orm/ent/expeditionlock"
 	entexpeditionmap "orm/ent/expeditionmap"
 	entexpeditionplace "orm/ent/expeditionplace"
+	entitem "orm/ent/item"
 	entlootchance "orm/ent/lootchance"
 
 	monster "app/internal/core/monster/domain"
@@ -26,7 +26,7 @@ type Repository struct {
 	genera   memo.Cache[struct{}, map[monster.Genus]string]
 	breeds   memo.Cache[breedsKey, []domain.BreedRule]
 	cocoons  memo.Cache[monster.Version, []domain.CocoonRule]
-	desires  memo.Cache[struct{}, map[int]string]
+	desires  memo.Cache[monster.Version, map[int]string]
 	maps     memo.Cache[struct{}, []domain.ExpeditionMap]
 	calendar memo.Cache[monster.Version, []domain.CalendarEntry]
 }
@@ -107,12 +107,12 @@ func (r *Repository) loadCocoonRules(ctx context.Context, version monster.Versio
 	return rules, nil
 }
 
-func (r *Repository) ListDesireNames(ctx context.Context) (map[int]string, error) {
-	return r.desires.Get(struct{}{}, func() (map[int]string, error) { return r.loadDesireNames(ctx) })
+func (r *Repository) ListDesireNames(ctx context.Context, version monster.Version) (map[int]string, error) {
+	return r.desires.Get(version, func() (map[int]string, error) { return r.loadDesireNames(ctx, version) })
 }
 
-func (r *Repository) loadDesireNames(ctx context.Context) (map[int]string, error) {
-	rows, err := r.client.Item.Query().All(ctx)
+func (r *Repository) loadDesireNames(ctx context.Context, version monster.Version) (map[int]string, error) {
+	rows, err := r.client.Item.Query().Where(entitem.VersionEQ(entitem.Version(version))).All(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -174,12 +174,11 @@ func (r *Repository) loadExpeditionMaps(ctx context.Context) ([]domain.Expeditio
 	return maps, nil
 }
 
-func price(sale string) int {
-	n, err := strconv.Atoi(sale)
-	if err != nil || n < 0 {
+func price(sale *int) int {
+	if sale == nil {
 		return 0
 	}
-	return n
+	return *sale
 }
 
 func mapOf(row *ent.ExpeditionMap, places []*ent.ExpeditionPlace, locks []*ent.ExpeditionLock, chances map[int][]domain.Chance) (domain.ExpeditionMap, error) {

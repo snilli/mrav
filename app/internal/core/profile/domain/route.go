@@ -93,31 +93,40 @@ func PlanRoute(m ExpeditionMap, w Walker) (Route, error) {
 	if w.At != nil {
 		origin = *w.At
 	}
-	points := []Point{origin}
 	stands := [][]Point{{origin}}
 	for _, s := range m.Spots {
-		points, stands = append(points, s.At), append(stands, m.beside(s.At, steps))
+		stands = append(stands, m.beside(s.At, steps))
 	}
-	points, stands = append(points, m.Start), append(stands, []Point{m.Start})
+	stands = append(stands, []Point{m.Start})
 	base := n + 1
-	dist := make([][]float64, len(stands))
-	land := make([][]Point, len(stands))
-	prev := make([][]int, len(stands))
-	for i, p := range points {
-		d, from := m.walk(p, steps)
-		dist[i], land[i], prev[i] = make([]float64, len(stands)), make([]Point, len(stands)), from
-		for j := range stands {
-			dist[i][j], land[i][j] = m.nearest(d, stands[j])
+	type leg struct {
+		dist []float64
+		land []int8
+		prev []int
+	}
+	legs := make([][]leg, len(stands))
+	for i := range stands[:base] {
+		legs[i] = make([]leg, len(stands[i]))
+		for k, p := range stands[i] {
+			d, from := m.walk(p, steps)
+			l := leg{dist: make([]float64, len(stands)), land: make([]int8, len(stands)), prev: from}
+			for j := range stands {
+				var at int
+				l.dist[j], at = m.nearest(d, stands[j])
+				l.land[j] = int8(at)
+			}
+			legs[i][k] = l
 		}
 	}
 
 	cost := make([]float64, (1<<n)*n)
 	from := make([]int8, (1<<n)*n)
+	stand := make([]int8, (1<<n)*n)
 	for i := range cost {
 		cost[i] = math.Inf(1)
 	}
 	for last := range n {
-		cost[(1<<last)*n+last] = dist[0][last+1] + SearchCost
+		cost[(1<<last)*n+last], stand[(1<<last)*n+last] = legs[0][0].dist[last+1]+SearchCost, legs[0][0].land[last+1]
 	}
 	value := make([]float64, 1<<n)
 	var best struct {
@@ -136,16 +145,17 @@ func PlanRoute(m ExpeditionMap, w Walker) (Route, error) {
 			if mask&(1<<last) == 0 || math.IsInf(c, 1) {
 				continue
 			}
+			l := legs[last+1][stand[mask*n+last]]
 			for next := range n {
 				if mask&(1<<next) != 0 {
 					continue
 				}
-				nc := c + dist[last+1][next+1] + SearchCost
+				nc := c + l.dist[next+1] + SearchCost
 				if at := (mask|1<<next)*n + next; nc < cost[at] {
-					cost[at], from[at] = nc, int8(last)
+					cost[at], from[at], stand[at] = nc, int8(last), l.land[next+1]
 				}
 			}
-			total := c + dist[last+1][base]
+			total := c + l.dist[base]
 			if total > float64(energy) || math.IsInf(total, 1) {
 				continue
 			}
@@ -168,13 +178,15 @@ func PlanRoute(m ExpeditionMap, w Walker) (Route, error) {
 		mask, last = mask&^(1<<last), int(from[mask*n+last])
 	}
 	r := Route{Path: []Point{origin}, Cost: best.cost, Value: best.value}
-	at := 0
+	at, k := 0, int8(0)
 	for _, o := range slices.Backward(order) {
 		r.Spots = append(r.Spots, m.Spots[o])
-		r.Path = append(r.Path, m.trail(prev[at], points[at], land[at][o+1])...)
-		at = o + 1
+		l := legs[at][k]
+		r.Path = append(r.Path, m.trail(l.prev, stands[at][k], stands[o+1][l.land[o+1]])...)
+		at, k = o+1, l.land[o+1]
 	}
-	r.Path = append(r.Path, m.trail(prev[at], points[at], land[at][base])...)
+	l := legs[at][k]
+	r.Path = append(r.Path, m.trail(l.prev, stands[at][k], m.Start)...)
 	return r, nil
 }
 
@@ -197,10 +209,12 @@ func (m ExpeditionMap) WaysTo(w Walker) map[string]Way {
 	dist, from := m.walk(origin, steps)
 	out := map[string]Way{}
 	for _, s := range m.Spots {
-		d, at := m.nearest(dist, m.beside(s.At, steps))
+		near := m.beside(s.At, steps)
+		d, i := m.nearest(dist, near)
 		if math.IsInf(d, 1) {
 			continue
 		}
+		at := near[i]
 		way := Way{Cost: d + SearchCost}
 		for _, p := range m.trail(from, origin, at) {
 			way.Steps++
@@ -232,11 +246,11 @@ func (m ExpeditionMap) beside(p Point, steps []float64) []Point {
 	return out
 }
 
-func (m ExpeditionMap) nearest(dist []float64, at []Point) (float64, Point) {
-	best, where := math.Inf(1), Point{}
-	for _, p := range at {
+func (m ExpeditionMap) nearest(dist []float64, at []Point) (float64, int) {
+	best, where := math.Inf(1), 0
+	for i, p := range at {
 		if d := dist[m.index(p)]; d < best {
-			best, where = d, p
+			best, where = d, i
 		}
 	}
 	return best, where

@@ -101,6 +101,28 @@ var _ = Describe("MoveService", func() {
 			Expect(grid.Cells[0][2].Place).To(BeEmpty())
 		})
 
+		It("does not blame an earlier move at a place that leaves most of the chance, when the move's own rule gives it none", func() {
+			durahan := domain.Genus{Code: 9, Name: "Durahan"}
+			flash := domain.Move{Genus: 9, MemorySlot: 1, Col: 1, Row: 2, Name: "Flash Slash", Icon: "Durahan_2",
+				Acquire: []domain.Acquire{{Place: 1, Priority: 1, Auto: 3, Gates: []domain.Gate{{Stats: []monster.Stat{monster.Pow}, Min: 250, Max: 400}}}}}
+			throw := domain.Move{Genus: 9, MemorySlot: 2, Col: 1, Row: 3, Name: "Sword Throw", Icon: "Durahan_3",
+				Acquire: []domain.Acquire{{Place: 1, Priority: 2, Gates: []domain.Gate{{Stats: []monster.Stat{monster.Int, monster.Speed}, Min: 450, Max: 650}}}}}
+			m := monster.Monster{Genus: 9}
+			for s := range m.Stats {
+				m.Stats[s] = 50
+			}
+			source.EXPECT().Current(ctx).Return(m, nil)
+			repo.EXPECT().GetGenus(ctx, monster.Genus(9)).Return(durahan, nil)
+			repo.EXPECT().ListMoves(ctx, monster.Genus(9), monster.MR2DX).Return([]domain.Move{flash, throw}, nil)
+			repo.EXPECT().ListGenera(ctx).Return([]domain.Genus{durahan}, nil)
+
+			grid, err := svc.CurrentGrid(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(grid.Cells[0][1].Chance).To(BeNumerically("~", 3), "Flash Slash takes only a little")
+			Expect(grid.Cells[0][2].Chance).To(BeZero(), "Sword Throw: its own gate gives it none")
+			Expect(grid.Cells[0][2].Requirements).To(BeEmpty())
+		})
+
 		It("gives a move that a place teaches only by luck its chance and its place, and does not mark it ready", func() {
 			luck := domain.Move{Genus: 7, MemorySlot: 1, Col: 1, Row: 2, Name: "Luck", Icon: "Golem_2",
 				Acquire: []domain.Acquire{{Place: 2, Priority: 1, Auto: 3, Gates: []domain.Gate{{Stats: []monster.Stat{monster.Pow}, Min: 250, Max: 400}}}}}

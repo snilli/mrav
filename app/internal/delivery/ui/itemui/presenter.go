@@ -1,6 +1,10 @@
 package itemui
 
-import "app/internal/core/item/domain"
+import (
+	"strconv"
+
+	"app/internal/core/item/domain"
+)
 
 const blank = "-----"
 
@@ -11,6 +15,13 @@ type DetailView struct {
 	Effect      string
 	Sale        string
 	Purchase    string
+}
+
+func priceText(price *int) string {
+	if price == nil {
+		return blank
+	}
+	return strconv.Itoa(*price)
 }
 
 func SlotName(s domain.Slot) string {
@@ -34,7 +45,7 @@ func NewDetailView(s *domain.Slot) DetailView {
 		it := s.Item
 		return DetailView{
 			Name: it.Name, Kind: it.Kind, Description: it.Description, Effect: it.Effect,
-			Sale: it.SalePrice, Purchase: it.PurchasePrice,
+			Sale: priceText(it.SalePrice), Purchase: priceText(it.PurchasePrice),
 		}
 	}
 	v := DetailView{Kind: "No Item", Description: "No item selected.", Effect: "No item selected.", Sale: blank, Purchase: blank}

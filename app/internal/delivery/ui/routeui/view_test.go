@@ -84,7 +84,7 @@ var _ = Describe("NewView", func() {
 		v, err := NewView(monsterOf(140, 350), aisle(), nil)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(v.Name).To(Equal("Parepare Jungle"))
-		Expect(v.Summary).To(Equal("Starts with 140 energy · rocks break 50% · the route costs about 13 energy"))
+		Expect(v.Summary).To(Equal("Starts with 140 energy · rocks break 50% · the route costs about 12 energy"))
 		Expect(v.Places).To(Equal([]PlaceView{{Name: "A", Stop: 1, Worth: "about 1,000 G"}}))
 		Expect(v.Route.Spots).To(HaveLen(1))
 	})
@@ -236,12 +236,12 @@ var _ = Describe("NewView", func() {
 		It("plans from the tile of the monster with the energy that it has left, once it has used some", func() {
 			v, err := NewView(walking(20, true), parepare(), nil)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(v.Summary).To(Equal("Rocks break 50% · the route costs about 12 energy"), "the energy it has and where it is are in the boxes")
+			Expect(v.Summary).To(Equal("Rocks break 50% · the route costs about 11 energy"), "the energy it has and where it is are in the boxes")
 			Expect(v.Route.Path[0]).To(Equal(domain.Point{X: 1}))
 		})
 
 		It("says that no place is in reach from where it is, when its energy is too little", func() {
-			v, err := NewView(walking(11, true), parepare(), nil)
+			v, err := NewView(walking(10, true), parepare(), nil)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(v.Summary).To(Equal("Rocks break 50%"))
 		})
@@ -286,7 +286,7 @@ var _ = Describe("NewView", func() {
 			func(p domain.Profile) {
 				v, err := NewView(p, parepare(), nil)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(v.Summary).To(Equal("Starts with 700 energy · rocks break 50% · the route costs about 13 energy"))
+				Expect(v.Summary).To(Equal("Starts with 700 energy · rocks break 50% · the route costs about 12 energy"))
 				Expect(v.Marker).NotTo(BeNil())
 			},
 			Entry("no energy used yet", walking(700, true)),

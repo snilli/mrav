@@ -10,19 +10,21 @@ import (
 
 	movedomain "app/internal/core/move/domain"
 	"app/internal/delivery/ui/demoui"
+	"app/internal/delivery/ui/drillui"
 	"app/internal/delivery/ui/errantryui"
 	"app/internal/delivery/ui/itemui"
 	"app/internal/delivery/ui/moveui"
+	"app/internal/delivery/ui/plannerui"
 	"app/internal/delivery/ui/profileui"
 	"app/internal/delivery/ui/routeui"
-	"app/internal/delivery/ui/trainingui"
 	"app/internal/infrastructure/fakemonster"
 	"app/internal/infrastructure/fakeplayer"
 	"app/internal/infrastructure/icons"
+	mockdrill "app/mock/core/drill"
 	mockitem "app/mock/core/item"
 	mockmove "app/mock/core/move"
+	mockplanner "app/mock/core/planner"
 	mockprofile "app/mock/core/profile"
-	mocktraining "app/mock/core/training"
 )
 
 type floored struct {
@@ -45,7 +47,8 @@ var _ = Describe("Shell", func() {
 		win = test.NewWindow(nil)
 		parts = Parts{
 			Dashboard: profileui.NewDashboard(mockprofile.NewMockProfileService(GinkgoT())),
-			Training:  trainingui.NewScreen(mocktraining.NewMockTrainingService(GinkgoT())),
+			Drills:    drillui.NewScreen(mockdrill.NewMockDrillService(GinkgoT())),
+			Planner:   plannerui.NewScreen(mockplanner.NewMockPlannerService(GinkgoT())),
 			Moves:     moveui.NewScreen(mockmove.NewMockMoveService(GinkgoT()), icons.Bytes),
 			Items:     itemui.NewScreen(mockitem.NewMockItemService(GinkgoT())),
 			Route:     routeui.NewScreen(mockprofile.NewMockProfileService(GinkgoT())),
@@ -127,7 +130,7 @@ var _ = Describe("Shell", func() {
 			test.Tap(last().add)
 			test.Tap(last().add)
 
-			Expect(shown()).To(Equal([]string{"Vitals", "Moves", "Training"}))
+			Expect(shown()).To(Equal([]string{"Vitals", "Moves", "Drills"}))
 			Expect(last().add.Visible()).To(BeFalse())
 			x := func(c *column) float32 { return fyne.CurrentApp().Driver().AbsolutePositionForObject(c.box).X }
 			Expect(x(s.columns[0])).To(BeNumerically("<", x(s.columns[1])))
@@ -137,8 +140,8 @@ var _ = Describe("Shell", func() {
 		It("offers each column the pages that no other column shows, and its own", func() {
 			test.Tap(s.columns[0].add)
 
-			Expect(s.columns[0].choice.Options).To(ConsistOf("Vitals", "Training", "Errantry", "Ranch", "Calendar", "Route", "Items"))
-			Expect(s.columns[1].choice.Options).To(ConsistOf("Moves", "Training", "Errantry", "Ranch", "Calendar", "Route", "Items"))
+			Expect(s.columns[0].choice.Options).To(ConsistOf("Vitals", "Drills", "Errantry", "Ranch", "Calendar", "Route", "Items", "Planner"))
+			Expect(s.columns[1].choice.Options).To(ConsistOf("Moves", "Drills", "Errantry", "Ranch", "Calendar", "Route", "Items", "Planner"))
 		})
 
 		It("shows the page that a column is told to choose, and offers the one that it showed to the others", func() {

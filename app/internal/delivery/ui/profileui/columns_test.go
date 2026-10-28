@@ -70,6 +70,22 @@ var _ = Describe("Columns", func() {
 		Expect(objs[1].Size().Width).To(BeZero())
 	})
 
+	It("says where a line between two columns goes, in the middle of the gap that Layout leaves, for the width that a row has", func() {
+		objs := cells(3)
+		columns := Columns{50, 0, 30}
+		columns.Layout(objs, fyne.NewSize(200, 30))
+
+		edges := columns.Edges(200)
+
+		Expect(edges).To(HaveLen(2))
+		Expect(edges[0]).To(Equal(objs[0].Position().X + objs[0].Size().Width + pad/2))
+		Expect(edges[1]).To(Equal(objs[1].Position().X + objs[1].Size().Width + pad/2))
+	})
+
+	It("has no line to say for a single column", func() {
+		Expect(Columns{0}.Edges(200)).To(BeEmpty())
+	})
+
 	It("needs the fixed widths, the least the flexible columns need, the gaps, and the tallest row", func() {
 		objs := cells(3)
 		objs[1].(*canvas.Rectangle).SetMinSize(fyne.NewSize(70, 45))

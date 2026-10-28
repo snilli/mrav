@@ -44,6 +44,30 @@ func (f CocoonFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, erro
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.CocoonMutation", m)
 }
 
+// The DrillGainFunc type is an adapter to allow the use of ordinary
+// function as DrillGain mutator.
+type DrillGainFunc func(context.Context, *ent.DrillGainMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f DrillGainFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.DrillGainMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.DrillGainMutation", m)
+}
+
+// The EffectFunc type is an adapter to allow the use of ordinary
+// function as Effect mutator.
+type EffectFunc func(context.Context, *ent.EffectMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f EffectFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.EffectMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.EffectMutation", m)
+}
+
 // The ExpeditionLockFunc type is an adapter to allow the use of ordinary
 // function as ExpeditionLock mutator.
 type ExpeditionLockFunc func(context.Context, *ent.ExpeditionLockMutation) (ent.Value, error)
@@ -80,6 +104,18 @@ func (f ExpeditionPlaceFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Va
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ExpeditionPlaceMutation", m)
 }
 
+// The FoodReactionFunc type is an adapter to allow the use of ordinary
+// function as FoodReaction mutator.
+type FoodReactionFunc func(context.Context, *ent.FoodReactionMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f FoodReactionFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.FoodReactionMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.FoodReactionMutation", m)
+}
+
 // The GenusFunc type is an adapter to allow the use of ordinary
 // function as Genus mutator.
 type GenusFunc func(context.Context, *ent.GenusMutation) (ent.Value, error)
@@ -102,6 +138,18 @@ func (f ItemFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error)
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ItemMutation", m)
+}
+
+// The LifeStageFunc type is an adapter to allow the use of ordinary
+// function as LifeStage mutator.
+type LifeStageFunc func(context.Context, *ent.LifeStageMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f LifeStageFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.LifeStageMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.LifeStageMutation", m)
 }
 
 // The LootChanceFunc type is an adapter to allow the use of ordinary
@@ -128,16 +176,16 @@ func (f MoveFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error)
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.MoveMutation", m)
 }
 
-// The TrainingGainFunc type is an adapter to allow the use of ordinary
-// function as TrainingGain mutator.
-type TrainingGainFunc func(context.Context, *ent.TrainingGainMutation) (ent.Value, error)
+// The SongFunc type is an adapter to allow the use of ordinary
+// function as Song mutator.
+type SongFunc func(context.Context, *ent.SongMutation) (ent.Value, error)
 
 // Mutate calls f(ctx, m).
-func (f TrainingGainFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	if mv, ok := m.(*ent.TrainingGainMutation); ok {
+func (f SongFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.SongMutation); ok {
 		return f(ctx, mv)
 	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TrainingGainMutation", m)
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SongMutation", m)
 }
 
 // Condition is a hook condition function.

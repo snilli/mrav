@@ -418,7 +418,7 @@ var _ = Describe("Screen", func() {
 	It("titles the map with its name and what the route is worth, as a heading and not a panel that opens, and says the route", func() {
 		s.apply(maps(), monsterOf(140, 350), nil)
 		Expect(s.boxes[0].title.Text).To(Equal("Route · Parepare Jungle: 1 place, about 1,000 G"))
-		Expect(s.boxes[0].summary.Text).To(Equal("Starts with 140 energy · rocks break 50% · the route costs about 13 energy"))
+		Expect(s.boxes[0].summary.Text).To(Equal("Starts with 140 energy · rocks break 50% · the route costs about 12 energy"))
 	})
 
 	It("says that nothing is in reach in the title, when it is not", func() {
@@ -610,6 +610,22 @@ var _ = Describe("Screen", func() {
 			Expect(swatch(b, "Hidden way, needs 300 INT").bg.FillColor).To(Equal(gateFill))
 			Expect(swatch(b, "Hidden way, INT too low").text.Text).To(Equal("5"))
 			Expect(swatch(b, "Hidden way, INT too low").bg.FillColor).To(Equal(shutFill))
+		})
+
+		It("opens a hidden way off the route when only the INT of the monster rises to it", func() {
+			m := aisle()
+			m.Width = 5
+			m.Tiles = []domain.Terrain{domain.Floor, domain.Floor, domain.Wall, domain.Gate, domain.Wall}
+			m.Locks = []domain.Lock{{At: domain.Point{X: 3}, MinINT: 300}}
+			s.apply([]domain.ExpeditionMap{m}, monsterWith(700, 350, 200, 0, 0), nil)
+			Expect(s.boxes[0].cells[3].bg.FillColor).To(Equal(shutFill))
+			Expect(words(s.boxes[0])).To(ContainElement("Hidden way, INT too low"))
+
+			s.apply([]domain.ExpeditionMap{m}, monsterWith(700, 350, 300, 0, 0), nil)
+			Expect(s.boxes[0].cells[3].bg.FillColor).To(Equal(gateFill))
+			Expect(words(s.boxes[0])).To(ContainElement("Hidden way, needs 300 INT"))
+			Expect(words(s.boxes[0])).NotTo(ContainElement("Hidden way, INT too low"))
+			Expect(s.by.Intelligence).To(Equal(300))
 		})
 
 		It("shows a teleport and a place where one lands as the map labels them", func() {

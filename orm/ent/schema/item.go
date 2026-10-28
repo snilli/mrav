@@ -17,8 +17,8 @@ func (Item) Fields() []ent.Field {
 		field.String("kind").NotEmpty(),
 		field.Text("description"),
 		field.Text("effect"),
-		field.String("sale_price").NotEmpty(),
-		field.String("purchase_price").NotEmpty(),
+		field.Int("sale_price").Positive().Optional().Nillable(),
+		field.Int("purchase_price").Positive().Optional().Nillable(),
 	}
 }
 

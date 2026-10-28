@@ -114,7 +114,7 @@ func events(p Profile, d player.Date, in int) []Event {
 		if e.Month != d.Month || e.Week != d.Week {
 			continue
 		}
-		if ev, ok := e.event(p, d); ok {
+		if ev, ok := e.event(p, d, in); ok {
 			list = append(list, ranked{ev, e.Kind == EventCup, e.grade()})
 		}
 	}
@@ -152,11 +152,11 @@ func (e CalendarEntry) grade() int {
 	return -1
 }
 
-func (e CalendarEntry) event(p Profile, d player.Date) (Event, bool) {
+func (e CalendarEntry) event(p Profile, d player.Date, in int) (Event, bool) {
 	ev := Event{Name: e.Name, Kind: e.Kind, Detail: e.detail()}
 	var needs []string
 	for _, c := range e.When {
-		fit, need, held := c.check(p, d, e.Name)
+		fit, need, held := c.check(p, d, in, e.Name)
 		if !held {
 			return Event{}, false
 		}
@@ -200,8 +200,9 @@ func (e CalendarEntry) detail() string {
 	return strings.Join(parts, ", ")
 }
 
-func (c EntryCondition) check(p Profile, d player.Date, name string) (Fit, string, bool) {
+func (c EntryCondition) check(p Profile, d player.Date, in int, name string) (Fit, string, bool) {
 	m, r := p.Monster, p.Player.Ranch
+	age := m.Age + in
 	v := c.Value
 	switch c.Type {
 	case CondRankAtLeast:
@@ -221,12 +222,12 @@ func (c EntryCondition) check(p Profile, d player.Date, name string) (Fit, strin
 	case CondYearAtLeast:
 		return least(d.Year >= v, fmt.Sprintf("Year %d", v))
 	case CondAgeUnder:
-		if m.Age >= v {
+		if age >= v {
 			return FitNever, "", true
 		}
 		return FitReady, "", true
 	case CondAgeAtLeast:
-		return least(m.Age >= v, fmt.Sprintf("Age %d weeks", v))
+		return least(age >= v, fmt.Sprintf("Age %d weeks", v))
 	case CondNatureAtLeast:
 		return least(m.Nature >= v, fmt.Sprintf("Nature %d or more", v))
 	case CondNatureAtMost:

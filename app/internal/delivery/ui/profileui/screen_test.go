@@ -230,6 +230,17 @@ var _ = Describe("Dashboard", func() {
 			Expect(d.breedFlags[37].txt.Text).To(Equal("B37"))
 		})
 
+		It("hides the list of breeds when the game closes, and shows it again when the game is back", func() {
+			p := ranchProfile()
+			p.Breeds = []domain.BreedUnlock{{Name: "Pixie", Unlocked: true}}
+			d.apply(p, nil)
+			Expect(d.breeds.Visible()).To(BeTrue())
+			d.apply(domain.Profile{}, apperr.NotFound("game", "DuckStation is not running"))
+			Expect(d.breeds.Visible()).To(BeFalse())
+			d.apply(p, nil)
+			Expect(d.breeds.Visible()).To(BeTrue())
+		})
+
 		It("has no list of breeds when the game does not say which are unlocked", func() {
 			d.apply(ranchProfile(), nil)
 			Expect(d.breeds.Visible()).To(BeFalse())

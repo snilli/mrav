@@ -132,7 +132,7 @@ var _ = Describe("profilerepo calendar", Label("integration"), func() {
 				When: []domain.EntryCondition{{Type: domain.CondRankExactly, Value: 4}},
 			}))
 			Expect(entry(got, domain.Phoenix.Name).When).To(Equal([]domain.EntryCondition{
-				{Type: domain.CondPhoenixOpen}, {Type: domain.CondYearAtLeast, Value: 1001}, {Type: domain.CondExpedition},
+				{Type: domain.CondPhoenixOpen}, {Type: domain.CondExpedition},
 			}))
 			for _, e := range domain.Expeditions {
 				Expect(entry(got, e.Name).Month).To(Equal(e.Month))

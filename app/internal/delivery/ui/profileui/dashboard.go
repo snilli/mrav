@@ -331,6 +331,7 @@ func (d *Dashboard) apply(p domain.Profile, err error) {
 		d.headerBody.Hide()
 		d.vitalsBody.Hide()
 		d.ranchBody.Hide()
+		d.breeds.Hide()
 		d.expeditionsBody.Hide()
 		d.calendar.Set(nil)
 		return
@@ -466,4 +467,5 @@ func (d *Dashboard) showRanch(r RanchView) {
 	}
 	d.breedsTitle.SetText(r.BreedsTitle)
 	setVisible(d.breeds, len(r.Breeds) > 0)
+	d.ranchBox.Refresh()
 }

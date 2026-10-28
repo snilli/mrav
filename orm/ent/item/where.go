@@ -84,12 +84,12 @@ func Effect(v string) predicate.Item {
 }
 
 // SalePrice applies equality check predicate on the "sale_price" field. It's identical to SalePriceEQ.
-func SalePrice(v string) predicate.Item {
+func SalePrice(v int) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldSalePrice, v))
 }
 
 // PurchasePrice applies equality check predicate on the "purchase_price" field. It's identical to PurchasePriceEQ.
-func PurchasePrice(v string) predicate.Item {
+func PurchasePrice(v int) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldPurchasePrice, v))
 }
 
@@ -479,133 +479,103 @@ func EffectContainsFold(v string) predicate.Item {
 }
 
 // SalePriceEQ applies the EQ predicate on the "sale_price" field.
-func SalePriceEQ(v string) predicate.Item {
+func SalePriceEQ(v int) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldSalePrice, v))
 }
 
 // SalePriceNEQ applies the NEQ predicate on the "sale_price" field.
-func SalePriceNEQ(v string) predicate.Item {
+func SalePriceNEQ(v int) predicate.Item {
 	return predicate.Item(sql.FieldNEQ(FieldSalePrice, v))
 }
 
 // SalePriceIn applies the In predicate on the "sale_price" field.
-func SalePriceIn(vs ...string) predicate.Item {
+func SalePriceIn(vs ...int) predicate.Item {
 	return predicate.Item(sql.FieldIn(FieldSalePrice, vs...))
 }
 
 // SalePriceNotIn applies the NotIn predicate on the "sale_price" field.
-func SalePriceNotIn(vs ...string) predicate.Item {
+func SalePriceNotIn(vs ...int) predicate.Item {
 	return predicate.Item(sql.FieldNotIn(FieldSalePrice, vs...))
 }
 
 // SalePriceGT applies the GT predicate on the "sale_price" field.
-func SalePriceGT(v string) predicate.Item {
+func SalePriceGT(v int) predicate.Item {
 	return predicate.Item(sql.FieldGT(FieldSalePrice, v))
 }
 
 // SalePriceGTE applies the GTE predicate on the "sale_price" field.
-func SalePriceGTE(v string) predicate.Item {
+func SalePriceGTE(v int) predicate.Item {
 	return predicate.Item(sql.FieldGTE(FieldSalePrice, v))
 }
 
 // SalePriceLT applies the LT predicate on the "sale_price" field.
-func SalePriceLT(v string) predicate.Item {
+func SalePriceLT(v int) predicate.Item {
 	return predicate.Item(sql.FieldLT(FieldSalePrice, v))
 }
 
 // SalePriceLTE applies the LTE predicate on the "sale_price" field.
-func SalePriceLTE(v string) predicate.Item {
+func SalePriceLTE(v int) predicate.Item {
 	return predicate.Item(sql.FieldLTE(FieldSalePrice, v))
 }
 
-// SalePriceContains applies the Contains predicate on the "sale_price" field.
-func SalePriceContains(v string) predicate.Item {
-	return predicate.Item(sql.FieldContains(FieldSalePrice, v))
+// SalePriceIsNil applies the IsNil predicate on the "sale_price" field.
+func SalePriceIsNil() predicate.Item {
+	return predicate.Item(sql.FieldIsNull(FieldSalePrice))
 }
 
-// SalePriceHasPrefix applies the HasPrefix predicate on the "sale_price" field.
-func SalePriceHasPrefix(v string) predicate.Item {
-	return predicate.Item(sql.FieldHasPrefix(FieldSalePrice, v))
-}
-
-// SalePriceHasSuffix applies the HasSuffix predicate on the "sale_price" field.
-func SalePriceHasSuffix(v string) predicate.Item {
-	return predicate.Item(sql.FieldHasSuffix(FieldSalePrice, v))
-}
-
-// SalePriceEqualFold applies the EqualFold predicate on the "sale_price" field.
-func SalePriceEqualFold(v string) predicate.Item {
-	return predicate.Item(sql.FieldEqualFold(FieldSalePrice, v))
-}
-
-// SalePriceContainsFold applies the ContainsFold predicate on the "sale_price" field.
-func SalePriceContainsFold(v string) predicate.Item {
-	return predicate.Item(sql.FieldContainsFold(FieldSalePrice, v))
+// SalePriceNotNil applies the NotNil predicate on the "sale_price" field.
+func SalePriceNotNil() predicate.Item {
+	return predicate.Item(sql.FieldNotNull(FieldSalePrice))
 }
 
 // PurchasePriceEQ applies the EQ predicate on the "purchase_price" field.
-func PurchasePriceEQ(v string) predicate.Item {
+func PurchasePriceEQ(v int) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldPurchasePrice, v))
 }
 
 // PurchasePriceNEQ applies the NEQ predicate on the "purchase_price" field.
-func PurchasePriceNEQ(v string) predicate.Item {
+func PurchasePriceNEQ(v int) predicate.Item {
 	return predicate.Item(sql.FieldNEQ(FieldPurchasePrice, v))
 }
 
 // PurchasePriceIn applies the In predicate on the "purchase_price" field.
-func PurchasePriceIn(vs ...string) predicate.Item {
+func PurchasePriceIn(vs ...int) predicate.Item {
 	return predicate.Item(sql.FieldIn(FieldPurchasePrice, vs...))
 }
 
 // PurchasePriceNotIn applies the NotIn predicate on the "purchase_price" field.
-func PurchasePriceNotIn(vs ...string) predicate.Item {
+func PurchasePriceNotIn(vs ...int) predicate.Item {
 	return predicate.Item(sql.FieldNotIn(FieldPurchasePrice, vs...))
 }
 
 // PurchasePriceGT applies the GT predicate on the "purchase_price" field.
-func PurchasePriceGT(v string) predicate.Item {
+func PurchasePriceGT(v int) predicate.Item {
 	return predicate.Item(sql.FieldGT(FieldPurchasePrice, v))
 }
 
 // PurchasePriceGTE applies the GTE predicate on the "purchase_price" field.
-func PurchasePriceGTE(v string) predicate.Item {
+func PurchasePriceGTE(v int) predicate.Item {
 	return predicate.Item(sql.FieldGTE(FieldPurchasePrice, v))
 }
 
 // PurchasePriceLT applies the LT predicate on the "purchase_price" field.
-func PurchasePriceLT(v string) predicate.Item {
+func PurchasePriceLT(v int) predicate.Item {
 	return predicate.Item(sql.FieldLT(FieldPurchasePrice, v))
 }
 
 // PurchasePriceLTE applies the LTE predicate on the "purchase_price" field.
-func PurchasePriceLTE(v string) predicate.Item {
+func PurchasePriceLTE(v int) predicate.Item {
 	return predicate.Item(sql.FieldLTE(FieldPurchasePrice, v))
 }
 
-// PurchasePriceContains applies the Contains predicate on the "purchase_price" field.
-func PurchasePriceContains(v string) predicate.Item {
-	return predicate.Item(sql.FieldContains(FieldPurchasePrice, v))
+// PurchasePriceIsNil applies the IsNil predicate on the "purchase_price" field.
+func PurchasePriceIsNil() predicate.Item {
+	return predicate.Item(sql.FieldIsNull(FieldPurchasePrice))
 }
 
-// PurchasePriceHasPrefix applies the HasPrefix predicate on the "purchase_price" field.
-func PurchasePriceHasPrefix(v string) predicate.Item {
-	return predicate.Item(sql.FieldHasPrefix(FieldPurchasePrice, v))
-}
-
-// PurchasePriceHasSuffix applies the HasSuffix predicate on the "purchase_price" field.
-func PurchasePriceHasSuffix(v string) predicate.Item {
-	return predicate.Item(sql.FieldHasSuffix(FieldPurchasePrice, v))
-}
-
-// PurchasePriceEqualFold applies the EqualFold predicate on the "purchase_price" field.
-func PurchasePriceEqualFold(v string) predicate.Item {
-	return predicate.Item(sql.FieldEqualFold(FieldPurchasePrice, v))
-}
-
-// PurchasePriceContainsFold applies the ContainsFold predicate on the "purchase_price" field.
-func PurchasePriceContainsFold(v string) predicate.Item {
-	return predicate.Item(sql.FieldContainsFold(FieldPurchasePrice, v))
+// PurchasePriceNotNil applies the NotNil predicate on the "purchase_price" field.
+func PurchasePriceNotNil() predicate.Item {
+	return predicate.Item(sql.FieldNotNull(FieldPurchasePrice))
 }
 
 // And groups predicates with the AND operator between them.

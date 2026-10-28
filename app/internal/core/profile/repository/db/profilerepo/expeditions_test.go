@@ -28,9 +28,13 @@ var _ = Describe("profilerepo expedition maps", Label("integration"), func() {
 		repo   profile.ProfileRepository
 	)
 
-	item := func(code int, name, price string) *ent.Item {
-		return client.Item.Create().SetVersion(entitem.VersionMr2).SetCode(code).SetName(name).SetDesireName(name).SetKind("Item").
-			SetDescription("").SetEffect("").SetSalePrice(price).SetPurchasePrice("-----").SaveX(ctx)
+	item := func(code int, name string, price int) *ent.Item {
+		create := client.Item.Create().SetVersion(entitem.VersionMr2).SetCode(code).SetName(name).SetDesireName(name).SetKind("Item").
+			SetDescription("").SetEffect("")
+		if price > 0 {
+			create.SetSalePrice(price)
+		}
+		return create.SaveX(ctx)
 	}
 	slots := map[[3]int]int{}
 	chance := func(place *ent.ExpeditionPlace, good bool, tier, min int, it *ent.Item, pct float64) {
@@ -65,9 +69,9 @@ var _ = Describe("profilerepo expedition maps", Label("integration"), func() {
 		DeferCleanup(client.Close)
 		repo = profilerepo.New(client)
 
-		gem, nuts := item(900, "Gem", "1000"), item(901, "Nuts", "100")
-		item(902, "Nuts", "100")
-		glue := item(903, "Glue", "-----")
+		gem, nuts := item(900, "Gem", 1000), item(901, "Nuts", 100)
+		item(902, "Nuts", 100)
+		glue := item(903, "Glue", 0)
 
 		cave := client.ExpeditionMap.Create().SetName("Cave").SetRows("S.A\n.gB").SetStartX(0).SetStartY(0).SaveX(ctx)
 		empty := client.ExpeditionMap.Create().SetName("Empty").SetRows("S").SetStartX(0).SetStartY(0).SaveX(ctx)
@@ -146,7 +150,7 @@ var _ = Describe("profilerepo expedition maps", Label("integration"), func() {
 
 	It("keeps the price of each item by the item and not by its name, so that two items of one name do not share one", func() {
 		a := client.ExpeditionPlace.Query().Where(entexpeditionplace.Name("A")).OnlyX(ctx)
-		dear := item(904, "Nuts", "300")
+		dear := item(904, "Nuts", 300)
 		chance(a, false, 0, 0, dear, 5)
 		Expect(chancesOf("Cave", "A")).To(ContainElement(domain.Chance{MinStat: 0, Slot: 2, Code: 904, Item: "Nuts", Pct: 5, Price: 300}))
 	})
@@ -263,16 +267,16 @@ var _ = Describe("profilerepo shipped expedition maps", Label("integration"), fu
 			Expect(m.Tiles[9*m.Width+last]).To(Equal(domain.Wall))
 		})
 
-		It("has a route to the cave and back for a monster with the energy for it, which costs 111: 54 back from the cave over its two rocks at 6 each, 7 less going out as the search is made from the tile before it, and a search of 10", func() {
+		It("has a route to the cave and back for a monster with the energy for it, which costs 104: 47 out to the tile before the cave over its two rocks at 6 each, the search of 10 made from that tile, and the same 47 back", func() {
 			r, err := domain.PlanRoute(maps[3], domain.Walker{Energy: 700, BreakChance: 1, Intelligence: 999})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(r.Spots).To(HaveLen(1))
 			Expect(r.Spots[0].Name).To(Equal("A"))
-			Expect(r.Cost).To(BeNumerically("~", 111, 1e-9))
+			Expect(r.Cost).To(BeNumerically("~", 104, 1e-9))
 		})
 
-		It("has no route for a monster that starts with 110, one short of the round", func() {
-			r, err := domain.PlanRoute(maps[3], domain.Walker{Energy: 110, BreakChance: 1, Intelligence: 999})
+		It("has no route for a monster that starts with 103, one short of the round", func() {
+			r, err := domain.PlanRoute(maps[3], domain.Walker{Energy: 103, BreakChance: 1, Intelligence: 999})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(r.Spots).To(BeEmpty())
 		})

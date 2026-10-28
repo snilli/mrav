@@ -116,13 +116,29 @@ var _ = Describe("Calendar", func() {
 		Entry("cup grade, met", fit(0, 0, "B"), when(domain.CondCupGrade, 3), domain.FitReady, ""),
 		Entry("cup grade, below", fit(0, 0, "C"), when(domain.CondCupGrade, 3), domain.FitNotYet, "Rank B"),
 		Entry("cup grade, past it: shown with a warning", fit(0, 0, "A"), when(domain.CondCupGrade, 3), domain.FitWarn, "Rank above B"),
-		Entry("age under, met", monster.Monster{Age: 23}, when(domain.CondAgeUnder, 24), domain.FitReady, ""),
-		Entry("age under, too old for good", monster.Monster{Age: 24}, when(domain.CondAgeUnder, 24), domain.FitNever, ""),
-		Entry("age at least, too young", monster.Monster{Age: 299}, when(domain.CondAgeAtLeast, 300), domain.FitNotYet, "Age 300 weeks"),
+		Entry("age under, met by the week of the event, five weeks on", monster.Monster{Age: 18}, when(domain.CondAgeUnder, 24), domain.FitReady, ""),
+		Entry("age under, too old for good by then", monster.Monster{Age: 19}, when(domain.CondAgeUnder, 24), domain.FitNever, ""),
+		Entry("age at least, too young by then", monster.Monster{Age: 294}, when(domain.CondAgeAtLeast, 300), domain.FitNotYet, "Age 300 weeks"),
+		Entry("age at least, old enough by then", monster.Monster{Age: 295}, when(domain.CondAgeAtLeast, 300), domain.FitReady, ""),
 		Entry("nature at least, met", monster.Monster{Nature: 20}, when(domain.CondNatureAtLeast, 20), domain.FitReady, ""),
 		Entry("nature at least, short", monster.Monster{Nature: 0}, when(domain.CondNatureAtLeast, 20), domain.FitNotYet, "Nature 20 or more"),
 		Entry("nature at most, short", monster.Monster{Nature: 0}, when(domain.CondNatureAtMost, -20), domain.FitNotYet, "Nature -20 or less"),
 	)
+
+	It("weighs the age the monster will be in the week of the event, not the age it is now", func() {
+		const jan1of1001 = 36
+		entries := []domain.CalendarEntry{
+			{Month: 6, Week: 2, Name: "Freshmen's Cup (F)", Kind: domain.EventCup, When: []domain.EntryCondition{when(domain.CondAgeUnder, 24)}},
+			{Month: 6, Week: 2, Name: "Elders' Cup", Kind: domain.EventCup, When: []domain.EntryCondition{when(domain.CondAgeAtLeast, 300)}},
+		}
+		young := domain.Calendar(profile(jan1of1001, monster.Monster{Age: 10}, entries))
+		for _, year := range []int{1001, 1002} {
+			Expect(event(on(young, year, 6, 2), "Freshmen's Cup (F)").Fit).To(Equal(domain.FitNever), "31 and 79 weeks old by then")
+		}
+		old := domain.Calendar(profile(jan1of1001, monster.Monster{Age: 250}, entries))
+		Expect(event(on(old, 1001, 6, 2), "Elders' Cup").Need).To(Equal("Age 300 weeks"), "271 weeks old by then")
+		Expect(event(on(old, 1002, 6, 2), "Elders' Cup").Fit).To(Equal(domain.FitReady), "319 weeks old by then")
+	})
 
 	It("asks for the trainer's rank and the year", func() {
 		e := one(fit(0, 0, "E"), domain.CalendarEntry{When: []domain.EntryCondition{when(domain.CondTrainerRankAtLeast, 6), when(domain.CondYearAtLeast, 1010)}})

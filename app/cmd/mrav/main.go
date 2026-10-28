@@ -15,26 +15,30 @@ import (
 	"go.uber.org/fx"
 
 	"app/config"
+	"app/internal/core/drill"
+	"app/internal/core/drill/repository/db/drillrepo"
+	"app/internal/core/drill/service/drillsvc"
 	"app/internal/core/item"
 	"app/internal/core/item/repository/db/itemrepo"
 	"app/internal/core/item/service/itemsvc"
 	"app/internal/core/move"
 	"app/internal/core/move/repository/db/moverepo"
 	"app/internal/core/move/service/movesvc"
+	"app/internal/core/planner"
+	"app/internal/core/planner/repository/db/plannerrepo"
+	"app/internal/core/planner/service/plannersvc"
 	"app/internal/core/profile"
 	"app/internal/core/profile/repository/db/profilerepo"
 	"app/internal/core/profile/service/profilesvc"
-	"app/internal/core/training"
-	"app/internal/core/training/repository/db/trainingrepo"
-	"app/internal/core/training/service/trainingsvc"
 	"app/internal/delivery/ui/demoui"
+	"app/internal/delivery/ui/drillui"
 	"app/internal/delivery/ui/errantryui"
 	"app/internal/delivery/ui/itemui"
 	"app/internal/delivery/ui/moveui"
+	"app/internal/delivery/ui/plannerui"
 	"app/internal/delivery/ui/profileui"
 	"app/internal/delivery/ui/routeui"
 	"app/internal/delivery/ui/shellui"
-	"app/internal/delivery/ui/trainingui"
 	"app/internal/infrastructure/database"
 	"app/internal/infrastructure/fakemonster"
 	"app/internal/infrastructure/fakeplayer"
@@ -48,7 +52,8 @@ func options() fx.Option {
 		fx.Provide(provideConfig, database.ProvideDatabase),
 		fx.Provide(moverepo.New, movesvc.New),
 		fx.Provide(profilerepo.New, profilesvc.New),
-		fx.Provide(trainingrepo.New, trainingsvc.New),
+		fx.Provide(drillrepo.New, drillsvc.New),
+		fx.Provide(plannerrepo.New, plannersvc.New),
 		fx.Provide(itemrepo.New, itemsvc.New),
 		fx.Provide(newSource),
 		fx.Provide(newFyneApp, newParts, newDemo, newWindow),
@@ -110,12 +115,13 @@ func newFyneApp() fyne.App {
 type loader interface{ Load(ctx context.Context) }
 
 func newParts(
-	_ fyne.App, profiles profile.ProfileService, moves move.MoveService, trainings training.TrainingService,
-	items item.ItemService, monsters *fakemonster.Source,
+	_ fyne.App, profiles profile.ProfileService, moves move.MoveService,
+	drills drill.DrillService, items item.ItemService, planners planner.PlannerService, monsters *fakemonster.Source,
 ) shellui.Parts {
 	return shellui.Parts{
 		Dashboard: profileui.NewDashboard(profiles),
-		Training:  trainingui.NewScreen(trainings),
+		Drills:    drillui.NewScreen(drills),
+		Planner:   plannerui.NewScreen(planners),
 		Moves:     moveui.NewScreen(moves, icons.Bytes),
 		Items:     itemui.NewScreen(items),
 		Route:     routeui.NewScreen(profiles),
@@ -124,7 +130,7 @@ func newParts(
 }
 
 func loaders(p shellui.Parts) []loader {
-	return []loader{p.Dashboard, p.Moves, p.Training, p.Items, p.Route, p.Errantry}
+	return []loader{p.Dashboard, p.Moves, p.Drills, p.Items, p.Route, p.Errantry, p.Planner}
 }
 
 func newDemo(_ fyne.App, svc move.MoveService, monsters *fakemonster.Source, players *fakeplayer.Source) (*demoui.Panel, error) {

@@ -6,7 +6,12 @@ packages:
       all: true
       dir: 'mock/core/{{.SrcPackageName}}'
       pkgname: 'mock{{.SrcPackageName}}'
-  app/internal/core/training:
+  app/internal/core/drill:
+    config:
+      all: true
+      dir: 'mock/core/{{.SrcPackageName}}'
+      pkgname: 'mock{{.SrcPackageName}}'
+  app/internal/core/planner:
     config:
       all: true
       dir: 'mock/core/{{.SrcPackageName}}'

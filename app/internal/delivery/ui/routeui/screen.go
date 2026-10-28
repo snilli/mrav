@@ -824,7 +824,9 @@ func (s *Screen) apply(maps []domain.ExpeditionMap, p domain.Profile, err error)
 	var problems []string
 	var built strings.Builder
 	size := tableSizeOf(maps)
-	fmt.Fprint(&built, size.w, "x", size.h, ";")
+	mon := p.Monster
+	by := domain.Searcher{Intelligence: mon.Stats[monster.Int], Skill: mon.Stats[monster.Skill], GoodNature: mon.Nature > 0}
+	fmt.Fprint(&built, size.w, "x", size.h, ";", by, ";")
 	for _, m := range maps {
 		if !m.Open(p.Player.Ranch, p.Monster) {
 			continue
@@ -835,7 +837,7 @@ func (s *Screen) apply(maps []domain.ExpeditionMap, p domain.Profile, err error)
 			continue
 		}
 		views = append(views, v)
-		fmt.Fprint(&built, v.Name, "|", v.Summary, "|", v.Places, "|", v.Route.Path, "|", v.Standing, "|", v.Got, ";")
+		fmt.Fprint(&built, v.Name, "|", v.Summary, "|", v.Places, "|", v.Route.Path, "|", v.Standing, "|", v.Got, "|", v.Intelligence, "|", v.Ways, ";")
 	}
 	drawn := built.String()
 	s.status.SetText(strings.Join(problems, "\n"))
@@ -856,8 +858,7 @@ func (s *Screen) apply(maps []domain.ExpeditionMap, p domain.Profile, err error)
 
 	s.clear()
 	s.drawn = drawn
-	mon := p.Monster
-	s.by = domain.Searcher{Intelligence: mon.Stats[monster.Int], Skill: mon.Stats[monster.Skill], GoodNature: mon.Nature > 0}
+	s.by = by
 	for _, v := range views {
 		b := newBox(v, size)
 		b.keyToggle.OnTapped = func() { s.state.keyOpen = !s.state.keyOpen; s.drawBoxes() }

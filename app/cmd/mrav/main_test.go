@@ -18,10 +18,11 @@ import (
 	"app/internal/infrastructure/fakemonster"
 	"app/internal/infrastructure/fakeplayer"
 	"app/internal/infrastructure/gamememory"
+	mockdrill "app/mock/core/drill"
 	mockitem "app/mock/core/item"
 	mockmove "app/mock/core/move"
+	mockplanner "app/mock/core/planner"
 	mockprofile "app/mock/core/profile"
-	mocktraining "app/mock/core/training"
 )
 
 var _ = Describe("newSource", func() {
@@ -88,7 +89,7 @@ var _ = Describe("newWindow", func() {
 		a := test.NewTempApp(GinkgoTB())
 		p := newParts(a,
 			mockprofile.NewMockProfileService(GinkgoT()), mockmove.NewMockMoveService(GinkgoT()),
-			mocktraining.NewMockTrainingService(GinkgoT()), mockitem.NewMockItemService(GinkgoT()), nil)
+			mockdrill.NewMockDrillService(GinkgoT()), mockitem.NewMockItemService(GinkgoT()), mockplanner.NewMockPlannerService(GinkgoT()), nil)
 
 		w := newWindow(a, p, nil)
 		Expect(w.Content()).NotTo(BeNil())
@@ -99,7 +100,7 @@ var _ = Describe("newWindow", func() {
 		a := test.NewTempApp(GinkgoTB())
 		p := newParts(a,
 			mockprofile.NewMockProfileService(GinkgoT()), mockmove.NewMockMoveService(GinkgoT()),
-			mocktraining.NewMockTrainingService(GinkgoT()), mockitem.NewMockItemService(GinkgoT()), nil)
+			mockdrill.NewMockDrillService(GinkgoT()), mockitem.NewMockItemService(GinkgoT()), mockplanner.NewMockPlannerService(GinkgoT()), nil)
 
 		w := newWindow(a, p, nil)
 		Expect(w.Canvas().Size()).To(Equal(startSize))
@@ -109,7 +110,7 @@ var _ = Describe("newWindow", func() {
 		a := test.NewTempApp(GinkgoTB())
 		p := newParts(a,
 			mockprofile.NewMockProfileService(GinkgoT()), mockmove.NewMockMoveService(GinkgoT()),
-			mocktraining.NewMockTrainingService(GinkgoT()), mockitem.NewMockItemService(GinkgoT()), nil)
+			mockdrill.NewMockDrillService(GinkgoT()), mockitem.NewMockItemService(GinkgoT()), mockplanner.NewMockPlannerService(GinkgoT()), nil)
 
 		w := newWindow(a, p, nil)
 		Expect(w.Content().MinSize().Height).To(BeNumerically(">=", minHeight))
@@ -122,9 +123,9 @@ var _ = Describe("loaders", func() {
 		test.NewTempApp(GinkgoTB())
 		p := newParts(nil,
 			mockprofile.NewMockProfileService(GinkgoT()), mockmove.NewMockMoveService(GinkgoT()),
-			mocktraining.NewMockTrainingService(GinkgoT()), mockitem.NewMockItemService(GinkgoT()), nil)
+			mockdrill.NewMockDrillService(GinkgoT()), mockitem.NewMockItemService(GinkgoT()), mockplanner.NewMockPlannerService(GinkgoT()), nil)
 
-		Expect(loaders(p)).To(ConsistOf(p.Dashboard, p.Moves, p.Training, p.Items, p.Route, p.Errantry))
+		Expect(loaders(p)).To(ConsistOf(p.Dashboard, p.Moves, p.Drills, p.Items, p.Route, p.Errantry, p.Planner))
 	})
 })
 

@@ -26,13 +26,17 @@ func (h *Haul) Note(m ExpeditionMap, r player.Ranch) {
 		return
 	}
 	at, _ := m.Stand(r)
+	best, far := "", 2
 	for _, s := range m.Spots {
-		if Near(s.At, at) {
-			if h.Got == nil {
-				h.Got = map[string][]int{}
-			}
-			h.Got[s.Name] = append(h.Got[s.Name], r.Found)
-			return
+		if d := max(s.At.X-at.X, at.X-s.At.X, s.At.Y-at.Y, at.Y-s.At.Y); d < far {
+			best, far = s.Name, d
 		}
 	}
+	if best == "" {
+		return
+	}
+	if h.Got == nil {
+		h.Got = map[string][]int{}
+	}
+	h.Got[best] = append(h.Got[best], r.Found)
 }

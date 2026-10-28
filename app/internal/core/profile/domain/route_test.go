@@ -43,6 +43,23 @@ func plan(m domain.ExpeditionMap, energy int, chance float64) (domain.Route, err
 	return domain.PlanRoute(m, domain.Walker{Energy: energy, BreakChance: chance, Intelligence: 999})
 }
 
+func walked(m domain.ExpeditionMap, w domain.Walker, r domain.Route) float64 {
+	cost := float64(len(r.Spots)) * domain.SearchCost
+	for i, p := range r.Path[1:] {
+		q := r.Path[i]
+		ExpectWithOffset(1, max(p.X-q.X, q.X-p.X)+max(p.Y-q.Y, q.Y-p.Y)).To(Equal(1), m.Name+": the path goes one tile at a time")
+		switch m.Tiles[p.Y*m.Width+p.X] {
+		case domain.Rock:
+			cost += domain.MoveCost + domain.ObstacleCost/w.BreakChance
+		case domain.Gate:
+			cost += domain.MoveCost + domain.SearchCost/domain.FindChance(w.Intelligence)
+		default:
+			cost += domain.MoveCost
+		}
+	}
+	return cost
+}
+
 func names(r domain.Route) []string {
 	var out []string
 	for _, s := range r.Spots {
@@ -70,6 +87,19 @@ var _ = Describe("PlanRoute", func() {
 		Expect(r.Path[len(r.Path)-1]).To(Equal(open.Start))
 	})
 
+	It("walks each next leg from the tile it searched from, so its cost is that of walking its path", func() {
+		m := chart(map[rune]float64{'A': 3, 'B': 4},
+			"S.A.",
+			"....",
+			"...B",
+		)
+		w := domain.Walker{Energy: 100, BreakChance: 1, Intelligence: 999}
+		r, err := domain.PlanRoute(m, w)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(names(r)).To(ConsistOf("A", "B"))
+		Expect(r.Cost).To(BeNumerically("~", walked(m, w, r), 1e-9))
+	})
+
 	It("goes to the places in the order of the map when either order costs the same", func() {
 		r, err := plan(chart(value, "A.S.B"), 100, 1)
 		Expect(err).NotTo(HaveOccurred())
@@ -84,10 +114,16 @@ var _ = Describe("PlanRoute", func() {
 			Expect(r.Cost).To(BeNumerically("==", cost))
 		},
 		Entry("both, with the last unit of it", 24, []string{"A", "B"}, 24.0),
-		Entry("the dearer one when only one is in reach of it", 20, []string{"B"}, 14.0),
-		Entry("the nearer one when it is all that is in reach", 13, []string{"A"}, 13.0),
-		Entry("nothing when none is", 12, []string(nil), 0.0),
+		Entry("the dearer one when only one is in reach of it", 20, []string{"B"}, 12.0),
+		Entry("nothing when none is", 11, []string(nil), 0.0),
 	)
+
+	It("takes the nearer one when it is all that is in reach", func() {
+		r, err := plan(chart(value, "S.A..B"), 13, 1)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(names(r)).To(Equal([]string{"A"}))
+		Expect(r.Cost).To(BeNumerically("==", 12))
+	})
 
 	It("takes the nearer of two places that are worth the same, when only one can be had", func() {
 		r, err := plan(chart(map[rune]float64{'A': 5, 'B': 5}, "S.A", "...", ".B."), 20, 1)
@@ -100,10 +136,10 @@ var _ = Describe("PlanRoute", func() {
 			"S#A",
 			".#.",
 			"...",
-		), 21, 1)
+		), 20, 1)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(names(r)).To(Equal([]string{"A"}))
-		Expect(r.Cost).To(BeNumerically("==", 21))
+		Expect(r.Cost).To(BeNumerically("==", 20))
 	})
 
 	It("leaves out a place that cannot be reached", func() {
@@ -115,13 +151,13 @@ var _ = Describe("PlanRoute", func() {
 
 	DescribeTable("counts a rock at what it costs on average to break it, each time it is crossed",
 		func(chance, cost float64) {
-			r, err := plan(chart(value, "SoA"), 100, chance)
+			r, err := plan(chart(value, "So.A"), 100, chance)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(names(r)).To(Equal([]string{"A"}))
 			Expect(r.Cost).To(BeNumerically("~", cost, 1e-9))
 		},
-		Entry("when it always breaks: 5 a time", 1.0, 23.0),
-		Entry("when it breaks half the time: 10 a time", 0.5, 33.0),
+		Entry("when it always breaks: 5 a time", 1.0, 24.0),
+		Entry("when it breaks half the time: 10 a time", 0.5, 34.0),
 	)
 
 	It("goes round a rock when that is cheaper than breaking it", func() {
@@ -131,12 +167,12 @@ var _ = Describe("PlanRoute", func() {
 			"...",
 		), 100, 1)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(r.Cost).To(BeNumerically("==", 16))
+		Expect(r.Cost).To(BeNumerically("==", 14))
 	})
 
 	Describe("a gate that wants intelligence", func() {
 		shortcut := func() domain.ExpeditionMap {
-			m := chart(value, "SgA")
+			m := chart(value, "Sg.A")
 			m.Locks = []domain.Lock{{At: domain.Point{X: 1}, MinINT: 300}}
 			return m
 		}
@@ -145,7 +181,7 @@ var _ = Describe("PlanRoute", func() {
 			r, err := domain.PlanRoute(shortcut(), domain.Walker{Energy: 100, BreakChance: 1, Intelligence: 300})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(names(r)).To(Equal([]string{"A"}))
-			Expect(r.Cost).To(BeNumerically("~", 2*(1+10/0.35)+1+10, 1e-9))
+			Expect(r.Cost).To(BeNumerically("~", 2*(2+10/0.35)+10, 1e-9))
 		})
 
 		It("is shut to a walker with less", func() {
@@ -162,7 +198,7 @@ var _ = Describe("PlanRoute", func() {
 			m.Locks = []domain.Lock{{At: domain.Point{X: 1}, MinINT: 300}}
 			r, err := domain.PlanRoute(m, domain.Walker{Energy: 100, BreakChance: 1, Intelligence: 300})
 			Expect(err).NotTo(HaveOccurred())
-			Expect(r.Cost).To(BeNumerically("==", 2+4+10))
+			Expect(r.Cost).To(BeNumerically("==", 2+2+10))
 		})
 
 		It("has to be given its intelligence, or the map is not one", func() {
@@ -180,7 +216,7 @@ var _ = Describe("PlanRoute", func() {
 			r, err := domain.PlanRoute(line(), domain.Walker{Energy: 16, BreakChance: 1, At: &at})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(names(r)).To(Equal([]string{"B"}))
-			Expect(r.Cost).To(BeNumerically("==", 15))
+			Expect(r.Cost).To(BeNumerically("==", 14))
 			Expect(r.Path[0]).To(Equal(at))
 			Expect(r.Path[len(r.Path)-1]).To(Equal(domain.Point{X: 0}))
 

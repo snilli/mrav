@@ -11,18 +11,18 @@ package gamememory
 #include <string.h>
 #include <strings.h>
 
-static pid_t find_pid(const char *prefix) {
+static int find_pids(const char *prefix, pid_t *out, int max) {
 	int bytes = proc_listpids(PROC_ALL_PIDS, 0, NULL, 0);
 	if (bytes <= 0) return 0;
 	bytes += 64 * sizeof(pid_t);
 	pid_t *pids = malloc(bytes);
 	if (!pids) return 0;
 	bytes = proc_listpids(PROC_ALL_PIDS, 0, pids, bytes);
-	pid_t found = 0;
-	for (int i = 0; i < bytes / (int)sizeof(pid_t) && !found; i++) {
+	int found = 0;
+	for (int i = 0; i < bytes / (int)sizeof(pid_t) && found < max; i++) {
 		char name[64];
 		if (pids[i] > 0 && proc_name(pids[i], name, sizeof name) > 0 && strncasecmp(name, prefix, strlen(prefix)) == 0)
-			found = pids[i];
+			out[found++] = pids[i];
 	}
 	free(pids);
 	return found;
@@ -137,14 +137,18 @@ func attachMR2DX() (Memory, error) {
 	return nil, errors.New("Monster Rancher 1&2 DX is read only on Windows")
 }
 
-func attachDuckStation() (_ Memory, err error) {
+func attachDuckStation() (Memory, error) {
 	prefix := C.CString("duckstation")
 	defer C.free(unsafe.Pointer(prefix))
-	pid := C.find_pid(prefix)
-	if pid == 0 {
+	var pids [16]C.pid_t
+	n := C.find_pids(prefix, &pids[0], C.int(len(pids)))
+	if n == 0 {
 		return nil, errors.New("DuckStation is not running")
 	}
+	return attachFirst(pids[:n], attachDuckStationPID)
+}
 
+func attachDuckStationPID(pid C.pid_t) (_ Memory, err error) {
 	path, cpu, err := exeOf(pid)
 	if err != nil {
 		return nil, fmt.Errorf("cannot look into DuckStation: %w", err)

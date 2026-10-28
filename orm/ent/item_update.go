@@ -112,30 +112,56 @@ func (_u *ItemUpdate) SetNillableEffect(v *string) *ItemUpdate {
 }
 
 // SetSalePrice sets the "sale_price" field.
-func (_u *ItemUpdate) SetSalePrice(v string) *ItemUpdate {
+func (_u *ItemUpdate) SetSalePrice(v int) *ItemUpdate {
+	_u.mutation.ResetSalePrice()
 	_u.mutation.SetSalePrice(v)
 	return _u
 }
 
 // SetNillableSalePrice sets the "sale_price" field if the given value is not nil.
-func (_u *ItemUpdate) SetNillableSalePrice(v *string) *ItemUpdate {
+func (_u *ItemUpdate) SetNillableSalePrice(v *int) *ItemUpdate {
 	if v != nil {
 		_u.SetSalePrice(*v)
 	}
 	return _u
 }
 
+// AddSalePrice adds value to the "sale_price" field.
+func (_u *ItemUpdate) AddSalePrice(v int) *ItemUpdate {
+	_u.mutation.AddSalePrice(v)
+	return _u
+}
+
+// ClearSalePrice clears the value of the "sale_price" field.
+func (_u *ItemUpdate) ClearSalePrice() *ItemUpdate {
+	_u.mutation.ClearSalePrice()
+	return _u
+}
+
 // SetPurchasePrice sets the "purchase_price" field.
-func (_u *ItemUpdate) SetPurchasePrice(v string) *ItemUpdate {
+func (_u *ItemUpdate) SetPurchasePrice(v int) *ItemUpdate {
+	_u.mutation.ResetPurchasePrice()
 	_u.mutation.SetPurchasePrice(v)
 	return _u
 }
 
 // SetNillablePurchasePrice sets the "purchase_price" field if the given value is not nil.
-func (_u *ItemUpdate) SetNillablePurchasePrice(v *string) *ItemUpdate {
+func (_u *ItemUpdate) SetNillablePurchasePrice(v *int) *ItemUpdate {
 	if v != nil {
 		_u.SetPurchasePrice(*v)
 	}
+	return _u
+}
+
+// AddPurchasePrice adds value to the "purchase_price" field.
+func (_u *ItemUpdate) AddPurchasePrice(v int) *ItemUpdate {
+	_u.mutation.AddPurchasePrice(v)
+	return _u
+}
+
+// ClearPurchasePrice clears the value of the "purchase_price" field.
+func (_u *ItemUpdate) ClearPurchasePrice() *ItemUpdate {
+	_u.mutation.ClearPurchasePrice()
 	return _u
 }
 
@@ -237,10 +263,22 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		_spec.SetField(item.FieldEffect, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.SalePrice(); ok {
-		_spec.SetField(item.FieldSalePrice, field.TypeString, value)
+		_spec.SetField(item.FieldSalePrice, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedSalePrice(); ok {
+		_spec.AddField(item.FieldSalePrice, field.TypeInt, value)
+	}
+	if _u.mutation.SalePriceCleared() {
+		_spec.ClearField(item.FieldSalePrice, field.TypeInt)
 	}
 	if value, ok := _u.mutation.PurchasePrice(); ok {
-		_spec.SetField(item.FieldPurchasePrice, field.TypeString, value)
+		_spec.SetField(item.FieldPurchasePrice, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedPurchasePrice(); ok {
+		_spec.AddField(item.FieldPurchasePrice, field.TypeInt, value)
+	}
+	if _u.mutation.PurchasePriceCleared() {
+		_spec.ClearField(item.FieldPurchasePrice, field.TypeInt)
 	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -347,30 +385,56 @@ func (_u *ItemUpdateOne) SetNillableEffect(v *string) *ItemUpdateOne {
 }
 
 // SetSalePrice sets the "sale_price" field.
-func (_u *ItemUpdateOne) SetSalePrice(v string) *ItemUpdateOne {
+func (_u *ItemUpdateOne) SetSalePrice(v int) *ItemUpdateOne {
+	_u.mutation.ResetSalePrice()
 	_u.mutation.SetSalePrice(v)
 	return _u
 }
 
 // SetNillableSalePrice sets the "sale_price" field if the given value is not nil.
-func (_u *ItemUpdateOne) SetNillableSalePrice(v *string) *ItemUpdateOne {
+func (_u *ItemUpdateOne) SetNillableSalePrice(v *int) *ItemUpdateOne {
 	if v != nil {
 		_u.SetSalePrice(*v)
 	}
 	return _u
 }
 
+// AddSalePrice adds value to the "sale_price" field.
+func (_u *ItemUpdateOne) AddSalePrice(v int) *ItemUpdateOne {
+	_u.mutation.AddSalePrice(v)
+	return _u
+}
+
+// ClearSalePrice clears the value of the "sale_price" field.
+func (_u *ItemUpdateOne) ClearSalePrice() *ItemUpdateOne {
+	_u.mutation.ClearSalePrice()
+	return _u
+}
+
 // SetPurchasePrice sets the "purchase_price" field.
-func (_u *ItemUpdateOne) SetPurchasePrice(v string) *ItemUpdateOne {
+func (_u *ItemUpdateOne) SetPurchasePrice(v int) *ItemUpdateOne {
+	_u.mutation.ResetPurchasePrice()
 	_u.mutation.SetPurchasePrice(v)
 	return _u
 }
 
 // SetNillablePurchasePrice sets the "purchase_price" field if the given value is not nil.
-func (_u *ItemUpdateOne) SetNillablePurchasePrice(v *string) *ItemUpdateOne {
+func (_u *ItemUpdateOne) SetNillablePurchasePrice(v *int) *ItemUpdateOne {
 	if v != nil {
 		_u.SetPurchasePrice(*v)
 	}
+	return _u
+}
+
+// AddPurchasePrice adds value to the "purchase_price" field.
+func (_u *ItemUpdateOne) AddPurchasePrice(v int) *ItemUpdateOne {
+	_u.mutation.AddPurchasePrice(v)
+	return _u
+}
+
+// ClearPurchasePrice clears the value of the "purchase_price" field.
+func (_u *ItemUpdateOne) ClearPurchasePrice() *ItemUpdateOne {
+	_u.mutation.ClearPurchasePrice()
 	return _u
 }
 
@@ -502,10 +566,22 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 		_spec.SetField(item.FieldEffect, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.SalePrice(); ok {
-		_spec.SetField(item.FieldSalePrice, field.TypeString, value)
+		_spec.SetField(item.FieldSalePrice, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedSalePrice(); ok {
+		_spec.AddField(item.FieldSalePrice, field.TypeInt, value)
+	}
+	if _u.mutation.SalePriceCleared() {
+		_spec.ClearField(item.FieldSalePrice, field.TypeInt)
 	}
 	if value, ok := _u.mutation.PurchasePrice(); ok {
-		_spec.SetField(item.FieldPurchasePrice, field.TypeString, value)
+		_spec.SetField(item.FieldPurchasePrice, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedPurchasePrice(); ok {
+		_spec.AddField(item.FieldPurchasePrice, field.TypeInt, value)
+	}
+	if _u.mutation.PurchasePriceCleared() {
+		_spec.ClearField(item.FieldPurchasePrice, field.TypeInt)
 	}
 	_node = &Item{config: _u.config}
 	_spec.Assign = _node.assignValues

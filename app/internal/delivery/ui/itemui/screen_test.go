@@ -28,7 +28,7 @@ func slots() []domain.Slot {
 	}
 	out[1].Item = &domain.Item{
 		Code: 29, Name: "Magic Banana", Kind: "Mysterious Banana", Description: "Its effect differs each time.",
-		Effect: "[effect]", SalePrice: "100", PurchasePrice: "200",
+		Effect: "[effect]", SalePrice: new(100), PurchasePrice: new(200),
 	}
 	return out
 }

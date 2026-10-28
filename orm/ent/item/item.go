@@ -69,9 +69,9 @@ var (
 	// KindValidator is a validator for the "kind" field. It is called by the builders before save.
 	KindValidator func(string) error
 	// SalePriceValidator is a validator for the "sale_price" field. It is called by the builders before save.
-	SalePriceValidator func(string) error
+	SalePriceValidator func(int) error
 	// PurchasePriceValidator is a validator for the "purchase_price" field. It is called by the builders before save.
-	PurchasePriceValidator func(string) error
+	PurchasePriceValidator func(int) error
 )
 
 // Version defines the type for the "version" enum field.

@@ -259,8 +259,8 @@ func (_c *MockProfileRepository_ListCocoonRules_Call) RunAndReturn(run func(ctx 
 }
 
 // ListDesireNames provides a mock function for the type MockProfileRepository
-func (_mock *MockProfileRepository) ListDesireNames(ctx context.Context) (map[int]string, error) {
-	ret := _mock.Called(ctx)
+func (_mock *MockProfileRepository) ListDesireNames(ctx context.Context, version domain.Version) (map[int]string, error) {
+	ret := _mock.Called(ctx, version)
 
 	if len(ret) == 0 {
 		panic("no return value specified for ListDesireNames")
@@ -268,18 +268,18 @@ func (_mock *MockProfileRepository) ListDesireNames(ctx context.Context) (map[in
 
 	var r0 map[int]string
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context) (map[int]string, error)); ok {
-		return returnFunc(ctx)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, domain.Version) (map[int]string, error)); ok {
+		return returnFunc(ctx, version)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context) map[int]string); ok {
-		r0 = returnFunc(ctx)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, domain.Version) map[int]string); ok {
+		r0 = returnFunc(ctx, version)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(map[int]string)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = returnFunc(ctx)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, domain.Version) error); ok {
+		r1 = returnFunc(ctx, version)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -293,18 +293,24 @@ type MockProfileRepository_ListDesireNames_Call struct {
 
 // ListDesireNames is a helper method to define mock.On call
 //   - ctx context.Context
-func (_e *MockProfileRepository_Expecter) ListDesireNames(ctx any) *MockProfileRepository_ListDesireNames_Call {
-	return &MockProfileRepository_ListDesireNames_Call{Call: _e.mock.On("ListDesireNames", ctx)}
+//   - version domain.Version
+func (_e *MockProfileRepository_Expecter) ListDesireNames(ctx any, version any) *MockProfileRepository_ListDesireNames_Call {
+	return &MockProfileRepository_ListDesireNames_Call{Call: _e.mock.On("ListDesireNames", ctx, version)}
 }
 
-func (_c *MockProfileRepository_ListDesireNames_Call) Run(run func(ctx context.Context)) *MockProfileRepository_ListDesireNames_Call {
+func (_c *MockProfileRepository_ListDesireNames_Call) Run(run func(ctx context.Context, version domain.Version)) *MockProfileRepository_ListDesireNames_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
+		var arg1 domain.Version
+		if args[1] != nil {
+			arg1 = args[1].(domain.Version)
+		}
 		run(
 			arg0,
+			arg1,
 		)
 	})
 	return _c
@@ -315,7 +321,7 @@ func (_c *MockProfileRepository_ListDesireNames_Call) Return(intToString map[int
 	return _c
 }
 
-func (_c *MockProfileRepository_ListDesireNames_Call) RunAndReturn(run func(ctx context.Context) (map[int]string, error)) *MockProfileRepository_ListDesireNames_Call {
+func (_c *MockProfileRepository_ListDesireNames_Call) RunAndReturn(run func(ctx context.Context, version domain.Version) (map[int]string, error)) *MockProfileRepository_ListDesireNames_Call {
 	_c.Call.Return(run)
 	return _c
 }
