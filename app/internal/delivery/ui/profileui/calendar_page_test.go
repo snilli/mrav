@@ -1,6 +1,8 @@
 package profileui
 
 import (
+	"slices"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/test"
 	"fyne.io/fyne/v2/widget"
@@ -53,10 +55,73 @@ var _ = Describe("CalendarPage", func() {
 		Expect(c.years.Objects[0].(*fyne.Container).Objects[1].Visible()).To(BeTrue())
 	})
 
-	It("names a tournament or a sale on its own, and puts the kind before any other event", func() {
-		Expect(eventTitle(CalEventView{Name: "Sirius Cup (B)", Type: "Tournament"})).To(Equal("Sirius Cup (B)"))
-		Expect(eventTitle(CalEventView{Name: "Shop sale", Type: "Shop"})).To(Equal("Shop sale"))
-		Expect(eventTitle(CalEventView{Name: "Durahan invite", Type: "Invite"})).To(Equal("Invite · Durahan invite"))
+	labels := func(o fyne.CanvasObject) []*widget.Label {
+		var out []*widget.Label
+		var walk func(o fyne.CanvasObject)
+		walk = func(o fyne.CanvasObject) {
+			switch o := o.(type) {
+			case *widget.Label:
+				out = append(out, o)
+			case *fyne.Container:
+				for _, child := range o.Objects {
+					walk(child)
+				}
+			}
+		}
+		walk(o)
+		return out
+	}
+	texts := func(o fyne.CanvasObject) []string {
+		var out []string
+		for _, l := range labels(o) {
+			out = append(out, l.Text)
+		}
+		return out
+	}
+
+	It("names every event the same way: its kind in a quiet line above, then its name alone", func() {
+		for _, e := range []CalEventView{{Name: "Sirius Cup (B)", Type: "Tournament"}, {Name: "Shop sale", Type: "Shop"}, {Name: "Durahan invite", Type: "Invite"}} {
+			got := labels(eventRow(e))
+			Expect(got[0].Text).To(Equal(e.Type))
+			Expect(got[0].Importance).To(Equal(widget.LowImportance))
+			Expect(got[1].Text).To(Equal(e.Name))
+			Expect(got[1].TextStyle.Bold).To(BeTrue())
+		}
+	})
+
+	It("marks this week by its whole row, with now in its title, and no other week", func() {
+		now, nowFill := weekRow(CalWeekView{Title: "wk 1", Now: true})
+		other, otherFill := weekRow(CalWeekView{Title: "wk 2"})
+		Expect(texts(now)).To(ContainElement("wk 1 · now"))
+		Expect(texts(now)).NotTo(ContainElement("now"))
+		Expect(texts(other)).To(ContainElement("wk 2"))
+		Expect(nowFill.Visible()).To(BeTrue())
+		Expect(otherFill.Visible()).To(BeFalse())
+	})
+
+	It("has a box to hide what the monster cannot enter yet, beside the one for cups past its rank", func() {
+		c := NewCalendarPage()
+		Expect(c.hideNotYet.Text).To(Equal("Hide not yet"))
+		Expect(c.hideNotYet.Checked).To(BeFalse())
+	})
+
+	It("keeps what the colours mean folded above the calendar, to open with one tap, and keeps it open when the data comes again", func() {
+		c := NewCalendarPage()
+		p := domain.Profile{Player: player.Player{NextSale: 99, Ranch: player.Ranch{Known: true, Date: 56}}}
+		c.Set(&p)
+		page := c.content.Content.(*fyne.Container).Objects
+		Expect(slices.Index(page, c.legend)).To(BeNumerically("<", slices.Index(page, fyne.CanvasObject(c.years))))
+		head := c.legend.(*fyne.Container).Objects[0].(*widget.Button)
+		body := c.legend.(*fyne.Container).Objects[1]
+		Expect(head.Text).To(Equal("▸ What the colours mean"))
+		Expect(body.Visible()).To(BeFalse())
+
+		test.Tap(head)
+		Expect(head.Text).To(Equal("▾ What the colours mean"))
+		Expect(body.Visible()).To(BeTrue())
+		p.Player.NextSale = 3
+		c.Set(&p)
+		Expect(body.Visible()).To(BeTrue())
 	})
 
 	It("asks for no more width than the Vitals page, so a column of it is no wider than the others", func() {

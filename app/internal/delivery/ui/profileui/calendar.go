@@ -12,6 +12,7 @@ import (
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/layout"
+	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 
 	player "app/internal/core/player/domain"
@@ -76,7 +77,9 @@ var eventTypes = map[domain.EventKind]string{
 	domain.EventVisit:  "Visitor",
 }
 
-func NewCalendarView(p domain.Profile, hidePast bool) CalendarView {
+type CalendarHide struct{ PastRank, NotYet bool }
+
+func NewCalendarView(p domain.Profile, hide CalendarHide) CalendarView {
 	weeks := domain.Calendar(p)
 	if len(weeks) == 0 {
 		return CalendarView{None: "The game does not say the date yet"}
@@ -95,7 +98,7 @@ func NewCalendarView(p domain.Profile, hidePast bool) CalendarView {
 		month := &year.Months[len(year.Months)-1]
 		wv := CalWeekView{Title: "wk " + strconv.Itoa(w.Date.Week), Now: w.In == 0}
 		for _, e := range w.Events {
-			if e.Fit == domain.FitNever || e.Fit == domain.FitWarn && hidePast {
+			if e.Fit == domain.FitNever || e.Fit == domain.FitWarn && hide.PastRank || e.Fit == domain.FitNotYet && hide.NotYet {
 				continue
 			}
 			wv.Events = append(wv.Events, eventView(e))
@@ -119,28 +122,24 @@ func eventView(e domain.Event) CalEventView {
 	return v
 }
 
-func eventTitle(e CalEventView) string {
-	if e.Type == eventTypes[domain.EventCup] || e.Type == eventTypes[domain.EventShop] {
-		return e.Name
-	}
-	return e.Type + " · " + e.Name
-}
-
 const foldIndent = 16
 
 type CalendarPage struct {
-	hidePast *widget.Check
-	none     *widget.Label
-	years    *fyne.Container
-	content  *container.Scroll
-	last     *domain.Profile
-	shown    *CalendarView
-	open     map[string]bool
+	legend     fyne.CanvasObject
+	hidePast   *widget.Check
+	hideNotYet *widget.Check
+	none       *widget.Label
+	years      *fyne.Container
+	content    *container.Scroll
+	last       *domain.Profile
+	shown      *CalendarView
+	open       map[string]bool
 }
 
 func NewCalendarPage() *CalendarPage {
 	c := &CalendarPage{none: Quiet(""), years: container.NewVBox(), open: map[string]bool{}}
 	c.hidePast = widget.NewCheck("Hide cups past rank", func(bool) { c.redraw() })
+	c.hideNotYet = widget.NewCheck("Hide not yet", func(bool) { c.redraw() })
 	legend := container.NewGridWithColumns(2)
 	for _, l := range CalendarLegend {
 		chip := NewToneBox()
@@ -149,7 +148,13 @@ func NewCalendarPage() *CalendarPage {
 		means.Wrapping = fyne.TextWrapWord
 		legend.Add(container.NewBorder(nil, nil, container.NewVBox(chip), nil, means))
 	}
-	c.content = container.NewVScroll(container.NewVBox(legend, container.NewHBox(layout.NewSpacer(), c.hidePast), widget.NewSeparator(), c.none, c.years))
+	page := container.NewVBox(container.NewHBox(layout.NewSpacer(), c.hideNotYet, c.hidePast))
+	c.content = container.NewVScroll(page)
+	c.legend = c.fold("legend", "What the colours mean", false, false, legend)
+	page.Add(c.legend)
+	page.Add(widget.NewSeparator())
+	page.Add(c.none)
+	page.Add(c.years)
 	return c
 }
 
@@ -163,7 +168,7 @@ func (c *CalendarPage) Set(p *domain.Profile) {
 func (c *CalendarPage) redraw() {
 	v := CalendarView{None: "No game to read"}
 	if c.last != nil {
-		v = NewCalendarView(*c.last, c.hidePast.Checked)
+		v = NewCalendarView(*c.last, CalendarHide{PastRank: c.hidePast.Checked, NotYet: c.hideNotYet.Checked})
 	}
 	if c.shown != nil && reflect.DeepEqual(v, *c.shown) {
 		return
@@ -230,31 +235,42 @@ func indent(o fyne.CanvasObject) fyne.CanvasObject {
 func weeksBox(m CalMonthView) fyne.CanvasObject {
 	rows := container.NewVBox()
 	for _, w := range m.Weeks {
-		head := container.NewVBox(widget.NewLabelWithStyle(w.Title, fyne.TextAlignLeading, fyne.TextStyle{Bold: w.Now}))
-		if w.Now {
-			now := widget.NewLabel("now")
-			now.Importance = widget.HighImportance
-			head.Add(now)
-		}
-		events := container.NewVBox()
-		for _, e := range w.Events {
-			name := widget.NewLabelWithStyle(eventTitle(e), fyne.TextAlignLeading, fyne.TextStyle{Bold: true})
-			name.Wrapping = fyne.TextWrapWord
-			chip := NewToneBox()
-			chip.Set(e.Status)
-			row := container.NewVBox(container.NewBorder(nil, nil, nil, container.NewVBox(chip), name))
-			if more := strings.Join(slices.DeleteFunc([]string{e.Detail, e.Note}, func(s string) bool { return s == "" }), " · "); more != "" {
-				note := widget.NewLabel(more)
-				note.Wrapping = fyne.TextWrapWord
-				row.Add(note)
-			}
-			events.Add(row)
-		}
-		if len(w.Events) == 0 {
-			events.Add(Quiet("Nothing"))
-		}
+		row, _ := weekRow(w)
 		rows.Add(widget.NewSeparator())
-		rows.Add(container.NewBorder(nil, nil, head, nil, events))
+		rows.Add(row)
 	}
 	return indent(rows)
+}
+
+func weekRow(w CalWeekView) (fyne.CanvasObject, *canvas.Rectangle) {
+	title := w.Title
+	if w.Now {
+		title += " · now"
+	}
+	head := container.NewVBox(widget.NewLabelWithStyle(title, fyne.TextAlignLeading, fyne.TextStyle{Bold: w.Now}))
+	events := container.NewVBox()
+	for _, e := range w.Events {
+		events.Add(eventRow(e))
+	}
+	if len(w.Events) == 0 {
+		events.Add(Quiet("Nothing"))
+	}
+	fill := canvas.NewRectangle(theme.Color(theme.ColorNameSelection))
+	setVisible(fill, w.Now)
+	return container.NewStack(fill, container.NewBorder(nil, nil, head, nil, events)), fill
+}
+
+func eventRow(e CalEventView) fyne.CanvasObject {
+	kind := Quiet(e.Type)
+	name := widget.NewLabelWithStyle(e.Name, fyne.TextAlignLeading, fyne.TextStyle{Bold: true})
+	name.Wrapping = fyne.TextWrapWord
+	chip := NewToneBox()
+	chip.Set(e.Status)
+	row := container.NewVBox(kind, container.NewBorder(nil, nil, nil, container.NewVBox(chip), name))
+	if more := strings.Join(slices.DeleteFunc([]string{e.Detail, e.Note}, func(s string) bool { return s == "" }), " · "); more != "" {
+		note := widget.NewLabel(more)
+		note.Wrapping = fyne.TextWrapWord
+		row.Add(note)
+	}
+	return row
 }

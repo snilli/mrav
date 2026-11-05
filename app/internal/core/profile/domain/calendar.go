@@ -238,12 +238,15 @@ func (c EntryCondition) check(p Profile, d player.Date, in int, name string) (Fi
 		switch {
 		case !r.PhoenixKnown:
 			return FitUnknown, "", true
-		case r.PhoenixDone:
+		case !PhoenixPending(r):
 			return FitNever, "", true
 		}
 		return FitReady, "", true
 	case CondPhoenixDone:
-		return least(!r.PhoenixKnown || r.PhoenixDone, "Phoenix first")
+		if PhoenixPending(r) {
+			return FitNever, "", true
+		}
+		return FitReady, "", true
 	case CondIMaYear:
 		held := r.Tournament != 0 && d.Year >= r.Tournament && (d.Year-r.Tournament)%imaEvery == 0
 		return FitReady, "", held

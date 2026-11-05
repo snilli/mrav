@@ -52,7 +52,7 @@ var _ = Describe("CalendarView", func() {
 	jun := func(v profileui.CalendarView) profileui.CalMonthView { return v.Years[0].Months[0] }
 
 	It("groups the weeks by year and by month, this year and the next", func() {
-		v := profileui.NewCalendarView(profile(), false)
+		v := profileui.NewCalendarView(profile(), profileui.CalendarHide{})
 		Expect(v.Years).To(HaveLen(2))
 		Expect(v.Years[0].Title).To(Equal("1001"))
 		Expect(v.Years[1].Title).To(Equal("1002"))
@@ -65,7 +65,7 @@ var _ = Describe("CalendarView", func() {
 	})
 
 	It("names each week and marks this one", func() {
-		w := jun(profileui.NewCalendarView(profile(), false)).Weeks
+		w := jun(profileui.NewCalendarView(profile(), profileui.CalendarHide{})).Weeks
 		Expect(w[0].Title).To(Equal("wk 1"))
 		Expect(w[0].Now).To(BeTrue())
 		Expect(w[3].Title).To(Equal("wk 4"))
@@ -73,13 +73,13 @@ var _ = Describe("CalendarView", func() {
 	})
 
 	It("counts the events of a month", func() {
-		m := jun(profileui.NewCalendarView(profile(), false))
+		m := jun(profileui.NewCalendarView(profile(), profileui.CalendarHide{}))
 		Expect(m.Count).To(Equal(4))
 		Expect(names(m.Weeks[1])).To(Equal([]string{domain.ShopSale}))
 	})
 
 	It("names each kind of event", func() {
-		v := profileui.NewCalendarView(profile(), false)
+		v := profileui.NewCalendarView(profile(), profileui.CalendarHide{})
 		Expect(find(jun(v).Weeks[0], "Kawrea Volcano").Type).To(Equal("Expedition"))
 		Expect(find(jun(v).Weeks[1], domain.ShopSale).Type).To(Equal("Shop"))
 		Expect(find(jun(v).Weeks[3], "IMa Official Cup (A)").Type).To(Equal("Tournament"))
@@ -89,7 +89,7 @@ var _ = Describe("CalendarView", func() {
 	})
 
 	It("tags an event by whether the monster can go, saying what it lacks or what the viewer cannot see", func() {
-		v := profileui.NewCalendarView(profile(), false)
+		v := profileui.NewCalendarView(profile(), profileui.CalendarHide{})
 		Expect(find(jun(v).Weeks[3], "IMa Official Cup (A)")).To(Equal(profileui.CalEventView{
 			Name: "IMa Official Cup (A)", Type: "Tournament", Detail: "4000G",
 			Status: profileui.Box{Text: "Ready", Tone: profileui.ToneLimeGreen},
@@ -107,7 +107,7 @@ var _ = Describe("CalendarView", func() {
 	})
 
 	It("tags a tournament below the monster's rank as over rank, rather than leaving it out", func() {
-		v := profileui.NewCalendarView(profile(), false)
+		v := profileui.NewCalendarView(profile(), profileui.CalendarHide{})
 		Expect(find(jun(v).Weeks[3], "IMa Official Cup (B)")).To(Equal(profileui.CalEventView{
 			Name: "IMa Official Cup (B)", Type: "Tournament", Detail: "3000G",
 			Status: profileui.Box{Text: "Over rank", Tone: profileui.ToneOrangeRed},
@@ -115,17 +115,26 @@ var _ = Describe("CalendarView", func() {
 	})
 
 	It("leaves out what will never come for this monster", func() {
-		v := profileui.NewCalendarView(profile(), false)
+		v := profileui.NewCalendarView(profile(), profileui.CalendarHide{})
 		Expect(names(v.Years[0].Months[1].Weeks[0])).NotTo(ContainElement("Dragon Tusk invite"))
 		Expect(names(jun(v).Weeks[0])).NotTo(ContainElement(domain.Phoenix.Name))
 	})
 
 	It("hides the cups the monster's rank is past when asked, and counts only what it shows", func() {
-		shown := jun(profileui.NewCalendarView(profile(), false))
-		hidden := jun(profileui.NewCalendarView(profile(), true))
+		shown := jun(profileui.NewCalendarView(profile(), profileui.CalendarHide{}))
+		hidden := jun(profileui.NewCalendarView(profile(), profileui.CalendarHide{PastRank: true}))
 		Expect(names(shown.Weeks[3])).To(ContainElement("IMa Official Cup (B)"))
 		Expect(names(hidden.Weeks[3])).NotTo(ContainElement("IMa Official Cup (B)"))
 		Expect(names(hidden.Weeks[3])).To(ContainElement("IMa Official Cup (A)"))
+		Expect(hidden.Count).To(Equal(shown.Count - 1))
+	})
+
+	It("hides what the monster cannot enter yet when asked, and counts only what it shows", func() {
+		shown := jun(profileui.NewCalendarView(profile(), profileui.CalendarHide{}))
+		hidden := jun(profileui.NewCalendarView(profile(), profileui.CalendarHide{NotYet: true}))
+		Expect(find(shown.Weeks[0], "Kawrea Volcano").Status.Text).To(Equal("Not yet"))
+		Expect(names(hidden.Weeks[0])).NotTo(ContainElement("Kawrea Volcano"))
+		Expect(names(hidden.Weeks[3])).To(ContainElement("IMa Official Cup (B)"))
 		Expect(hidden.Count).To(Equal(shown.Count - 1))
 	})
 
@@ -139,7 +148,7 @@ var _ = Describe("CalendarView", func() {
 	})
 
 	It("says so when the game does not say the date", func() {
-		v := profileui.NewCalendarView(domain.Profile{}, false)
+		v := profileui.NewCalendarView(domain.Profile{}, profileui.CalendarHide{})
 		Expect(v.Years).To(BeEmpty())
 		Expect(v.None).To(Equal("The game does not say the date yet"))
 	})

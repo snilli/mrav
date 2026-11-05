@@ -187,11 +187,24 @@ var _ = Describe("Calendar", func() {
 			Expect(event(on(done, 1001, 6, 1), domain.Phoenix.Name).Fit).To(Equal(domain.FitNever))
 		})
 
-		It("keep the other expeditions waiting for the Phoenix adventure", func() {
+		It("leaves the other expeditions out while the Phoenix adventure waits, as the Ranch page does", func() {
 			waiting := domain.Calendar(profile(may4of1001, fit(300, 60, "B"), both, pending))
-			Expect(event(on(waiting, 1001, 6, 1), "Kawrea Volcano").Need).To(Equal("Phoenix first"))
+			Expect(event(on(waiting, 1001, 6, 1), "Kawrea Volcano").Fit).To(Equal(domain.FitNever))
+			Expect(event(on(waiting, 1001, 6, 1), domain.Phoenix.Name).Fit).To(Equal(domain.FitReady))
 			done := domain.Calendar(profile(may4of1001, fit(300, 60, "B"), both))
 			Expect(event(on(done, 1001, 6, 1), "Kawrea Volcano").Fit).To(Equal(domain.FitReady))
+		})
+
+		It("keeps the Phoenix adventure, and not the others, in the week of it while the monster is in the cave, where the game has marked it done already", func() {
+			inCave := func(p *player.Player) {
+				r := &p.Ranch
+				r.WalkKnown, r.OffsetKnown, r.Tile = true, true, 5*player.MapWidth+20
+				r.OffsetX, r.OffsetY = r.Tile%player.MapWidth-domain.Phoenix.Origin.X, domain.Phoenix.Origin.Y-r.Tile/player.MapWidth
+			}
+			weeks := domain.Calendar(profile(jun1of1001, fit(300, 60, "B"), both, inCave))
+			Expect(domain.PhoenixPending(profile(jun1of1001, fit(300, 60, "B"), both, inCave).Player.Ranch)).To(BeTrue())
+			Expect(event(on(weeks, 1001, 6, 1), domain.Phoenix.Name).Fit).To(Equal(domain.FitReady))
+			Expect(event(on(weeks, 1001, 6, 1), "Kawrea Volcano").Fit).To(Equal(domain.FitNever))
 		})
 
 		It("cannot tell about the Phoenix adventure where the game has no word for it", func() {
