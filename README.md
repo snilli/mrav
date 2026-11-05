@@ -1,8 +1,7 @@
 # mrav
 
-An all-in-one helper for Monster Rancher. Leave it open next to the game and it shows your monster's stats, what each
-drill will give and how likely it is to go great or get cheated, which moves an errantry can teach, the best
-expedition route, what's on the calendar, and a planner that follows along as you play.
+An all-in-one helper for Monster Rancher. Leave it open next to the game and it reads what it needs from the game
+itself, so there's nothing to type in.
 
 It's a Go port of Lexichu's [MR2AV](https://github.com/Lexichu/mr2av_repo).
 
@@ -14,6 +13,20 @@ Works with:
 
 - MR2 (English, PlayStation) in DuckStation, on Windows and macOS
 - Monster Rancher 1 & 2 DX on Steam, Windows only
+
+## What it does
+
+### Monster Rancher 2
+
+- **Monster**: breed, stats and growth, life stage, lifespan and life index, nature, loyalty, form, likes, specials
+- **Drills**: what every drill gives and the chance of Success, Great, Cheat, Failure and Truancy
+- **Planner**: plan the weeks ahead and see fatigue, stress, form and life; it follows along as you play
+- **Moves** and **Errantry**: what the breed can learn, what it needs, and where to learn it
+- **Ranch** and **Route**: the expeditions open to the monster, with the best route and what each place can turn up
+- **Calendar**: the year's tournaments, errantries and events, and whether the monster can enter
+- **Items**: what you hold and what each one does
+
+Open several pages side by side with **+ Col**.
 
 ## Download
 
