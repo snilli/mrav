@@ -46,4 +46,11 @@ cat > "$app/Contents/Info.plist" <<PLIST
 PLIST
 
 codesign --force --deep --sign - --entitlements debugger.entitlements "$app"
-du -sh "$app"
+
+dmg="$out/mrav-mac-$(go env GOARCH).dmg"
+stage="$work/dmg"
+mkdir "$stage"
+cp -R "$app" "$stage/"
+ln -s /Applications "$stage/Applications"
+hdiutil create -volname mrav -srcfolder "$stage" -ov -format UDZO "$dmg" >/dev/null
+du -sh "$app" "$dmg"

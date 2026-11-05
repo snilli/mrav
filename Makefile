@@ -1,4 +1,4 @@
-.PHONY: dev mac-dev watch build build-mac test test-integration generate mock
+.PHONY: dev mac-dev watch build build-mac build-windows test test-integration generate mock
 
 dev:
 	cd app && go run ./cmd/mrav
@@ -16,6 +16,9 @@ watch:
 
 build:
 	cd app && go build -o bin/mrav ./cmd/mrav
+
+build-windows:
+	app/build-windows.sh
 
 build-mac:
 	app/build-mac.sh
