@@ -2,6 +2,20 @@
 
 Go + Fyne viewer for Monster Rancher 2, ported from MR2AV. It reads the running game's RAM: DuckStation (PlayStation) on macOS and Windows, MR2DX (Steam) on Windows. `GAME=demo` needs no game.
 
+## Principles
+
+An all-in-one helper for playing Monster Rancher (MR2 now, MR1 later), for the owner first, for anyone who downloads it second.
+
+1. One file, ready to run: the database is built in, nothing to install or set up. A feature that needs extra files is not built.
+2. All in one app: read the game, so the player never types numbers into a web calculator.
+3. Scope: read only, offline. No Japanese releases. MR1 and Hard Mode later.
+4. Plain words and a compact screen, not symbols.
+5. Correct data: when sources differ, believe LegendCup; say what was seen in the game and what was inferred.
+6. Fast: every query through an index, read once.
+7. Structure (always, not traded): rules in the domain, clean architecture.
+
+When they pull apart: one file and easy to use, then correct data, then more features, then speed.
+
 ## Layout
 
 - `go.work` joins `app` (the program) and `orm` (Ent schemas).
