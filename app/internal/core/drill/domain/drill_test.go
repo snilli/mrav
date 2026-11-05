@@ -64,8 +64,8 @@ var _ = Describe("Drills", func() {
 		drills := domain.Drills()
 		Expect(drills).To(HaveLen(10))
 		Expect(drills[0]).To(Equal(domain.Drill{Name: "Domino", Primary: monster.Pow}))
-		Expect(drills[6]).To(Equal(domain.Drill{Name: "Pull", Heavy: true, Primary: monster.Pow, Secondary: monster.Life, Drop: monster.Speed, Slot: 6}))
-		Expect(drills[9]).To(Equal(domain.Drill{Name: "Swim", Heavy: true, Primary: monster.Defense, Secondary: monster.Life, Drop: monster.Int, Slot: 9}))
+		Expect(drills[6]).To(Equal(domain.Drill{Name: "Pull", Heavy: true, Primary: monster.Pow, Secondary: monster.Life, Drop: monster.Speed, Slot: 6, Hardness: 40}))
+		Expect(drills[9]).To(Equal(domain.Drill{Name: "Swim", Heavy: true, Primary: monster.Defense, Secondary: monster.Life, Drop: monster.Int, Slot: 9, Hardness: 40, SwimBug: true}))
 
 		drills[0].Name = "Changed"
 		Expect(domain.Drills()[0].Name).To(Equal("Domino"))
@@ -130,6 +130,24 @@ var _ = Describe("Build", func() {
 			effect(monster.Life, code(domain.Success, domain.Secondary, false, 4, 1)),
 			effect(monster.Int, code(domain.Success, domain.Drop, false, 4, 3))),
 	)
+
+	It("trains a swim on the PlayStation with the growth swapped, Defense by the growth of Life and Life by the growth of Defense, as the Swim Bug of the Drill Calculator does, and not on Steam", func() {
+		swim := func(version monster.Version) []domain.Effect {
+			s := m
+			s.Version = version
+			return domain.Build(s, everyCell()).Drills[9].Outcomes[1].Effects
+		}
+		Expect(swim(monster.MR2)).To(Equal([]domain.Effect{
+			effect(monster.Defense, code(domain.Success, domain.Primary, false, 4, 1)),
+			effect(monster.Life, code(domain.Success, domain.Secondary, false, 4, 2)),
+			effect(monster.Int, code(domain.Success, domain.Drop, false, 4, 3)),
+		}))
+		Expect(swim(monster.MR2DX)).To(Equal([]domain.Effect{
+			effect(monster.Defense, code(domain.Success, domain.Primary, false, 4, 2)),
+			effect(monster.Life, code(domain.Success, domain.Secondary, false, 4, 1)),
+			effect(monster.Int, code(domain.Success, domain.Drop, false, 4, 3)),
+		}))
+	})
 
 	It("reads the other two results from their own tables", func() {
 		d := domain.Build(m, everyCell()).Drills[0]

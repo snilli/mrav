@@ -24,9 +24,10 @@ import (
 )
 
 const (
-	noEffect = "N/A"
-	star     = "★"
-	note     = "★ specialty: its numbers are the ones with the bonus\nThe percent is the monster's motivation for the drill"
+	noEffect   = "N/A"
+	bonusMark  = "+1"
+	legendText = "specialty: its numbers are the ones with the bonus"
+	note       = "Mot is the monster's motivation for the drill\nChance is how likely the chosen result is"
 
 	firstPlace  = 9
 	firstResult = 1
@@ -38,25 +39,49 @@ var (
 )
 
 var (
-	columns     = profileui.Columns{104, 60, 0, 0, 0, 0, 0, 0}
+	columns     = profileui.Columns{104, 60, 56, 0, 0, 0, 0, 0, 0}
 	resultNames = []string{"Cheat", "Success", "Great"}
+	results     = []domain.Result{domain.Cheat, domain.Success, domain.Great}
 )
 
 type row struct {
 	name   *widget.Label
+	bonus  *fyne.Container
+	tag    *canvas.Rectangle
+	mark   *canvas.Text
+	title  *fyne.Container
 	keen   *widget.Label
+	chance *widget.Label
 	cells  [monster.StatCount]*canvas.Text
 	bg     *canvas.Rectangle
 	object fyne.CanvasObject
 }
 
+func newTag() (*fyne.Container, *canvas.Rectangle, *canvas.Text) {
+	tag := canvas.NewRectangle(color.White)
+	tag.CornerRadius = 3
+	mark := canvas.NewText(bonusMark, color.Black)
+	mark.TextStyle = fyne.TextStyle{Bold: true}
+	return container.NewStack(tag, container.New(layout.NewCustomPaddedLayout(0, 0, 2, 2), mark)), tag, mark
+}
+
+type legend struct {
+	tag  *canvas.Rectangle
+	mark *canvas.Text
+	text *widget.Label
+}
+
 func newRow(name string) *row {
 	r := &row{
-		name: widget.NewLabelWithStyle(name, fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
-		keen: widget.NewLabelWithStyle("", fyne.TextAlignTrailing, fyne.TextStyle{}),
-		bg:   canvas.NewRectangle(color.Transparent),
+		name:   widget.NewLabelWithStyle(name, fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
+		keen:   widget.NewLabelWithStyle("", fyne.TextAlignTrailing, fyne.TextStyle{}),
+		chance: widget.NewLabelWithStyle("", fyne.TextAlignTrailing, fyne.TextStyle{}),
+		bg:     canvas.NewRectangle(color.Transparent),
 	}
-	objects := []fyne.CanvasObject{r.name, r.keen}
+	r.bonus, r.tag, r.mark = newTag()
+	r.bonus.Hide()
+	r.title = container.New(layout.NewCustomPaddedHBoxLayout(2), r.name, container.NewCenter(r.bonus))
+	objects := []fyne.CanvasObject{r.title, r.keen, r.chance}
 	for stat := range r.cells {
 		r.cells[stat] = canvas.NewText("", theme.Color(theme.ColorNameForeground))
 		objects = append(objects, container.NewCenter(r.cells[stat]))
@@ -66,16 +91,15 @@ func newRow(name string) *row {
 }
 
 func (r *row) show(g domain.DrillGains, result int) {
-	name := g.Drill.Name
-	if g.Specialty {
-		name += " " + star
-	}
-	r.name.SetText(name)
+	r.name.SetText(g.Drill.Name)
+	r.bonus.Hidden = !g.Specialty
+	r.title.Refresh()
 	r.keen.Importance = widget.MediumImportance
 	if profileui.MotivationTone(g.Motivation) == profileui.ToneOrangeRed {
 		r.keen.Importance = widget.DangerImportance
 	}
 	r.keen.SetText(strconv.Itoa(g.Motivation) + "%")
+	r.chance.SetText(strconv.FormatFloat(g.Chances.Of(results[result]), 'f', -1, 64) + "%")
 	r.bg.FillColor = color.Transparent
 	if g.Recommended {
 		r.bg.FillColor = recommendedFill
@@ -113,6 +137,8 @@ type Screen struct {
 
 	training domain.Training
 	order    order
+	onChance bool
+	byChance *widget.Button
 	status   *widget.Label
 	result   *widget.RadioGroup
 	sort     *widget.Button
@@ -120,6 +146,7 @@ type Screen struct {
 	frame    *canvas.Rectangle
 	rows     []*row
 	table    *fyne.Container
+	legend   legend
 	note     *widget.Label
 	places   *widget.Label
 	body     fyne.CanvasObject
@@ -134,10 +161,16 @@ func NewScreen(svc drill.DrillService) *Screen {
 		places: widget.NewLabel("Good places: none"),
 	}
 	s.status.Hide()
+	badge, tag, mark := newTag()
+	s.legend = legend{tag: tag, mark: mark, text: widget.NewLabel(legendText)}
+	key := container.New(layout.NewCustomPaddedLayout(0, 0, theme.InnerPadding(), 0),
+		container.New(layout.NewCustomPaddedHBoxLayout(2), container.NewCenter(badge), s.legend.text))
 
-	s.sort = widget.NewButton("%", s.cycle)
+	s.sort = widget.NewButton("Mot", func() { s.cycle(false) })
 	s.sort.Importance = widget.LowImportance
-	head := []fyne.CanvasObject{widget.NewLabelWithStyle("Drill", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}), s.sort}
+	s.byChance = widget.NewButton("Chance", func() { s.cycle(true) })
+	s.byChance.Importance = widget.LowImportance
+	head := []fyne.CanvasObject{widget.NewLabelWithStyle("Drill", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}), s.sort, s.byChance}
 	for stat := range s.heads {
 		s.heads[stat] = canvas.NewText(profileui.StatNames[stat], profileui.StatColors[stat])
 		s.heads[stat].TextStyle = fyne.TextStyle{Bold: true}
@@ -156,7 +189,7 @@ func NewScreen(svc drill.DrillService) *Screen {
 
 	s.frame = canvas.NewRectangle(color.Transparent)
 	s.frame.StrokeColor, s.frame.StrokeWidth = profileui.LineColor, profileui.LineWidth
-	s.body = container.NewVBox(s.result, container.NewStack(s.table, s.frame), s.note, s.places)
+	s.body = container.NewVBox(s.result, container.NewStack(s.table, s.frame), key, s.note, s.places)
 	s.content = container.NewPadded(container.NewVBox(s.status, s.body))
 	return s
 }
@@ -217,20 +250,35 @@ func (o order) icon() fyne.Resource {
 	return nil
 }
 
-func (s *Screen) cycle() {
+func (s *Screen) cycle(chance bool) {
+	if chance != s.onChance {
+		s.onChance, s.order = chance, pageOrder
+	}
 	s.order = (s.order + 1) % (lowFirst + 1)
-	s.sort.SetIcon(s.order.icon())
+	s.sort.SetIcon(nil)
+	s.byChance.SetIcon(nil)
+	if s.onChance {
+		s.byChance.SetIcon(s.order.icon())
+	} else {
+		s.sort.SetIcon(s.order.icon())
+	}
 	s.render()
 }
 
 func (s *Screen) render() {
 	result := max(slices.Index(resultNames, s.result.Selected), 0)
 	drills := slices.Clone(s.training.Drills)
+	key := func(g domain.DrillGains) float64 {
+		if s.onChance {
+			return g.Chances.Of(results[result])
+		}
+		return float64(g.Motivation)
+	}
 	switch s.order {
 	case highFirst:
-		slices.SortStableFunc(drills, func(a, b domain.DrillGains) int { return cmp.Compare(b.Motivation, a.Motivation) })
+		slices.SortStableFunc(drills, func(a, b domain.DrillGains) int { return cmp.Compare(key(b), key(a)) })
 	case lowFirst:
-		slices.SortStableFunc(drills, func(a, b domain.DrillGains) int { return cmp.Compare(a.Motivation, b.Motivation) })
+		slices.SortStableFunc(drills, func(a, b domain.DrillGains) int { return cmp.Compare(key(a), key(b)) })
 	}
 	for i, g := range drills[:min(len(drills), len(s.rows))] {
 		s.rows[i].show(g, result)

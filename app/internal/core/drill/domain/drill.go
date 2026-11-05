@@ -39,6 +39,8 @@ type Drill struct {
 	Secondary monster.Stat
 	Drop      monster.Stat
 	Slot      int
+	Hardness  int
+	SwimBug   bool
 }
 
 var drills = [...]Drill{
@@ -48,10 +50,10 @@ var drills = [...]Drill{
 	{Name: "Shoot", Primary: monster.Skill, Slot: 3},
 	{Name: "Dodge", Primary: monster.Speed, Slot: 4},
 	{Name: "Endure", Primary: monster.Defense, Slot: 5},
-	{Name: "Pull", Heavy: true, Primary: monster.Pow, Secondary: monster.Life, Drop: monster.Speed, Slot: 6},
-	{Name: "Meditate", Heavy: true, Primary: monster.Int, Secondary: monster.Skill, Drop: monster.Defense, Slot: 7},
-	{Name: "Leap", Heavy: true, Primary: monster.Speed, Secondary: monster.Int, Drop: monster.Pow, Slot: 8},
-	{Name: "Swim", Heavy: true, Primary: monster.Defense, Secondary: monster.Life, Drop: monster.Int, Slot: 9},
+	{Name: "Pull", Heavy: true, Primary: monster.Pow, Secondary: monster.Life, Drop: monster.Speed, Slot: 6, Hardness: 40},
+	{Name: "Meditate", Heavy: true, Primary: monster.Int, Secondary: monster.Skill, Drop: monster.Defense, Slot: 7, Hardness: 50},
+	{Name: "Leap", Heavy: true, Primary: monster.Speed, Secondary: monster.Int, Drop: monster.Pow, Slot: 8, Hardness: 50},
+	{Name: "Swim", Heavy: true, Primary: monster.Defense, Secondary: monster.Life, Drop: monster.Int, Slot: 9, Hardness: 40, SwimBug: true},
 }
 
 func Drills() []Drill { return slices.Clone(drills[:]) }
@@ -102,6 +104,7 @@ type DrillGains struct {
 	Drill       Drill
 	Outcomes    []Outcome
 	Motivation  int
+	Chances     Chances
 	Specialty   bool
 	Recommended bool
 }
@@ -117,7 +120,7 @@ func Build(m monster.Monster, gains Gains) Training {
 		t.Specialties[bit] = m.TrainBoost&(1<<bit) != 0
 	}
 	for _, d := range drills {
-		g := DrillGains{Drill: d, Motivation: m.Motivation[d.Slot], Specialty: t.Specialties[d.Slot]}
+		g := DrillGains{Drill: d, Motivation: m.Motivation[d.Slot], Chances: ChancesOf(m, d), Specialty: t.Specialties[d.Slot]}
 		g.Recommended = g.Specialty && g.Motivation >= recommendedMotivation
 		for _, result := range resultOrder {
 			g.Outcomes = append(g.Outcomes, Outcome{Result: result, Effects: effects(m, d, result, g.Specialty, gains)})
@@ -129,18 +132,22 @@ func Build(m monster.Monster, gains Gains) Training {
 
 func effects(m monster.Monster, d Drill, result Result, bonus bool, gains Gains) []Effect {
 	var out []Effect
-	add := func(stat monster.Stat, role Role, bonus bool) {
-		if low, high, ok := span(gains.Slots(result, role, bonus, m.LifeStage, m.Growth[stat])); ok {
+	add := func(stat, rate monster.Stat, role Role, bonus bool) {
+		if low, high, ok := span(gains.Slots(result, role, bonus, m.LifeStage, m.Growth[rate])); ok {
 			out = append(out, Effect{Stat: stat, Low: low, High: high})
 		}
 	}
 	if !d.Heavy {
-		add(d.Primary, Light, bonus)
+		add(d.Primary, d.Primary, Light, bonus)
 		return out
 	}
-	add(d.Primary, Primary, bonus)
-	add(d.Secondary, Secondary, bonus)
-	add(d.Drop, Drop, false)
+	mainRate, subRate := d.Primary, d.Secondary
+	if d.SwimBug && m.Version == monster.MR2 {
+		mainRate, subRate = subRate, mainRate
+	}
+	add(d.Primary, mainRate, Primary, bonus)
+	add(d.Secondary, subRate, Secondary, bonus)
+	add(d.Drop, d.Drop, Drop, false)
 	return out
 }
 

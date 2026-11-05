@@ -1,13 +1,16 @@
 package drillui
 
 import (
+	"cmp"
 	"context"
 	"errors"
+	"fmt"
 	"image/color"
 	"image/png"
 	"os"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"strings"
 
 	"fyne.io/fyne/v2"
@@ -76,12 +79,18 @@ var _ = Describe("Screen", func() {
 	})
 
 	shown := func(drill int, stat monster.Stat) string { return s.rows[drill].cells[stat].Text }
+	marked := func(r *row) string {
+		if r.bonus.Visible() {
+			return r.name.Text + " +1"
+		}
+		return r.name.Text
+	}
 
 	It("lists the ten drills in the order of the page, the swim once, one row each", func() {
 		Expect(s.rows).To(HaveLen(10))
-		Expect(s.rows[0].name.Text).To(Equal("Domino"))
-		Expect(s.rows[6].name.Text).To(Equal("Pull"))
-		Expect(s.rows[9].name.Text).To(Equal("Swim"))
+		Expect(marked(s.rows[0])).To(Equal("Domino"))
+		Expect(marked(s.rows[6])).To(Equal("Pull"))
+		Expect(marked(s.rows[9])).To(Equal("Swim"))
 	})
 
 	It("heads a column for each stat, named in the colour of the stat, in the order of the vitals page", func() {
@@ -178,11 +187,21 @@ var _ = Describe("Screen", func() {
 		Expect(shown(0, monster.Pow)).To(Equal("2~4"))
 		s.apply(trainingOf(0), nil)
 		Expect(shown(0, monster.Pow)).To(Equal("1~3"))
-		Expect(s.note.Text).To(ContainSubstring("bonus"))
+		Expect(s.legend.text.Text).To(ContainSubstring("bonus"))
 	})
 
-	It("says what the percent is under the table, in two short lines that the label does not have to wrap", func() {
+	It("explains the +1 under the table with the same white tag that the rows have, beside what it means", func() {
+		Expect(s.legend.tag.FillColor).To(Equal(color.White))
+		Expect(s.legend.mark.Text).To(Equal("+1"))
+		Expect(s.legend.mark.Color).To(Equal(color.Black))
+		Expect(s.legend.text.Text).To(Equal("specialty: its numbers are the ones with the bonus"))
+		Expect(s.note.Text).NotTo(ContainSubstring("+1"))
+	})
+
+	It("says what Mot and Chance are under the table, by their names, in two short lines that the label does not have to wrap", func() {
 		Expect(s.note.Text).To(ContainSubstring("motivation"))
+		Expect(s.note.Text).To(ContainSubstring("Mot is"))
+		Expect(s.note.Text).To(ContainSubstring("Chance is"))
 		Expect(strings.Split(s.note.Text, "\n")).To(HaveLen(2))
 		Expect(s.note.Wrapping).To(Equal(fyne.TextWrap(fyne.TextWrapOff)))
 	})
@@ -200,10 +219,10 @@ var _ = Describe("Screen", func() {
 
 	It("stars the drills the monster specialises in, and highlights the ones it is also keen on", func() {
 		s.apply(trainingOf(1<<0|1<<1|1<<9), nil)
-		Expect(s.rows[0].name.Text).To(Equal("Domino ★"))
-		Expect(s.rows[1].name.Text).To(Equal("Study ★"))
-		Expect(s.rows[2].name.Text).To(Equal("Run"))
-		Expect(s.rows[9].name.Text).To(Equal("Swim ★"))
+		Expect(marked(s.rows[0])).To(Equal("Domino +1"))
+		Expect(marked(s.rows[1])).To(Equal("Study +1"))
+		Expect(marked(s.rows[2])).To(Equal("Run"))
+		Expect(marked(s.rows[9])).To(Equal("Swim +1"))
 
 		Expect(s.rows[0].bg.FillColor).To(Equal(recommendedFill))
 		Expect(s.rows[1].bg.FillColor).To(Equal(color.Transparent))
@@ -211,12 +230,24 @@ var _ = Describe("Screen", func() {
 		Expect(s.rows[9].bg.FillColor).To(Equal(recommendedFill))
 	})
 
-	It("clears a highlight and a star when the page loads again without them", func() {
+	It("marks the bonus of a drill as the game does, +1 in dark text on a white tag with slightly round corners, beside the name", func() {
+		s.apply(trainingOf(1<<0), nil)
+		Expect(s.rows[0].name.Text).To(Equal("Domino"))
+		Expect(s.rows[0].bonus.Visible()).To(BeTrue())
+		Expect(s.rows[0].mark.Text).To(Equal("+1"))
+		Expect(s.rows[0].mark.Color).To(Equal(color.Black))
+		Expect(s.rows[0].tag.FillColor).To(Equal(color.White))
+		Expect(s.rows[0].tag.CornerRadius).To(BeNumerically(">", 0))
+		Expect(s.rows[0].tag.CornerRadius).To(BeNumerically("<=", 4))
+		Expect(s.rows[1].bonus.Visible()).To(BeFalse())
+	})
+
+	It("clears a highlight and a +1 when the page loads again without them", func() {
 		s.apply(trainingOf(1<<0), nil)
 		Expect(s.rows[0].bg.FillColor).To(Equal(recommendedFill))
 		s.apply(trainingOf(0), nil)
 		Expect(s.rows[0].bg.FillColor).To(Equal(color.Transparent))
-		Expect(s.rows[0].name.Text).To(Equal("Domino"))
+		Expect(marked(s.rows[0])).To(Equal("Domino"))
 	})
 
 	It("names the places the monster is good at, the pool among them, or says there are none", func() {
@@ -229,6 +260,18 @@ var _ = Describe("Screen", func() {
 
 	It("shows its table at once, with no panel to open, because the column that holds it already says what it is", func() {
 		Expect(withAccordion(s.Content())).To(BeFalse())
+	})
+
+	It("shows the chance of the chosen result for each drill in a column of its own, after the motivation, as the Drill Calculator gives it", func() {
+		t := trainingOf(0)
+		t.Drills[0].Chances = domain.Chances{Success: 54, Failure: 36.3, Great: 3.4, Cheat: 6.3}
+		s.apply(t, nil)
+		Expect(s.rows[0].chance.Text).To(Equal("54%"))
+		s.result.SetSelected("Cheat")
+		Expect(s.rows[0].chance.Text).To(Equal("6.3%"))
+		s.result.SetSelected("Great")
+		Expect(s.rows[0].chance.Text).To(Equal("3.4%"))
+		Expect(s.rows[0].chance.Alignment).To(Equal(fyne.TextAlignTrailing))
 	})
 
 	It("is no wider than a column of the window, so that it never makes the window grow", func() {
@@ -273,14 +316,14 @@ var _ = Describe("Screen", func() {
 		names := func() []string {
 			var out []string
 			for _, r := range s.rows {
-				out = append(out, strings.TrimSuffix(r.name.Text, " ★"))
+				out = append(out, strings.TrimSuffix(r.name.Text, " +1"))
 			}
 			return out
 		}
 
-		It("heads the percent column with a button, and shows the drills in the order of the page until it is used", func() {
+		It("heads the motivation column with a button named Mot, short for motivation, and shows the drills in the order of the page until it is used", func() {
 			s.apply(trainingOf(0), nil)
-			Expect(s.sort.Text).To(Equal("%"))
+			Expect(s.sort.Text).To(Equal("Mot"))
 			Expect(s.sort.Icon).To(BeNil())
 			Expect(names()).To(Equal([]string{"Domino", "Study", "Run", "Shoot", "Dodge", "Endure", "Pull", "Meditate", "Leap", "Swim"}))
 		})
@@ -301,14 +344,45 @@ var _ = Describe("Screen", func() {
 			Expect(s.sort.Icon).To(BeNil())
 		})
 
-		It("moves the numbers, the star and the highlight of a drill with it", func() {
+		It("moves the numbers, the +1 and the highlight of a drill with it", func() {
 			s.apply(trainingOf(1<<9), nil)
 			test.Tap(s.sort)
-			Expect(s.rows[0].name.Text).To(Equal("Swim ★"))
+			Expect(marked(s.rows[0])).To(Equal("Swim +1"))
 			Expect(s.rows[0].keen.Text).To(Equal("100%"))
 			Expect(shown(0, monster.Int)).To(Equal("-3~-2"))
 			Expect(s.rows[0].bg.FillColor).To(Equal(recommendedFill))
 			Expect(s.rows[9].bg.FillColor).To(Equal(color.Transparent))
+		})
+
+		It("sorts by the chance of the chosen result with the Chance button, high first, then low first, and one column at a time", func() {
+			s.apply(trainingOf(0), nil)
+			chances := func() []float64 {
+				var out []float64
+				for _, r := range s.rows {
+					v, err := strconv.ParseFloat(strings.TrimSuffix(r.chance.Text, "%"), 64)
+					Expect(err).NotTo(HaveOccurred())
+					out = append(out, v)
+				}
+				return out
+			}
+			Expect(s.byChance.Text).To(Equal("Chance"))
+
+			test.Tap(s.sort)
+			test.Tap(s.byChance)
+			Expect(s.byChance.Icon).To(Equal(theme.MenuDropDownIcon()))
+			Expect(s.sort.Icon).To(BeNil())
+			Expect(slices.IsSortedFunc(chances(), func(a, b float64) int { return cmp.Compare(b, a) })).To(BeTrue(), fmt.Sprint(chances()))
+			Expect(slices.Compact(chances())).NotTo(HaveLen(1))
+
+			test.Tap(s.byChance)
+			Expect(slices.IsSorted(chances())).To(BeTrue(), fmt.Sprint(chances()))
+
+			s.result.SetSelected("Great")
+			Expect(slices.IsSorted(chances())).To(BeTrue(), fmt.Sprint(chances()))
+
+			test.Tap(s.sort)
+			Expect(s.byChance.Icon).To(BeNil())
+			Expect(s.sort.Icon).To(Equal(theme.MenuDropDownIcon()))
 		})
 
 		It("keeps the order when the page loads again", func() {
@@ -337,7 +411,7 @@ var _ = Describe("Screen", func() {
 	It("asks the service for the current page and shows it", func() {
 		svc.EXPECT().Current(ctx).Return(trainingOf(1), nil)
 		s.Load(ctx)
-		Eventually(func() string { return s.rows[0].name.Text }).Should(Equal("Domino ★"))
+		Eventually(func() string { return marked(s.rows[0]) }).Should(Equal("Domino +1"))
 	})
 
 	It("renders the page to a PNG", Label("screenshot"), func() {
