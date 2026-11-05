@@ -26,17 +26,21 @@ var _ = Describe("the form of the monster", func() {
 			domain.Step{Item: domain.Mango, Action: domain.LightDrill},
 			domain.Step{Action: domain.HardDrill},
 			domain.Step{Item: domain.Candy, Action: domain.Rest},
-		)).To(Equal([]int{10, 8, 18}))
+		)).To(Equal([]int{10, 8, 23}))
 	})
 
 	It("changes with the food of a month", func() {
 		Expect(forms(0, map[int]domain.Food{2: domain.Meat},
-			domain.Step{Action: domain.Rest}, domain.Step{Action: domain.Rest}, domain.Step{Action: domain.Rest}, domain.Step{Action: domain.Rest},
-			domain.Step{Action: domain.Rest},
-		)).To(Equal([]int{0, 0, 0, 0, 6, 6}))
+			domain.Step{Action: domain.LightDrill}, domain.Step{Action: domain.LightDrill}, domain.Step{Action: domain.LightDrill}, domain.Step{Action: domain.LightDrill},
+			domain.Step{Action: domain.LightDrill},
+		)).To(Equal([]int{-1, -2, -3, -4, 2, 1}))
 	})
 
-	It("does not change with a rest, a battle, an errantry, an expedition, or a freeze, nor with what has no change told", func() {
+	It("grows by five with a rest, as the Drill Processing page has it and as the game showed (4, rest, 9)", func() {
+		Expect(forms(4, nil, domain.Step{Action: domain.Rest})).To(Equal([]int{9}))
+	})
+
+	It("does not change with a battle, an errantry, an expedition, or a freeze, nor with what has no change told", func() {
 		Expect(forms(-5, nil,
 			domain.Step{Item: domain.GoldPeach, Action: domain.BattleWin},
 			domain.Step{Action: domain.Errantry},
