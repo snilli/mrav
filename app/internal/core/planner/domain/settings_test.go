@@ -81,4 +81,12 @@ var _ = Describe("SettingsOf", func() {
 		Expect([]int{s.Pots, s.Sculptures}).To(Equal([]int{3, 2}))
 		Expect(domain.SettingsOf(monster.Monster{}, inventory()).Pots).To(BeZero())
 	})
+	It("begins in the month and week of the game, and leaves them unknown when the game's date is not read", func() {
+		ranch := player.Ranch{Known: true}.InWeek(4, 3)
+		s := domain.SettingsOf(monster.Monster{}, inventory()).In(ranch)
+		Expect([]int{s.Month, s.Week}).To(Equal([]int{4, 3}))
+
+		s = domain.SettingsOf(monster.Monster{}, inventory()).In(player.Ranch{})
+		Expect([]int{s.Month, s.Week}).To(Equal([]int{0, 0}))
+	})
 })

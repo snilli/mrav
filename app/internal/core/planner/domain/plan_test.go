@@ -151,6 +151,56 @@ var _ = Describe("a plan", func() {
 		Expect(p.Totals).To(Equal(domain.Build(reactions, shippedEffects(), domain.DefaultSettings(), steps, nil).Totals))
 	})
 
+	Describe("begun in the week that the game is in", func() {
+		thirdWeek := func() domain.Settings {
+			s := domain.DefaultSettings()
+			s.Month, s.Week = 4, 3
+			return s
+		}
+		begun := func(steps ...domain.Step) domain.Plan {
+			return domain.Build(reactions, shippedEffects(), thirdWeek(), steps, nil)
+		}
+
+		It("starts on that week, so that the food of the next month comes after two weeks, not four", func() {
+			p := begun(drill, drill, drill)
+			Expect(ids(p)).To(Equal([]string{"1-3", "1-4", "2-0", "2-1", "2-2"}))
+			Expect(p.Rows[2].Kind).To(Equal(domain.FoodRow))
+			Expect(p.Totals.Lived).To(Equal(3))
+		})
+
+		It("has no food for the month that it begins in, as the game gives the food of a month on its first week", func() {
+			Expect(kinds(begun())).To(Equal([]domain.Kind{domain.NextRow}))
+		})
+
+		It("leaves out an expedition on its first week, which is not the first of a month, and takes one on the first week of the next", func() {
+			p := begun(domain.Step{Action: domain.Expedition})
+			Expect(p.Problems).To(Equal([]domain.Problem{{Step: 0, Reason: domain.ExpeditionWeek}}))
+
+			p = begun(drill, drill, domain.Step{Action: domain.Expedition})
+			Expect(p.Problems).To(BeEmpty())
+			Expect(p.Rows[3].Action).To(Equal(domain.Expedition))
+		})
+
+		It("begins with the food of the month when it begins on the month's first week, as the game asks for it in that week", func() {
+			s := thirdWeek()
+			s.Week = 1
+			p := domain.Build(reactions, shippedEffects(), s, []domain.Step{drill}, map[int]domain.Food{1: domain.Tablet})
+			Expect(ids(p)).To(Equal([]string{"1-0", "1-1", "1-2"}))
+			Expect(p.Rows[0].Food).To(Equal(domain.Tablet))
+		})
+
+		It("begins on the first week when the game's week is not known", func() {
+			s := domain.DefaultSettings()
+			s.Week = 0
+			Expect(ids(domain.Build(reactions, shippedEffects(), s, []domain.Step{drill}, nil))).To(Equal([]string{"1-1", "1-2"}))
+		})
+
+		It("names a month of the plan by the month of the game, and by its number when that is not known", func() {
+			Expect([]string{thirdWeek().MonthName(1), thirdWeek().MonthName(2), thirdWeek().MonthName(10)}).To(Equal([]string{"Apr", "May", "Jan"}))
+			Expect(domain.DefaultSettings().MonthName(2)).To(Equal("Month 2"))
+		})
+	})
+
 	It("offers an expedition to the first week of a month only, and every other action to every week", func() {
 		for week := 1; week <= 4; week++ {
 			row := domain.Row{Month: 1, Week: week}

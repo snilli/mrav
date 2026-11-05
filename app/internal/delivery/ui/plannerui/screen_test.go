@@ -176,6 +176,25 @@ var _ = Describe("Screen", func() {
 			Expect(sequence).To(Equal([]string{"Month 1", "1wk", "2wk", "3wk", "4wk", "Month 2", "food", "1wk"}))
 		})
 
+		It("names the months by the game's months and begins on the game's week", func() {
+			start(func(st *domain.Settings) { st.Month, st.Week = 4, 3 })
+			light(2)
+
+			var sequence []string
+			for _, sl := range s.slots {
+				switch {
+				case !sl.object.Visible():
+				case sl.header:
+					sequence = append(sequence, sl.head.Text)
+				default:
+					sequence = append(sequence, sl.week.Text)
+				}
+			}
+			Expect(sequence).To(Equal([]string{"Apr", "3wk", "4wk", "May", "food", "1wk"}))
+			choose(0, "Candy", "Light Drill")
+			Expect(s.effect.Text).To(HavePrefix("Apr, week 3, Candy:"))
+		})
+
 		It("lets the food of a month be chosen, potato at first, and works the choice in", func() {
 			light(4)
 			food := weeks()[4]
@@ -415,5 +434,89 @@ var _ = Describe("Screen", func() {
 		c.SetContent(container.NewVBox(s.status, s.body))
 		c.Resize(fyne.NewSize(466, c.Content().MinSize().Height))
 		Expect(png.Encode(f, c.Capture())).To(Succeed())
+	})
+	Describe("following the game", func() {
+		rocky := domain.WhoOf(monster.Monster{Genus: 34, SubGenus: 34, Name: "Rocky", InitialLifespan: 350})
+		at := func(date, week int, who domain.Who) domain.Current {
+			c := currentOf(func(st *domain.Settings) { st.Month, st.Week, st.Lifespan = 4, week, 100 })
+			c.Date, c.Dated, c.Who = date, true, who
+			return c
+		}
+		done := func() []*slot {
+			var out []*slot
+			for _, sl := range weeks() {
+				if sl.done {
+					out = append(out, sl)
+				}
+			}
+			return out
+		}
+
+		BeforeEach(func() { s.apply(at(100, 3, rocky), nil) })
+
+		It("says nothing of a plan before a week of it is chosen", func() {
+			Expect(s.tracking.Visible()).To(BeFalse())
+		})
+
+		It("marks the week that the game has played as done, which cannot be changed, and works the rest from the game", func() {
+			choose(0, "No item", "Light Drill")
+			choose(1, "No item", "Rest")
+			Expect(s.tracking.Text).To(Equal("Plan from Apr wk 3 · 0 weeks done"))
+
+			s.apply(at(101, 4, rocky), nil)
+			Expect(s.steps).To(Equal([]domain.Step{{Action: domain.Rest}}))
+			Expect(done()).To(HaveLen(1))
+			Expect(done()[0].item.Visible()).To(BeFalse())
+			Expect(done()[0].away.Text).To(Equal("Light Drill"))
+			Expect(done()[0].ftg.Color).To(Equal(theme.Color(theme.ColorNameDisabled)))
+			Expect(weeks()[1].week.Text).To(Equal("4wk"))
+			Expect(weeks()[1].action.Selected).To(Equal("Rest"))
+			Expect(s.tracking.Text).To(Equal("Plan from Apr wk 3 · 1 week done"))
+		})
+
+		It("keeps the food chosen for a month that is still to come", func() {
+			light(7)
+			june := weeks()[7]
+			Expect(june.week.Text).To(Equal("food"))
+			june.food.SetSelected("Tablet")
+
+			s.apply(at(102, 1, rocky), nil)
+			Expect(s.foods).To(Equal(map[int]domain.Food{2: domain.Tablet}))
+			Expect(weeks()[7].food.Selected).To(Equal("Tablet"))
+		})
+
+		It("greys the weeks of an errantry that has begun, and goes on once it is over", func() {
+			choose(0, "No item", "Errantry")
+			light(1)
+
+			s.apply(at(102, 1, rocky), nil)
+			Expect(done()).To(HaveLen(2))
+			Expect(s.steps).To(HaveLen(2))
+
+			s.apply(at(104, 3, rocky), nil)
+			Expect(s.steps).To(Equal([]domain.Step{{Action: domain.LightDrill}}))
+			Expect(done()).To(HaveLen(4))
+		})
+
+		It("starts again with another monster, or a game that went back in time", func() {
+			choose(0, "No item", "Light Drill")
+			s.apply(at(101, 4, rocky), nil)
+			s.apply(at(101, 4, domain.WhoOf(monster.Monster{Genus: 1})), nil)
+			Expect(s.steps).To(BeEmpty())
+			Expect(done()).To(BeEmpty())
+			Expect(s.tracking.Visible()).To(BeFalse())
+
+			choose(0, "No item", "Light Drill")
+			s.apply(at(90, 1, domain.WhoOf(monster.Monster{Genus: 1})), nil)
+			Expect(s.steps).To(BeEmpty())
+		})
+
+		It("forgets the weeks done with the rest of the plan when it is cleared", func() {
+			choose(0, "No item", "Light Drill")
+			s.apply(at(101, 4, rocky), nil)
+			test.Tap(s.clear)
+			Expect(done()).To(BeEmpty())
+			Expect(s.tracking.Visible()).To(BeFalse())
+		})
 	})
 })

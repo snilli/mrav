@@ -51,6 +51,19 @@ var _ = Describe("the life that is left", func() {
 		Expect(lives(p)).To(Equal([]life{{2, 51}, {2, 50}, {2, 49}, {2, 48}}))
 	})
 
+	It("takes a week for each week lived from the week that the plan begins in, not from the first of the month", func() {
+		s := settings(monster.MR2DX, 100)
+		s.Week = 3
+		p := build(s, domain.Step{Action: domain.LightDrill}, domain.Step{Action: domain.LightDrill}, domain.Step{Action: domain.LightDrill})
+
+		var lived []int
+		for _, l := range lives(p) {
+			lived = append(lived, 100-l.Life+l.Total)
+		}
+		Expect(lived).To(Equal([]int{1, 2, 3}))
+		Expect(p.Totals.Lived).To(Equal(3))
+	})
+
 	It("takes nothing for a frozen week, and has nothing for the food of a month or the empty week to fill", func() {
 		p := build(settings(monster.MR2DX, 50), domain.Step{Action: domain.Freeze}, domain.Step{Action: domain.LightDrill})
 

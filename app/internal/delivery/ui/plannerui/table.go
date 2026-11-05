@@ -1,9 +1,9 @@
 package plannerui
 
 import (
-	"fmt"
 	"image/color"
 	"strconv"
+	"strings"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
@@ -34,6 +34,7 @@ var (
 type slot struct {
 	object fyne.CanvasObject
 	header bool
+	done   bool
 	row    domain.Row
 
 	head    *canvas.Text
@@ -118,15 +119,15 @@ func names[T interface{ Name() string }](list []T) []string {
 	return out
 }
 
-func (s *Screen) fillHeader(sl *slot, month int) {
+func (s *Screen) fillHeader(sl *slot, month string) {
 	sl.setHeader(true)
-	sl.head.Text = fmt.Sprintf("Month %d", month)
+	sl.head.Text = month
 	sl.head.Refresh()
 }
 
-func (s *Screen) fillWeek(sl *slot, r domain.Row) {
+func (s *Screen) fillWeek(sl *slot, r domain.Row, done bool) {
 	sl.setHeader(false)
-	sl.row = r
+	sl.row, sl.done = r, done
 
 	label := strconv.Itoa(r.Week) + "wk"
 	if r.Kind == domain.FoodRow {
@@ -134,15 +135,21 @@ func (s *Screen) fillWeek(sl *slot, r domain.Row) {
 	}
 	sl.week.SetText(label)
 
-	switch r.Kind {
-	case domain.FoodRow:
+	switch {
+	case done:
+		setVisible(sl.item, false)
+		setVisible(sl.action, false)
+		setVisible(sl.food, false)
+		setVisible(sl.away, true)
+		sl.away.SetText(doneText(r))
+	case r.Kind == domain.FoodRow:
 		setVisible(sl.item, false)
 		setVisible(sl.action, false)
 		setVisible(sl.food, true)
 		setVisible(sl.away, true)
 		sl.away.SetText("Monthly food")
 		sl.food.SetSelected(r.Food.Name())
-	case domain.FollowRow:
+	case r.Kind == domain.FollowRow:
 		setVisible(sl.item, false)
 		setVisible(sl.food, false)
 		setVisible(sl.action, false)
@@ -173,7 +180,13 @@ func (s *Screen) fillWeek(sl *slot, r domain.Row) {
 	}
 
 	foreground := theme.Color(theme.ColorNameForeground)
+	if done {
+		foreground = theme.Color(theme.ColorNameDisabled)
+	}
 	set := func(t *canvas.Text, text string, c color.Color) {
+		if done {
+			c = foreground
+		}
 		t.Text, t.Color = text, c
 		t.Refresh()
 	}
@@ -242,4 +255,18 @@ func foodOf(name string) domain.Food {
 		}
 	}
 	return domain.NoFood
+}
+
+func doneText(r domain.Row) string {
+	if r.Kind == domain.FoodRow {
+		return r.Food.Name()
+	}
+	var words []string
+	if r.Item != domain.NoItem {
+		words = append(words, r.Item.Name())
+	}
+	if r.Action != domain.NoAction {
+		words = append(words, r.Action.Name())
+	}
+	return strings.Join(words, ", ")
 }

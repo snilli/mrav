@@ -14,6 +14,7 @@ func ceil(v float64) int { return int(math.Ceil(v)) }
 func simulate(rows []Row, reactions Reactions, effects Effects, s Settings) (weeks, lived int) {
 	ftg, str, form := s.Fatigue, s.Stress, s.Form
 	frozen := 0
+	before := s.firstWeek() - 1
 	for i := range rows {
 		r := &rows[i]
 		switch {
@@ -33,11 +34,11 @@ func simulate(rows []Row, reactions Reactions, effects Effects, s Settings) (wee
 			if r.Action == Freeze {
 				frozen++
 			}
-			r.ShowLife, r.Total, r.Life = true, weeks, s.Lifespan-(r.Month-1)*4-r.Week+frozen+weeks
+			r.ShowLife, r.Total, r.Life = true, weeks, s.Lifespan-(r.Month-1)*4-r.Week+before+frozen+weeks
 		}
 	}
 	last := rows[len(rows)-1]
-	return weeks, (last.Month-1)*4 + last.Week - frozen
+	return weeks, (last.Month-1)*4 + last.Week - before - frozen
 }
 
 func monthly(food Food, ftg, str int, s Settings, reactions Reactions) (int, int) {

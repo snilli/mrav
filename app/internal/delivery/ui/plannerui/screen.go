@@ -32,6 +32,12 @@ type Screen struct {
 	plan      domain.Plan
 	updating  bool
 	changed   int
+	track     domain.Tracking
+	current   domain.Current
+	done      []doneRow
+	passing   int
+	from      string
+	live      domain.Settings
 
 	status *widget.Label
 	body   fyne.CanvasObject
@@ -44,6 +50,7 @@ type Screen struct {
 	problems              *widget.Label
 	effect                *widget.Label
 	clear                 *widget.Button
+	tracking              *widget.Label
 
 	content fyne.CanvasObject
 }
@@ -53,6 +60,7 @@ func NewScreen(svc planner.PlannerService) *Screen {
 		svc:      svc,
 		changed:  -1,
 		settings: domain.DefaultSettings(),
+		live:     domain.DefaultSettings(),
 		foods:    map[int]domain.Food{},
 		status:   widget.NewLabelWithStyle("", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
 		lived:    widget.NewLabel(""),
@@ -60,12 +68,14 @@ func NewScreen(svc planner.PlannerService) *Screen {
 		average:  widget.NewLabel(""),
 		problems: widget.NewLabel(""),
 		effect:   widget.NewLabel(""),
+		tracking: widget.NewLabel(""),
 	}
 	s.status.Hide()
 	s.problems.Wrapping = fyne.TextWrapWord
 	s.problems.Hide()
 	s.effect.Wrapping = fyne.TextWrapWord
 	s.effect.Hide()
+	s.tracking.Hide()
 
 	s.table = container.New(layout.NewCustomPaddedVBoxLayout(0), newHeading())
 	s.frame = canvas.NewRectangle(color.Transparent)
@@ -73,7 +83,7 @@ func NewScreen(svc planner.PlannerService) *Screen {
 	s.clear = widget.NewButton("Clear", s.reset)
 
 	summary := container.NewBorder(nil, nil, container.NewVBox(s.lived, s.weeks, s.average), container.NewVBox(s.clear))
-	s.body = container.NewVBox(container.NewStack(s.table, s.frame), s.effect, summary, s.problems, widget.NewLabel(note))
+	s.body = container.NewVBox(s.tracking, container.NewStack(s.table, s.frame), s.effect, summary, s.problems, widget.NewLabel(note))
 	s.content = container.NewPadded(container.NewVBox(s.status, s.body))
 	s.recompute()
 	return s
@@ -102,8 +112,52 @@ func (s *Screen) apply(current domain.Current, err error) {
 	s.body.Show()
 	s.content.Refresh()
 
-	s.reactions, s.effects, s.settings = current.Reactions, current.Effects, current.Settings
+	s.reactions, s.effects, s.current, s.live = current.Reactions, current.Effects, current, current.Settings
+	weeks, reset := s.track.Weeks(current)
+	if reset {
+		s.forget()
+	}
+	switch {
+	case !s.track.Started:
+		s.settings = current.Settings
+	case weeks > 0:
+		s.follow(weeks)
+	}
 	s.recompute()
+}
+
+func (s *Screen) follow(weeks int) {
+	s.passing = weeks
+	passed, ok := s.plan.Passed(weeks)
+	if !ok {
+		return
+	}
+	for _, r := range passed.Rows {
+		s.done = append(s.done, doneRow{row: r, month: s.settings.MonthName(r.Month)})
+	}
+	s.steps = s.steps[min(passed.Step, len(s.steps)):]
+	foods := map[int]domain.Food{}
+	for month, food := range s.foods {
+		if month >= passed.Month {
+			foods[month-passed.Month+1] = food
+		}
+	}
+	s.foods = foods
+	s.changed = max(s.changed-passed.Step, -1)
+	s.settings, s.track.Date, s.passing = s.live, s.current.Date, 0
+}
+
+func (s *Screen) begin() {
+	if s.track.Started || !s.current.Dated {
+		return
+	}
+	s.track = domain.Tracking{Started: true, Date: s.current.Date, Who: s.current.Who}
+	s.from = fmt.Sprintf("%s wk %d", s.settings.MonthName(1), s.plan.Rows[0].Week)
+}
+
+func (s *Screen) forget() {
+	s.steps, s.foods, s.changed = nil, map[int]domain.Food{}, -1
+	s.done, s.passing, s.track, s.from = nil, 0, domain.Tracking{}, ""
 }
 
 func (s *Screen) quietly(do func()) {
@@ -119,7 +173,8 @@ func (s *Screen) recompute() {
 }
 
 func (s *Screen) reset() {
-	s.steps, s.foods, s.changed = nil, map[int]domain.Food{}, -1
+	s.forget()
+	s.settings = s.live
 	s.recompute()
 }
 
@@ -127,6 +182,7 @@ func (s *Screen) edit(sl *slot) {
 	if s.updating {
 		return
 	}
+	s.begin()
 	step := domain.Step{Item: itemOf(sl.item.Selected), Action: actionOf(sl.action.Selected)}
 	s.steps = domain.SetStep(s.steps, sl.row.Step, step)
 	s.changed = sl.row.Step
@@ -140,6 +196,7 @@ func (s *Screen) eat(sl *slot) {
 	if s.updating {
 		return
 	}
+	s.begin()
 	s.foods[sl.row.Month] = foodOf(sl.food.Selected)
 	s.recompute()
 }
@@ -158,18 +215,45 @@ func (s *Screen) render() {
 			sl.object.Show()
 			return sl
 		}
-		month := 0
-		for _, r := range s.plan.Rows {
-			if r.Month != month {
-				month = r.Month
+		heading := ""
+		week := func(r domain.Row, month string, done bool) {
+			if month != heading {
+				heading = month
 				s.fillHeader(next(), month)
 			}
-			s.fillWeek(next(), r)
+			s.fillWeek(next(), r, done)
+		}
+		for _, d := range s.done {
+			week(d.row, d.month, true)
+		}
+		passing := s.passing
+		for _, r := range s.plan.Rows {
+			done := passing > 0
+			if done && r.Kind != domain.FoodRow {
+				passing--
+			}
+			week(r, s.settings.MonthName(r.Month), done)
 		}
 		for _, sl := range s.slots[used:] {
 			sl.object.Hide()
 		}
 	})
+
+	s.tracking.Hide()
+	if s.track.Started {
+		weeks := s.passing
+		for _, d := range s.done {
+			if d.row.Kind != domain.FoodRow {
+				weeks++
+			}
+		}
+		unit := "weeks"
+		if weeks == 1 {
+			unit = "week"
+		}
+		s.tracking.SetText(fmt.Sprintf("Plan from %s · %d %s done", s.from, weeks, unit))
+		s.tracking.Show()
+	}
 
 	t := s.plan.Totals
 	s.lived.SetText(fmt.Sprintf("Weeks lived: %d", t.Lived))
@@ -188,7 +272,7 @@ func (s *Screen) render() {
 	for _, p := range s.plan.Problems {
 		for _, r := range s.plan.Rows {
 			if r.Step == p.Step && r.Kind == domain.StepRow {
-				problems = append(problems, fmt.Sprintf("Month %d, week %d: %s", r.Month, r.Week, p.Reason.Text()))
+				problems = append(problems, fmt.Sprintf("%s, week %d: %s", s.settings.MonthName(r.Month), r.Week, p.Reason.Text()))
 				break
 			}
 		}
@@ -196,7 +280,7 @@ func (s *Screen) render() {
 	s.effect.Hide()
 	for _, r := range s.plan.Rows {
 		if r.Kind == domain.StepRow && r.Step == s.changed && r.Item != domain.NoItem {
-			s.effect.SetText(fmt.Sprintf("Month %d, week %d, %s: %s", r.Month, r.Week, r.Item.Name(), s.effects.Text(r.Item, s.settings)))
+			s.effect.SetText(fmt.Sprintf("%s, week %d, %s: %s", s.settings.MonthName(r.Month), r.Week, r.Item.Name(), s.effects.Text(r.Item, s.settings)))
 			s.effect.Show()
 		}
 	}
@@ -208,4 +292,9 @@ func (s *Screen) render() {
 	}
 	s.table.Refresh()
 	s.body.Refresh()
+}
+
+type doneRow struct {
+	row   domain.Row
+	month string
 }

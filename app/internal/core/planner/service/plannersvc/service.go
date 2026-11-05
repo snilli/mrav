@@ -35,5 +35,8 @@ func (s *Service) Current(ctx context.Context) (domain.Current, error) {
 	if err != nil {
 		return domain.Current{}, err
 	}
-	return domain.Current{Settings: domain.SettingsOf(m, p.Items), Reactions: domain.NewReactions(reactions), Effects: domain.NewEffects(effects)}, nil
+	return domain.Current{
+		Settings: domain.SettingsOf(m, p.Items).In(p.Ranch), Reactions: domain.NewReactions(reactions), Effects: domain.NewEffects(effects),
+		Date: p.Ranch.Date, Dated: p.Ranch.Known, Who: domain.WhoOf(m),
+	}, nil
 }

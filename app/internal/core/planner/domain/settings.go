@@ -2,6 +2,7 @@ package domain
 
 import (
 	"cmp"
+	"fmt"
 
 	monster "app/internal/core/monster/domain"
 	player "app/internal/core/player/domain"
@@ -28,6 +29,7 @@ type Settings struct {
 	Lifespan    int
 	GoldPeach   bool
 	SilverPeach bool
+	Month, Week int
 }
 
 func DefaultSettings() Settings {
@@ -63,3 +65,20 @@ func SettingsOf(m monster.Monster, items [player.ItemSlots]int) Settings {
 	}
 	return s
 }
+
+func (s Settings) In(r player.Ranch) Settings {
+	if r.Known {
+		d := r.Calendar()
+		s.Month, s.Week = d.Month, d.Week
+	}
+	return s
+}
+
+func (s Settings) MonthName(month int) string {
+	if s.Month == 0 {
+		return fmt.Sprintf("Month %d", month)
+	}
+	return player.MonthNames[(s.Month+month-2)%player.MonthsPerYear]
+}
+
+func (s Settings) firstWeek() int { return min(max(s.Week, 1), player.WeeksPerMonth) }
