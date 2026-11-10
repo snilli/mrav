@@ -281,6 +281,26 @@ var _ = Describe("OpenShipped", Label("integration"), func() {
 		Expect(enemies).To(Equal(17))
 	})
 
+	It("ships the 256 breeds of the More Monsters mod for MR2DX, each on a main and sub breed that the game itself does not use", func() {
+		ctx := context.Background()
+		client, err := testutil.OpenShipped(ctx)
+		if errors.Is(err, testutil.ErrNoShippedDB) {
+			Skip(err.Error())
+		}
+		Expect(err).NotTo(HaveOccurred())
+		DeferCleanup(client.Close)
+
+		var dx, pairs int
+		Expect(client.DB.QueryRowContext(ctx, "SELECT COUNT(*) FROM breeds WHERE version = 'mr2dx'").Scan(&dx)).To(Succeed())
+		Expect(client.DB.QueryRowContext(ctx, "SELECT COUNT(*) FROM (SELECT DISTINCT main_genus, sub_genus FROM breeds WHERE version = 'mr2dx')").Scan(&pairs)).To(Succeed())
+		Expect(dx).To(Equal(498 + 256))
+		Expect(pairs).To(Equal(415 + 256))
+		var name, growth string
+		var guts int
+		Expect(client.DB.QueryRowContext(ctx, "SELECT name, guts, growth FROM breeds WHERE version = 'mr2dx' AND main_genus = 8 AND sub_genus = 43").Scan(&name, &guts, &growth)).To(Succeed())
+		Expect([]any{name, guts, growth}).To(Equal([]any{"Holiday Zuum", 12, "[2,2,1,3,2,2]"}))
+	})
+
 	DescribeTable("ships a song as the script of the page lists it: stats and gains in the order of the page, the life type by the byte of the game, the offset as a flag",
 		func(id int, title, artist string, offset bool, stats, gains []int, lifespan, nature, lifeType, guts int, arena, training, techs, specials string, enemy bool) {
 			ctx := context.Background()

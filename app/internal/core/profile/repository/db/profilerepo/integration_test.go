@@ -158,7 +158,7 @@ var _ = Describe("profilerepo", Label("integration"), func() {
 
 		for version, want := range map[monster.Version]struct{ breeds, cocoons int }{
 			monster.MR2:   {428, 12},
-			monster.MR2DX: {498, 14},
+			monster.MR2DX: {498 + 256, 14},
 		} {
 			total := 0
 			for main := range 50 {
