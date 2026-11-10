@@ -119,20 +119,38 @@ func notYet(s domain.Spot, item string, by domain.Searcher) string {
 	if s.Building != "" {
 		where += " (" + s.Building + ")"
 	}
-	stat := "INT"
+	stat, have := "INT", by.Intelligence
 	if s.BySkill {
-		stat = "SKI"
+		stat, have = "SKI", by.Skill
 	}
-	need, ok := 0, false
-	for _, c := range s.Chances {
-		if c.Item == item && c.Good == by.GoodNature && c.Pct > 0 && (!ok || c.MinStat < need) {
-			need, ok = c.MinStat, true
+	parts := []string{item + " at " + where}
+	mine := s.Tiers(item, by.GoodNature)
+	var lower []string
+	for _, t := range mine {
+		if t.From > have {
+			parts = append(parts, fmt.Sprintf("needs %s %d", stat, t.From))
+			lower = nil
+			break
+		}
+		lower = append(lower, fmt.Sprintf("%d-%d", t.From, t.To))
+	}
+	switch {
+	case len(mine) == 0:
+		parts = append(parts, "not for this nature")
+	case len(lower) > 0:
+		parts = append(parts, "only with "+stat+" "+strings.Join(lower, " or "))
+	}
+	other := "nature above 0"
+	if by.GoodNature {
+		other = "nature 0 or below"
+	}
+	for _, t := range s.Tiers(item, !by.GoodNature) {
+		if t.Holds(have) {
+			parts = append(parts, other+" finds it at this "+stat)
+			break
 		}
 	}
-	if !ok {
-		return fmt.Sprintf("%s at %s · not for this nature", item, where)
-	}
-	return fmt.Sprintf("%s at %s · needs %s %d", item, where, stat, need)
+	return strings.Join(parts, " · ")
 }
 
 func (s *Screen) items() []string {

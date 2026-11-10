@@ -74,3 +74,44 @@ func (m ExpeditionMap) For(by Searcher) ExpeditionMap {
 	m.Spots = spots
 	return m
 }
+
+type Tier struct {
+	From, To int
+}
+
+func (t Tier) Holds(stat int) bool {
+	return stat >= t.From && (t.To == 0 || stat <= t.To)
+}
+
+func (s Spot) Tiers(item string, good bool) []Tier {
+	var mins []int
+	pct := map[int]float64{}
+	for _, c := range s.Chances {
+		if c.Good != good {
+			continue
+		}
+		if !slices.Contains(mins, c.MinStat) {
+			mins = append(mins, c.MinStat)
+		}
+		if c.Item == item {
+			pct[c.MinStat] += c.Pct
+		}
+	}
+	slices.Sort(mins)
+	var out []Tier
+	for i, m := range mins {
+		if pct[m] <= 0 {
+			continue
+		}
+		to := 0
+		if i+1 < len(mins) {
+			to = mins[i+1] - 1
+		}
+		if n := len(out); n > 0 && out[n-1].To == m-1 {
+			out[n-1].To = to
+			continue
+		}
+		out = append(out, Tier{From: m, To: to})
+	}
+	return out
+}

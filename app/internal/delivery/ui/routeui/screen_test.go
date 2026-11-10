@@ -205,12 +205,12 @@ var _ = Describe("Screen", func() {
 		It("folds what the monster cannot find yet into one line", func() {
 			b := finding("Gold")
 			Expect(b.rows).To(BeEmpty())
-			Expect(b.notYetToggle.Text).To(Equal("▸ 1 more needs a higher stat"))
+			Expect(b.notYetToggle.Text).To(Equal("▸ 1 more this monster can't find yet"))
 			Expect(b.notYetBox.Visible()).To(BeFalse())
 			test.Tap(b.notYetToggle)
 			b = s.boxes[0]
 			Expect(b.notYetBox.Visible()).To(BeTrue())
-			Expect(b.notYetToggle.Text).To(Equal("▾ 1 more needs a higher stat"))
+			Expect(b.notYetToggle.Text).To(Equal("▾ 1 more this monster can't find yet"))
 		})
 
 		It("folds the key of the map away until asked for, keeps it so, and tells the tiles of the mode shown", func() {

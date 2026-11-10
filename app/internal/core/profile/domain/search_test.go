@@ -134,4 +134,33 @@ var _ = Describe("what a search of a place turns up", func() {
 			domain.Searcher{Skill: 10}, "SKI", 200, true),
 		Entry("only the tables of the monster's nature", mine(), domain.Searcher{Intelligence: 50, GoodNature: true}, "INT", 100, true),
 	)
+
+	Describe("Tiers", func() {
+		altar := func() domain.Spot {
+			return domain.Spot{Name: "B", BySkill: true, Chances: []domain.Chance{
+				{Good: true, MinStat: 0, Item: "Platina", Pct: 6.3},
+				{Good: true, MinStat: 100, Item: "Platina", Pct: 0},
+				{Good: true, MinStat: 100, Item: "Prune", Pct: 50},
+				{Good: true, MinStat: 200, Item: "Platina", Pct: 6.3},
+				{Good: true, MinStat: 300, Item: "Platina", Pct: 0},
+				{MinStat: 0, Item: "Platina", Pct: 0},
+				{MinStat: 200, Item: "Platina", Pct: 12.5},
+				{MinStat: 300, Item: "Platina", Pct: 12.5},
+			}}
+		}
+
+		It("gives the stretches of the stat where the item turns up for the nature, a top of 0 when it runs on without end", func() {
+			Expect(altar().Tiers("Platina", true)).To(Equal([]domain.Tier{{From: 0, To: 99}, {From: 200, To: 299}}))
+			Expect(altar().Tiers("Platina", false)).To(Equal([]domain.Tier{{From: 200}}))
+		})
+
+		It("gives nothing for an item the nature never turns up there", func() {
+			Expect(altar().Tiers("Prune", false)).To(BeEmpty())
+		})
+
+		It("says whether a stat falls in a stretch", func() {
+			Expect(domain.Tier{From: 200}.Holds(999)).To(BeTrue())
+			Expect(domain.Tier{From: 0, To: 99}.Holds(100)).To(BeFalse())
+		})
+	})
 })

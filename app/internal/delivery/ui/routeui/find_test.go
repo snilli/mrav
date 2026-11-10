@@ -73,4 +73,48 @@ var _ = Describe("NewFindView", func() {
 		Expect(names(v)).To(Equal([]string{"D", "A"}))
 		Expect(v.Places[1].Energy).To(Equal("out of reach"))
 	})
+
+	Describe("what the monster cannot find", func() {
+		altar := func() View {
+			m := aisle()
+			m.Width, m.Tiles = 7, make([]domain.Terrain, 7)
+			m.Spots = []domain.Spot{{Name: "B", At: domain.Point{X: 2}, Building: "Burned Altar", BySkill: true, Chances: []domain.Chance{
+				{Good: true, MinStat: 0, Item: "Platina", Pct: 6.3},
+				{Good: true, MinStat: 100, Item: "Platina", Pct: 0},
+				{Good: true, MinStat: 200, Item: "Platina", Pct: 6.3},
+				{Good: true, MinStat: 300, Item: "Platina", Pct: 0},
+				{MinStat: 0, Item: "Platina", Pct: 0},
+				{MinStat: 200, Item: "Platina", Pct: 12.5},
+				{MinStat: 300, Item: "Platina", Pct: 12.5},
+			}}}
+			return View{Map: m, Ways: map[string]domain.Way{"B": {Steps: 2, Cost: 12}}}
+		}
+		notYet := func(by domain.Searcher) []string {
+			v := altar()
+			v.Map = v.Map.For(by)
+			return NewFindView(v, map[string]bool{"Platina": true}, by).NotYet
+		}
+
+		It("says the lower stats that find it, not a higher one, and that the other nature finds it at this stat", func() {
+			Expect(notYet(domain.Searcher{Skill: 350, GoodNature: true})).To(Equal([]string{
+				"Platina at B (Burned Altar) · only with SKI 0-99 or 200-299 · nature 0 or below finds it at this SKI",
+			}))
+		})
+
+		It("says both the higher stat and the lower ones when they both find it", func() {
+			Expect(notYet(domain.Searcher{Skill: 150, GoodNature: true})).To(Equal([]string{
+				"Platina at B (Burned Altar) · needs SKI 200",
+			}))
+		})
+
+		It("says when the monster's nature never finds it", func() {
+			v := altar()
+			v.Map.Spots[0].Chances = v.Map.Spots[0].Chances[4:]
+			by := domain.Searcher{Skill: 350, GoodNature: true}
+			v.Map = v.Map.For(by)
+			Expect(NewFindView(v, map[string]bool{"Platina": true}, by).NotYet).To(Equal([]string{
+				"Platina at B (Burned Altar) · not for this nature · nature 0 or below finds it at this SKI",
+			}))
+		})
+	})
 })

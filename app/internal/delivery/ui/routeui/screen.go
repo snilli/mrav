@@ -486,15 +486,11 @@ func (b *box) draw(mode int, f FindView, st findState) {
 	}
 	b.notYetToggle, b.notYetBox = nil, nil
 	if n := len(f.NotYet); n > 0 {
-		verb := "needs"
-		if n > 1 {
-			verb = "need"
-		}
 		mark := "▸ "
 		if st.notYetOpen {
 			mark = "▾ "
 		}
-		b.notYetToggle = widget.NewButton(fmt.Sprintf("%s%d more %s a higher stat", mark, n, verb), st.onNotYet)
+		b.notYetToggle = widget.NewButton(fmt.Sprintf("%s%d more this monster can't find yet", mark, n), st.onNotYet)
 		b.notYetToggle.Alignment = widget.ButtonAlignLeading
 		b.notYetToggle.Importance = widget.LowImportance
 		b.notYetBox = container.NewVBox()
