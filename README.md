@@ -54,8 +54,8 @@ make test
 ## Credits
 
 - [MR2AV](https://github.com/Lexichu/mr2av_repo) by Lexichu: memory addresses, names, item list, and the original app
-- [LegendCup](https://legendcup.com) by Teawch: moves, breeds, drill data, the training planner (with MonsterFenrick),
-  errantry chances, expedition maps, and the GameShark page the PlayStation ranch addresses come from. Much of it
-  comes from SmilingFaces96.
+- [LegendCup](https://legendcup.com) by MonsterFenrick: moves, breeds, drill data, the training planner, errantry
+  chances, expedition maps, and the GameShark page the PlayStation ranch addresses come from. Much of it comes from
+  SmilingFaces96. Thanks to Teawch for answering my questions.
 - The MR2DX Cheat Engine table on [fearlessrevolution](https://fearlessrevolution.com/viewtopic.php?t=18453): the
   extra Steam addresses
