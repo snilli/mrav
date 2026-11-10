@@ -50,9 +50,17 @@ var _ = Describe("CalendarView", func() {
 		return out
 	}
 	jun := func(v profileui.CalendarView) profileui.CalMonthView { return v.Years[0].Months[0] }
+	all := func() profileui.CalendarShow {
+		return profileui.CalendarShow{domain.FitReady: true, domain.FitNotYet: true, domain.FitUnknown: true, domain.FitWarn: true}
+	}
+	but := func(fit domain.Fit) profileui.CalendarShow {
+		show := all()
+		show[fit] = false
+		return show
+	}
 
 	It("groups the weeks by year and by month, this year and the next", func() {
-		v := profileui.NewCalendarView(profile(), profileui.CalendarHide{})
+		v := profileui.NewCalendarView(profile(), all())
 		Expect(v.Years).To(HaveLen(2))
 		Expect(v.Years[0].Title).To(Equal("1001"))
 		Expect(v.Years[1].Title).To(Equal("1002"))
@@ -65,7 +73,7 @@ var _ = Describe("CalendarView", func() {
 	})
 
 	It("names each week and marks this one", func() {
-		w := jun(profileui.NewCalendarView(profile(), profileui.CalendarHide{})).Weeks
+		w := jun(profileui.NewCalendarView(profile(), all())).Weeks
 		Expect(w[0].Title).To(Equal("wk 1"))
 		Expect(w[0].Now).To(BeTrue())
 		Expect(w[3].Title).To(Equal("wk 4"))
@@ -73,13 +81,13 @@ var _ = Describe("CalendarView", func() {
 	})
 
 	It("counts the events of a month", func() {
-		m := jun(profileui.NewCalendarView(profile(), profileui.CalendarHide{}))
+		m := jun(profileui.NewCalendarView(profile(), all()))
 		Expect(m.Count).To(Equal(4))
 		Expect(names(m.Weeks[1])).To(Equal([]string{domain.ShopSale}))
 	})
 
 	It("names each kind of event", func() {
-		v := profileui.NewCalendarView(profile(), profileui.CalendarHide{})
+		v := profileui.NewCalendarView(profile(), all())
 		Expect(find(jun(v).Weeks[0], "Kawrea Volcano").Type).To(Equal("Expedition"))
 		Expect(find(jun(v).Weeks[1], domain.ShopSale).Type).To(Equal("Shop"))
 		Expect(find(jun(v).Weeks[3], "IMa Official Cup (A)").Type).To(Equal("Tournament"))
@@ -89,7 +97,7 @@ var _ = Describe("CalendarView", func() {
 	})
 
 	It("tags an event by whether the monster can go, saying what it lacks or what the viewer cannot see", func() {
-		v := profileui.NewCalendarView(profile(), profileui.CalendarHide{})
+		v := profileui.NewCalendarView(profile(), all())
 		Expect(find(jun(v).Weeks[3], "IMa Official Cup (A)")).To(Equal(profileui.CalEventView{
 			Name: "IMa Official Cup (A)", Type: "Tournament", Detail: "4000G",
 			Status: profileui.Box{Text: "Ready", Tone: profileui.ToneLimeGreen},
@@ -107,7 +115,7 @@ var _ = Describe("CalendarView", func() {
 	})
 
 	It("tags a tournament below the monster's rank as over rank, rather than leaving it out", func() {
-		v := profileui.NewCalendarView(profile(), profileui.CalendarHide{})
+		v := profileui.NewCalendarView(profile(), all())
 		Expect(find(jun(v).Weeks[3], "IMa Official Cup (B)")).To(Equal(profileui.CalEventView{
 			Name: "IMa Official Cup (B)", Type: "Tournament", Detail: "3000G",
 			Status: profileui.Box{Text: "Over rank", Tone: profileui.ToneOrangeRed},
@@ -115,14 +123,14 @@ var _ = Describe("CalendarView", func() {
 	})
 
 	It("leaves out what will never come for this monster", func() {
-		v := profileui.NewCalendarView(profile(), profileui.CalendarHide{})
+		v := profileui.NewCalendarView(profile(), all())
 		Expect(names(v.Years[0].Months[1].Weeks[0])).NotTo(ContainElement("Dragon Tusk invite"))
 		Expect(names(jun(v).Weeks[0])).NotTo(ContainElement(domain.Phoenix.Name))
 	})
 
 	It("hides the cups the monster's rank is past when asked, and counts only what it shows", func() {
-		shown := jun(profileui.NewCalendarView(profile(), profileui.CalendarHide{}))
-		hidden := jun(profileui.NewCalendarView(profile(), profileui.CalendarHide{PastRank: true}))
+		shown := jun(profileui.NewCalendarView(profile(), all()))
+		hidden := jun(profileui.NewCalendarView(profile(), but(domain.FitWarn)))
 		Expect(names(shown.Weeks[3])).To(ContainElement("IMa Official Cup (B)"))
 		Expect(names(hidden.Weeks[3])).NotTo(ContainElement("IMa Official Cup (B)"))
 		Expect(names(hidden.Weeks[3])).To(ContainElement("IMa Official Cup (A)"))
@@ -130,25 +138,38 @@ var _ = Describe("CalendarView", func() {
 	})
 
 	It("hides what the monster cannot enter yet when asked, and counts only what it shows", func() {
-		shown := jun(profileui.NewCalendarView(profile(), profileui.CalendarHide{}))
-		hidden := jun(profileui.NewCalendarView(profile(), profileui.CalendarHide{NotYet: true}))
+		shown := jun(profileui.NewCalendarView(profile(), all()))
+		hidden := jun(profileui.NewCalendarView(profile(), but(domain.FitNotYet)))
 		Expect(find(shown.Weeks[0], "Kawrea Volcano").Status.Text).To(Equal("Not yet"))
 		Expect(names(hidden.Weeks[0])).NotTo(ContainElement("Kawrea Volcano"))
 		Expect(names(hidden.Weeks[3])).To(ContainElement("IMa Official Cup (B)"))
 		Expect(hidden.Count).To(Equal(shown.Count - 1))
 	})
 
+	It("hides what the viewer cannot see it all of when asked", func() {
+		hidden := profileui.NewCalendarView(profile(), but(domain.FitUnknown))
+		Expect(names(hidden.Years[1].Months[1].Weeks[0])).NotTo(ContainElement("Durahan invite"))
+	})
+
+	It("counts every event of each status, whether it is shown or not", func() {
+		shown := profileui.NewCalendarView(profile(), all())
+		hidden := profileui.NewCalendarView(profile(), profileui.CalendarShow{domain.FitReady: true})
+		Expect(hidden.Fits).To(Equal(shown.Fits))
+		Expect(shown.Fits[domain.FitWarn]).To(BeNumerically(">", 0))
+		Expect(shown.Fits).NotTo(HaveKey(domain.FitNever))
+	})
+
 	It("explains every status with its colour, in a few words", func() {
 		Expect(profileui.CalendarLegend).To(Equal([]profileui.LegendItem{
-			{Status: profileui.Box{Text: "Ready", Tone: profileui.ToneLimeGreen}, Means: "can go"},
-			{Status: profileui.Box{Text: "Not yet", Tone: profileui.ToneOrange}, Means: "not there yet"},
-			{Status: profileui.Box{Text: "Maybe", Tone: profileui.ToneYellow}, Means: "can't see it all"},
-			{Status: profileui.Box{Text: "Over rank", Tone: profileui.ToneOrangeRed}, Means: "rank is past it"},
+			{Fit: domain.FitReady, Status: profileui.Box{Text: "Ready", Tone: profileui.ToneLimeGreen}},
+			{Fit: domain.FitNotYet, Status: profileui.Box{Text: "Not yet", Tone: profileui.ToneOrange}},
+			{Fit: domain.FitUnknown, Status: profileui.Box{Text: "Maybe", Tone: profileui.ToneYellow}},
+			{Fit: domain.FitWarn, Status: profileui.Box{Text: "Over rank", Tone: profileui.ToneOrangeRed}},
 		}))
 	})
 
 	It("says so when the game does not say the date", func() {
-		v := profileui.NewCalendarView(domain.Profile{}, profileui.CalendarHide{})
+		v := profileui.NewCalendarView(domain.Profile{}, all())
 		Expect(v.Years).To(BeEmpty())
 		Expect(v.None).To(Equal("The game does not say the date yet"))
 	})

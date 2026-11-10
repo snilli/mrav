@@ -11,7 +11,6 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 
@@ -22,6 +21,7 @@ import (
 type CalendarView struct {
 	None  string
 	Years []CalYearView
+	Fits  map[domain.Fit]int
 }
 
 type CalYearView struct {
@@ -50,8 +50,8 @@ type CalEventView struct {
 }
 
 type LegendItem struct {
+	Fit    domain.Fit
 	Status Box
-	Means  string
 }
 
 var fitStatus = map[domain.Fit]Box{
@@ -62,10 +62,10 @@ var fitStatus = map[domain.Fit]Box{
 }
 
 var CalendarLegend = []LegendItem{
-	{Status: fitStatus[domain.FitReady], Means: "can go"},
-	{Status: fitStatus[domain.FitNotYet], Means: "not there yet"},
-	{Status: fitStatus[domain.FitUnknown], Means: "can't see it all"},
-	{Status: fitStatus[domain.FitWarn], Means: "rank is past it"},
+	{Fit: domain.FitReady, Status: fitStatus[domain.FitReady]},
+	{Fit: domain.FitNotYet, Status: fitStatus[domain.FitNotYet]},
+	{Fit: domain.FitUnknown, Status: fitStatus[domain.FitUnknown]},
+	{Fit: domain.FitWarn, Status: fitStatus[domain.FitWarn]},
 }
 
 var eventTypes = map[domain.EventKind]string{
@@ -77,14 +77,14 @@ var eventTypes = map[domain.EventKind]string{
 	domain.EventVisit:  "Visitor",
 }
 
-type CalendarHide struct{ PastRank, NotYet bool }
+type CalendarShow map[domain.Fit]bool
 
-func NewCalendarView(p domain.Profile, hide CalendarHide) CalendarView {
+func NewCalendarView(p domain.Profile, show CalendarShow) CalendarView {
 	weeks := domain.Calendar(p)
 	if len(weeks) == 0 {
 		return CalendarView{None: "The game does not say the date yet"}
 	}
-	var v CalendarView
+	v := CalendarView{Fits: map[domain.Fit]int{}}
 	for _, w := range weeks {
 		title := strconv.Itoa(w.Date.Year)
 		if n := len(v.Years); n == 0 || v.Years[n-1].Title != title {
@@ -98,7 +98,11 @@ func NewCalendarView(p domain.Profile, hide CalendarHide) CalendarView {
 		month := &year.Months[len(year.Months)-1]
 		wv := CalWeekView{Title: "wk " + strconv.Itoa(w.Date.Week), Now: w.In == 0}
 		for _, e := range w.Events {
-			if e.Fit == domain.FitNever || e.Fit == domain.FitWarn && hide.PastRank || e.Fit == domain.FitNotYet && hide.NotYet {
+			if e.Fit == domain.FitNever {
+				continue
+			}
+			v.Fits[e.Fit]++
+			if !show[e.Fit] {
 				continue
 			}
 			wv.Events = append(wv.Events, eventView(e))
@@ -125,36 +129,39 @@ func eventView(e domain.Event) CalEventView {
 const foldIndent = 16
 
 type CalendarPage struct {
-	legend     fyne.CanvasObject
-	hidePast   *widget.Check
-	hideNotYet *widget.Check
-	none       *widget.Label
-	years      *fyne.Container
-	content    *container.Scroll
-	last       *domain.Profile
-	shown      *CalendarView
-	open       map[string]bool
+	filters fyne.CanvasObject
+	tiles   []*Flag
+	show    CalendarShow
+	none    *widget.Label
+	years   *fyne.Container
+	content *container.Scroll
+	last    *domain.Profile
+	shown   *CalendarView
+	open    map[string]bool
 }
 
 func NewCalendarPage() *CalendarPage {
-	c := &CalendarPage{none: Quiet(""), years: container.NewVBox(), open: map[string]bool{}}
-	c.hidePast = widget.NewCheck("Hide cups past rank", func(bool) { c.redraw() })
-	c.hideNotYet = widget.NewCheck("Hide not yet", func(bool) { c.redraw() })
-	legend := container.NewGridWithColumns(2)
+	c := &CalendarPage{none: Quiet(""), years: container.NewVBox(), open: map[string]bool{}, show: CalendarShow{}}
+	prefs := fyne.CurrentApp().Preferences()
+	tiles := container.NewHBox(Quiet("Show"))
 	for _, l := range CalendarLegend {
-		chip := NewToneBox()
-		chip.Set(l.Status)
-		means := widget.NewLabel(l.Means)
-		means.Wrapping = fyne.TextWrapWord
-		legend.Add(container.NewBorder(nil, nil, container.NewVBox(chip), nil, means))
+		key := "calendar.show." + strconv.Itoa(int(l.Fit))
+		c.show[l.Fit] = prefs.BoolWithFallback(key, l.Fit == domain.FitReady)
+		tile := NewFlag("", l.Status.Tone)
+		tile.OnTapped = func() {
+			c.show[l.Fit] = !c.show[l.Fit]
+			prefs.SetBool(key, c.show[l.Fit])
+			c.redraw()
+		}
+		c.tiles = append(c.tiles, tile)
+		tiles.Add(tile)
 	}
-	page := container.NewVBox(container.NewHBox(layout.NewSpacer(), c.hideNotYet, c.hidePast))
+	c.filters = tiles
+	page := container.NewVBox(c.filters, widget.NewSeparator())
 	c.content = container.NewVScroll(page)
-	c.legend = c.fold("legend", "What the colours mean", false, false, legend)
-	page.Add(c.legend)
-	page.Add(widget.NewSeparator())
 	page.Add(c.none)
 	page.Add(c.years)
+	c.redraw()
 	return c
 }
 
@@ -168,7 +175,11 @@ func (c *CalendarPage) Set(p *domain.Profile) {
 func (c *CalendarPage) redraw() {
 	v := CalendarView{None: "No game to read"}
 	if c.last != nil {
-		v = NewCalendarView(*c.last, CalendarHide{PastRank: c.hidePast.Checked, NotYet: c.hideNotYet.Checked})
+		v = NewCalendarView(*c.last, c.show)
+	}
+	for i, l := range CalendarLegend {
+		c.tiles[i].SetText(l.Status.Text + " " + strconv.Itoa(v.Fits[l.Fit]))
+		c.tiles[i].Set(c.show[l.Fit])
 	}
 	if c.shown != nil && reflect.DeepEqual(v, *c.shown) {
 		return

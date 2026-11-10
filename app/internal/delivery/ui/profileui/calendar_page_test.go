@@ -2,8 +2,10 @@ package profileui
 
 import (
 	"slices"
+	"strconv"
 
 	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/test"
 	"fyne.io/fyne/v2/widget"
 	. "github.com/onsi/ginkgo/v2"
@@ -99,29 +101,34 @@ var _ = Describe("CalendarPage", func() {
 		Expect(otherFill.Visible()).To(BeFalse())
 	})
 
-	It("has a box to hide what the monster cannot enter yet, beside the one for cups past its rank", func() {
+	It("puts a small tile for each colour in one line above the calendar, saying how many there are, with only Ready lit at first", func() {
 		c := NewCalendarPage()
-		Expect(c.hideNotYet.Text).To(Equal("Hide not yet"))
-		Expect(c.hideNotYet.Checked).To(BeFalse())
+		c.Set(&domain.Profile{Player: player.Player{NextSale: 1, Ranch: player.Ranch{Known: true, Date: 56}}})
+		page := c.content.Content.(*fyne.Container).Objects
+		Expect(slices.Index(page, c.filters)).To(BeNumerically("<", slices.Index(page, fyne.CanvasObject(c.years))))
+		Expect(texts(c.content.Content)).To(ContainElement("Show"))
+		Expect(c.tiles).To(HaveLen(len(CalendarLegend)))
+		Expect(c.tiles[0].txt.Text).To(HavePrefix("Ready "))
+		Expect(c.tiles[1].txt.Text).To(Equal("Not yet " + strconv.Itoa(c.shown.Fits[domain.FitNotYet])))
+		Expect(c.filters.MinSize().Height).To(BeNumerically("<", 2*c.tiles[0].MinSize().Height))
+		var lit []bool
+		for _, t := range c.tiles {
+			lit = append(lit, t.On())
+		}
+		Expect(lit).To(Equal([]bool{true, false, false, false}))
+		Expect(c.tiles[1].Cursor()).To(Equal(desktop.PointerCursor))
 	})
 
-	It("keeps what the colours mean folded above the calendar, to open with one tap, and keeps it open when the data comes again", func() {
+	It("shows a colour once its tile is tapped and hides it again on the next tap, and remembers it for the next time", func() {
 		c := NewCalendarPage()
-		p := domain.Profile{Player: player.Player{NextSale: 99, Ranch: player.Ranch{Known: true, Date: 56}}}
-		c.Set(&p)
-		page := c.content.Content.(*fyne.Container).Objects
-		Expect(slices.Index(page, c.legend)).To(BeNumerically("<", slices.Index(page, fyne.CanvasObject(c.years))))
-		head := c.legend.(*fyne.Container).Objects[0].(*widget.Button)
-		body := c.legend.(*fyne.Container).Objects[1]
-		Expect(head.Text).To(Equal("▸ What the colours mean"))
-		Expect(body.Visible()).To(BeFalse())
+		c.Set(&domain.Profile{Player: player.Player{NextSale: 1, Ranch: player.Ranch{Known: true, Date: 56}}})
+		test.Tap(c.tiles[3])
+		Expect(c.tiles[3].On()).To(BeTrue())
+		Expect(NewCalendarPage().tiles[3].On()).To(BeTrue())
 
-		test.Tap(head)
-		Expect(head.Text).To(Equal("▾ What the colours mean"))
-		Expect(body.Visible()).To(BeTrue())
-		p.Player.NextSale = 3
-		c.Set(&p)
-		Expect(body.Visible()).To(BeTrue())
+		test.Tap(c.tiles[0])
+		Expect(c.tiles[0].On()).To(BeFalse())
+		Expect(NewCalendarPage().tiles[0].On()).To(BeFalse())
 	})
 
 	It("asks for no more width than the Vitals page, so a column of it is no wider than the others", func() {

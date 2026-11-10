@@ -107,7 +107,7 @@ func newSource(cfg *config.Config) (port.MonsterSource, port.PlayerSource, *fake
 }
 
 func newFyneApp() fyne.App {
-	a := fyneapp.New()
+	a := fyneapp.NewWithID("com.github.snilli.mrav")
 	a.Settings().SetTheme(shellui.Theme())
 	return a
 }

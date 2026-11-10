@@ -3,6 +3,7 @@ package profileui
 import (
 	"image/color"
 
+	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/test"
 	"fyne.io/fyne/v2/theme"
 	. "github.com/onsi/ginkgo/v2"
@@ -40,6 +41,20 @@ var _ = Describe("Flag", func() {
 		f.SetText("Pixie")
 		Expect(f.txt.Text).To(Equal("Pixie"))
 		Expect(f.On()).To(BeTrue())
+	})
+
+	It("can be tapped once it is given something to do, showing a hand and an outline while it is dim", func() {
+		f := NewFlag("Ready", ToneLimeGreen)
+		Expect(f.Cursor()).To(Equal(desktop.DefaultCursor))
+		tapped := 0
+		f.OnTapped = func() { tapped++ }
+		f.Set(false)
+		test.Tap(f)
+		Expect(tapped).To(Equal(1))
+		Expect(f.Cursor()).To(Equal(desktop.PointerCursor))
+		Expect(f.bg.StrokeWidth).To(BeNumerically(">", 0))
+		f.Set(true)
+		Expect(f.bg.StrokeWidth).To(BeZero())
 	})
 
 	It("goes dim again when it stops being so", func() {
