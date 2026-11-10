@@ -26,11 +26,11 @@ var _ = Describe("SettingsOf", func() {
 	}
 
 	It("starts the plan from the monster of the game: its game, breed, form, fatigue and stress", func() {
-		m := monster.Monster{Version: monster.MR2, Genus: 7, SubGenus: 9, Form: -35, Fatigue: 15, Stress: 25, LifeStage: 3, ItemLike: 5, ItemDislike: 2}
+		m := monster.Monster{Version: monster.MR2, Genus: 7, SubGenus: 9, Form: -35, Fatigue: 15, Stress: 25, LifeStage: 3, ItemLike: 5, ItemDislike: 2, ItemUsed: true}
 
 		Expect(domain.SettingsOf(m, inventory())).To(Equal(domain.Settings{
 			Version: monster.MR2, Main: 7, Sub: 9, Like: domain.Tablet, Dislike: domain.Meat,
-			LifeStage: 4, Form: -35, Fatigue: 15, Stress: 25,
+			LifeStage: 4, Form: -35, Fatigue: 15, Stress: 25, ItemUsed: true,
 		}))
 	})
 

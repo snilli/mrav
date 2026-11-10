@@ -56,6 +56,7 @@ type Monster struct {
 	SilverPeach     bool
 	ItemUsed        bool
 	Motivation      [DrillCount]int
+	DrillLevel      [DrillCount]int
 	PlayType        int
 	Drug            int
 	DrugWeeks       int

@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"image/color"
+	"maps"
+	"slices"
 	"strings"
 
 	"fyne.io/fyne/v2"
@@ -26,18 +28,14 @@ type Screen struct {
 
 	reactions domain.Reactions
 	effects   domain.Effects
-	settings  domain.Settings
-	steps     []domain.Step
-	foods     map[int]domain.Food
-	plan      domain.Plan
-	updating  bool
-	changed   int
-	track     domain.Tracking
-	current   domain.Current
-	done      []doneRow
-	passing   int
-	from      string
-	live      domain.Settings
+	tracked
+	plan     domain.Plan
+	updating bool
+	current  domain.Current
+	live     domain.Settings
+	aside    *tracked
+	waiting  bool
+	read     bool
 
 	status *widget.Label
 	body   fyne.CanvasObject
@@ -58,10 +56,8 @@ type Screen struct {
 func NewScreen(svc planner.PlannerService) *Screen {
 	s := &Screen{
 		svc:      svc,
-		changed:  -1,
-		settings: domain.DefaultSettings(),
+		settings: domain.DefaultSettings(), foods: map[int]domain.Food{}, changed: -1,
 		live:     domain.DefaultSettings(),
-		foods:    map[int]domain.Food{},
 		status:   widget.NewLabelWithStyle("", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
 		lived:    widget.NewLabel(""),
 		weeks:    widget.NewLabel(""),
@@ -113,26 +109,66 @@ func (s *Screen) apply(current domain.Current, err error) {
 	s.content.Refresh()
 
 	s.reactions, s.effects, s.current, s.live = current.Reactions, current.Effects, current, current.Settings
-	weeks, reset := s.track.Weeks(current)
-	if reset {
+	if s.track.Another(current) {
+		aside := s.tracked
 		s.forget()
+		s.aside = &aside
+	} else if s.aside != nil && !s.track.Started && current.Dated && current.Who == s.aside.track.Who {
+		s.tracked, s.aside = *s.aside, nil
 	}
+	weeks, ok := s.track.Weeks(current)
+	s.waiting = s.track.Started && !ok
 	switch {
-	case !s.track.Started:
-		s.settings = current.Settings
+	case !ok:
+	case weeks < 0:
+		s.back(current.Date)
+		s.follow(current.Date - s.track.Date)
 	case weeks > 0:
 		s.follow(weeks)
+	}
+	if (!current.Acting || !s.read) && (!s.track.Started || ok && s.track.Date == current.Date) {
+		s.settings, s.used, s.read = current.Settings, current.Settings.ItemUsed, true
+		s.age()
 	}
 	s.recompute()
 }
 
+func (s *Screen) back(date int) {
+	for len(s.marks) > 0 && s.track.Date > date {
+		m := s.marks[len(s.marks)-1]
+		s.marks = s.marks[:len(s.marks)-1]
+		s.steps = append(slices.Clone(m.passed), s.steps...)
+		foods := maps.Clone(m.foods)
+		for month, food := range s.foods {
+			foods[month+m.month-1] = food
+		}
+		s.foods = foods
+		if s.changed >= 0 {
+			s.changed += len(m.passed)
+		}
+		s.done, s.settings, s.track.Date = s.done[:m.done], m.settings, m.date
+	}
+	s.passing, s.used, s.aged = 0, true, true
+}
+
 func (s *Screen) follow(weeks int) {
 	s.passing = weeks
+	if weeks == 0 {
+		return
+	}
+	s.plan = domain.Build(s.reactions, s.effects, s.settings, s.steps, s.foods)
 	passed, ok := s.plan.Passed(weeks)
 	if !ok {
 		return
 	}
-	for _, r := range passed.Rows {
+	m := mark{date: s.track.Date, passed: slices.Clone(s.steps[:min(passed.Step, len(s.steps))]), month: passed.Month, done: len(s.done), settings: s.settings, foods: map[int]domain.Food{}}
+	for month, food := range s.foods {
+		if month < passed.Month {
+			m.foods[month] = food
+		}
+	}
+	s.marks = append(s.marks, m)
+	for _, r := range passed.Played(s.used, s.live).Rows {
 		s.done = append(s.done, doneRow{row: r, month: s.settings.MonthName(r.Month)})
 	}
 	s.steps = s.steps[min(passed.Step, len(s.steps)):]
@@ -144,20 +180,34 @@ func (s *Screen) follow(weeks int) {
 	}
 	s.foods = foods
 	s.changed = max(s.changed-passed.Step, -1)
-	s.settings, s.track.Date, s.passing = s.live, s.current.Date, 0
+	s.settings, s.track.Date, s.passing, s.aged = s.live, s.current.Date, 0, false
+}
+
+func (s *Screen) age() {
+	if s.aged || len(s.marks) == 0 {
+		return
+	}
+	start := s.marks[len(s.marks)-1].settings.Lifespan
+	for i := len(s.done) - 1; i >= 0; i-- {
+		if s.done[i].row.Kind != domain.FoodRow {
+			s.done[i].row, s.aged = s.done[i].row.Aged(start, s.live.Lifespan)
+			return
+		}
+	}
 }
 
 func (s *Screen) begin() {
 	if s.track.Started || !s.current.Dated {
 		return
 	}
-	s.track = domain.Tracking{Started: true, Date: s.current.Date, Who: s.current.Who}
+	s.track = domain.Tracking{Started: true, Start: s.current.Date, Date: s.current.Date, Who: s.current.Who}
 	s.from = fmt.Sprintf("%s wk %d", s.settings.MonthName(1), s.plan.Rows[0].Week)
+	s.aside = nil
 }
 
 func (s *Screen) forget() {
-	s.steps, s.foods, s.changed = nil, map[int]domain.Food{}, -1
-	s.done, s.passing, s.track, s.from = nil, 0, domain.Tracking{}, ""
+	s.tracked = tracked{settings: s.settings, foods: map[int]domain.Food{}, changed: -1}
+	s.aside, s.waiting = nil, false
 }
 
 func (s *Screen) quietly(do func()) {
@@ -251,7 +301,11 @@ func (s *Screen) render() {
 		if weeks == 1 {
 			unit = "week"
 		}
-		s.tracking.SetText(fmt.Sprintf("Plan from %s · %d %s done", s.from, weeks, unit))
+		text := fmt.Sprintf("Plan from %s · %d %s done", s.from, weeks, unit)
+		if s.waiting {
+			text += " · waiting for " + s.track.Who.Name
+		}
+		s.tracking.SetText(text)
 		s.tracking.Show()
 	}
 
@@ -297,4 +351,27 @@ func (s *Screen) render() {
 type doneRow struct {
 	row   domain.Row
 	month string
+}
+
+type tracked struct {
+	settings domain.Settings
+	steps    []domain.Step
+	foods    map[int]domain.Food
+	changed  int
+	track    domain.Tracking
+	done     []doneRow
+	passing  int
+	from     string
+	marks    []mark
+	used     bool
+	aged     bool
+}
+
+type mark struct {
+	date     int
+	passed   []domain.Step
+	month    int
+	done     int
+	settings domain.Settings
+	foods    map[int]domain.Food
 }

@@ -7,4 +7,5 @@ type Current struct {
 	Date      int
 	Dated     bool
 	Who       Who
+	Acting    bool
 }

@@ -18,6 +18,7 @@ type addresses struct {
 	lifespan, initial, nature, natureBase                              uint32
 	fatigue, fame, stress, spoil, fear, form                           uint32
 	growth, trainBoost, cupJellies, gold, silver, motivation, playType uint32
+	drillLevel                                                         uint32
 	drug, drugWeeks, itemUsed, like, dislike                           uint32
 	rank, lifeStage, lifeType                                          uint32
 	moves, active, arena, guts, specials, prize                        uint32
@@ -25,6 +26,7 @@ type addresses struct {
 	money, items, nextSale, errantry, input                            uint32
 	record                                                             uint32
 	date, tournament, grade, house, barn, altar                        uint32
+	acted                                                              uint32
 	unlocks, phoenix                                                   uint32
 	energy, tile, position, found                                      uint32
 }
@@ -36,14 +38,14 @@ var (
 		lifespan: 0x97A30, initial: 0x97A32, nature: 0x97A34, natureBase: 0x97A59,
 		fatigue: 0x97A37, fame: 0x97A38, stress: 0x97A3B, spoil: 0x97A3C, fear: 0x97A3D, form: 0x97A3E,
 		growth: 0x97A40, trainBoost: 0x97A78, cupJellies: 0x97AC5, gold: 0x97AC6, silver: 0x97AC7,
-		motivation: 0x97AF0, playType: 0x97AFD,
+		motivation: 0x97AF0, playType: 0x97AFD, drillLevel: 0x97A4C,
 		drug: 0x97B0A, drugWeeks: 0x97B0C, itemUsed: 0x97B0E, like: 0x97B1A, dislike: 0x97B1C,
 		rank: 0x97B92, lifeStage: 0x97B93, lifeType: 0x97B94,
 		moves: 0x97B9A, active: 0x97BD0, arena: 0x97BD6, guts: 0x97BD7, specials: 0x97BD8, prize: 0x97A5C,
 		name: 0x97B78, breeder: 0x98FAA,
 		money: 0x98FBC, items: 0x9923C, nextSale: 0x992DE, errantry: 0x992E9, input: 0x938AE,
 		record: 0x97A66,
-		date:   0x99228, tournament: 0x99080, grade: 0x98FC0, house: 0x98FC1, barn: 0x98FC2, altar: 0x99050,
+		date:   0x99228, tournament: 0x99080, grade: 0x98FC0, house: 0x98FC1, barn: 0x98FC2, altar: 0x99050, acted: 0x9904C,
 		unlocks: 0x99386, phoenix: 0x993CE,
 		energy: 0x0D55BC, tile: 0x0D55B6, position: 0x0D55C0,
 	}
@@ -53,14 +55,14 @@ var (
 		lifespan: 0x97A28, initial: 0x97A2A, nature: 0x97A2C, natureBase: 0x97A51,
 		fatigue: 0x97A2F, fame: 0x97A30, stress: 0x97A33, spoil: 0x97A34, fear: 0x97A35, form: 0x97A36,
 		growth: 0x97A38, trainBoost: 0x97A70, cupJellies: 0x97ABD, gold: 0x97ABE, silver: 0x97ABF,
-		motivation: 0x97AE8, playType: 0x97AF5,
+		motivation: 0x97AE8, playType: 0x97AF5, drillLevel: 0x97A44,
 		drug: 0x97B02, drugWeeks: 0x97B04, itemUsed: 0x97B06, like: 0x97B12, dislike: 0x97B14,
 		rank: 0x97B9A, lifeStage: 0x97B9B, lifeType: 0x97B9C,
 		moves: 0x97BA2, active: 0x97BD8, arena: 0x97BDE, guts: 0x97BDF, specials: 0x97BE0, prize: 0x97A54,
 		name: 0x97B78, breeder: 0x9A54A,
 		money: 0x9A568, items: 0x9A7EC, nextSale: 0x9A88E, errantry: 0x9A899, input: 0x938AE,
 		record: 0x97A5E,
-		date:   0x9A7D8, tournament: 0x9A62C, grade: 0x9A56C, house: 0x9A56D, barn: 0x9A56E, altar: 0x9A5FC,
+		date:   0x9A7D8, tournament: 0x9A62C, grade: 0x9A56C, house: 0x9A56D, barn: 0x9A56E, altar: 0x9A5FC, acted: 0x9A5F8,
 		unlocks: 0x9A936, phoenix: 0x9A97E,
 		energy: 0x1DE8B84, tile: 0x1DE8B7E, position: 0x1DE8B88, found: 0x1DE8BAC,
 	}
@@ -151,6 +153,7 @@ func monsterImage(a addresses, name, breeder []byte) *image {
 	img.u8(a.gold, 1)
 	img.u8(a.silver, 0)
 	img.put(a.motivation, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100)
+	img.put(a.drillLevel, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0)
 	img.u8(a.playType, 2)
 	img.u8(a.drug, 38)
 	img.u8(a.drugWeeks, 3)
@@ -189,6 +192,7 @@ func monsterImage(a addresses, name, breeder []byte) *image {
 	}
 	if a.date != 0 {
 		img.i32(a.date, 155)
+		img.i32(a.acted, 154)
 		img.i32(a.tournament, 1003)
 		img.u8(a.grade, 6)
 		img.u8(a.house, 2)
@@ -247,6 +251,7 @@ var _ = Describe("decode", func() {
 				TrainBoost: 0x0405,
 				CupJellies: 31, GoldPeach: true, ItemUsed: true,
 				Motivation: [monster.DrillCount]int{10, 20, 30, 40, 50, 60, 70, 80, 90, 100},
+				DrillLevel: [monster.DrillCount]int{1, 2, 3, 1, 2, 3, 1, 2, 3, 1},
 				PlayType:   2, Drug: 38, DrugWeeks: 3, ItemLike: 4, ItemDislike: 130,
 				Rank: 2, LifeStage: 5, LifeType: 3, ArenaSpeed: 4, GutsRate: 5,
 				Specials: 0x0403, PrizeMoney: 12345,
@@ -273,7 +278,7 @@ var _ = Describe("decode", func() {
 		},
 		Entry("MR2 on the PlayStation, which keeps the expedition in its RAM and the breeder's name as one byte a letter", ps1, ps1MR2AV, ps1Breeder, "AA888888",
 			player.Ranch{
-				Known: true, Date: 155, Tournament: 1003, Grade: 6, House: 2, Barn: 1, Altar: 3,
+				Known: true, Date: 155, Acted: 154, Tournament: 1003, Grade: 6, House: 2, Barn: 1, Altar: 3,
 				Unlocked: [player.BreedCount]bool{0: true, 1: true, 36: true},
 				Energy:   485, EnergyKnown: true, Tile: 420, WalkKnown: true,
 				OffsetX: -4, OffsetY: 1, OffsetKnown: true,
@@ -281,7 +286,7 @@ var _ = Describe("decode", func() {
 			}),
 		Entry("MR2DX on Steam", steam, steamMR2AV, steamBreeds, "Bob",
 			player.Ranch{
-				Known: true, Date: 155, Tournament: 1003, Grade: 6, House: 2, Barn: 1, Altar: 3,
+				Known: true, Date: 155, Acted: 154, Tournament: 1003, Grade: 6, House: 2, Barn: 1, Altar: 3,
 				Unlocked: [player.BreedCount]bool{0: true, 1: true, 36: true}, Energy: -5, EnergyKnown: true,
 				Tile: 911, WalkKnown: true, OffsetX: -3, OffsetY: 2, OffsetKnown: true,
 				PhoenixKnown: true, PhoenixDone: true, Found: 46, FoundKnown: true,

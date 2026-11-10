@@ -181,12 +181,12 @@ var _ = Describe("a plan", func() {
 			Expect(p.Rows[3].Action).To(Equal(domain.Expedition))
 		})
 
-		It("begins with the food of the month when it begins on the month's first week, as the game asks for it in that week", func() {
+		It("has no food for the month it begins on, even on its first week, as the game has had it given by then", func() {
 			s := thirdWeek()
 			s.Week = 1
-			p := domain.Build(reactions, shippedEffects(), s, []domain.Step{drill}, map[int]domain.Food{1: domain.Tablet})
-			Expect(ids(p)).To(Equal([]string{"1-0", "1-1", "1-2"}))
-			Expect(p.Rows[0].Food).To(Equal(domain.Tablet))
+			p := domain.Build(reactions, shippedEffects(), s, []domain.Step{drill, drill, drill, drill}, map[int]domain.Food{1: domain.Tablet, 2: domain.Milk})
+			Expect(ids(p)).To(Equal([]string{"1-1", "1-2", "1-3", "1-4", "2-0", "2-1"}))
+			Expect(p.Rows[4].Food).To(Equal(domain.Milk))
 		})
 
 		It("begins on the first week when the game's week is not known", func() {
@@ -232,6 +232,31 @@ var _ = Describe("a plan", func() {
 		It("is every item, for a plan that has no peach", func() {
 			Expect(domain.ItemsFor(domain.DefaultSettings(), []domain.Step{drill}, 0)).To(Equal(domain.Items()))
 			Expect(domain.ItemsFor(domain.DefaultSettings(), nil, 0)).To(Equal(domain.Items()))
+		})
+
+		It("offers no item to the week the game is in once the monster has had one this week, as the game gives one a week", func() {
+			settings := domain.DefaultSettings()
+			settings.ItemUsed = true
+			Expect(domain.ItemsFor(settings, []domain.Step{drill, drill}, 0)).To(Equal([]domain.Item{domain.NoItem}))
+			Expect(domain.ItemsFor(settings, []domain.Step{{Item: domain.NutsOil, Action: domain.Rest}}, 0)).To(Equal([]domain.Item{domain.NoItem, domain.NutsOil}))
+			Expect(domain.ItemsFor(settings, []domain.Step{drill, drill}, 1)).To(Equal(domain.Items()))
+		})
+
+		It("works no item into the week the game is in once the monster has had one, as the game has it in already, and still names it", func() {
+			settings := domain.DefaultSettings()
+			settings.Fatigue = 50
+			given := []domain.Step{{Item: domain.NutsOil, Action: domain.Rest}, {Item: domain.NutsOil, Action: domain.Rest}}
+			plain := []domain.Step{{Action: domain.Rest}, {Item: domain.NutsOil, Action: domain.Rest}}
+
+			settings.ItemUsed = true
+			p := domain.Build(domain.NewReactions(nil), shippedEffects(), settings, given, nil)
+			q := domain.Build(domain.NewReactions(nil), shippedEffects(), settings, plain, nil)
+			Expect(p.Rows[0].Item).To(Equal(domain.NutsOil))
+			Expect([]int{p.Rows[0].Fatigue, p.Rows[1].Fatigue}).To(Equal([]int{q.Rows[0].Fatigue, q.Rows[1].Fatigue}))
+
+			settings.ItemUsed = false
+			r := domain.Build(domain.NewReactions(nil), shippedEffects(), settings, given, nil)
+			Expect(r.Rows[0].Fatigue).NotTo(Equal(q.Rows[0].Fatigue))
 		})
 
 		It("leaves out a peach that another step has, as a monster is given each of them once", func() {

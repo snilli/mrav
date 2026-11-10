@@ -113,6 +113,9 @@ func decode(l Layout, mem Memory) (monster.Monster, error) {
 	for d, percent := range r.read(l.Motivation, monster.DrillCount) {
 		m.Motivation[d] = int(percent)
 	}
+	for d, stars := range r.read(l.DrillLevel, monster.DrillCount) {
+		m.DrillLevel[d] = int(stars) + 1
+	}
 	moves := r.read(l.Moves, 2*monster.SlotCount)
 	for slot := range m.Learned {
 		m.Learned[slot] = moves[2*slot] == 1
@@ -149,7 +152,7 @@ func decodePlayer(l Layout, mem Memory) (player.Player, error) {
 			tournament = 0
 		}
 		p.Ranch = player.Ranch{
-			Known: true, Date: r.i32(l.Date), Tournament: tournament, Grade: r.u8(l.Grade),
+			Known: true, Date: r.i32(l.Date), Acted: r.i32(l.Acted), Tournament: tournament, Grade: r.u8(l.Grade),
 			House: r.u8(l.House), Barn: r.u8(l.Barn), Altar: r.u8(l.Altar),
 		}
 		for breed, unlocked := range r.read(l.Unlocks, player.BreedCount) {

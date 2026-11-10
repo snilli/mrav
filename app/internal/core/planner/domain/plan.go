@@ -154,9 +154,6 @@ func (b *builder) apply(at int, step Step) {
 
 func Build(reactions Reactions, effects Effects, settings Settings, steps []Step, foods map[int]Food) Plan {
 	b := &builder{settings: settings, rows: []Row{{Month: 1, Week: settings.firstWeek(), Kind: NextRow}}}
-	if settings.Week == 1 {
-		b.rows = append([]Row{{Month: 1, Kind: FoodRow, Step: -1}}, b.rows...)
-	}
 	for at, step := range steps {
 		if !step.blank() {
 			b.apply(at, step)

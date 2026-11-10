@@ -47,6 +47,12 @@ func (i Item) Name() string { return itemNames[i] }
 func (i Item) isPeach() bool { return i == GoldPeach || i == SilverPeach }
 
 func ItemsFor(settings Settings, steps []Step, at int) []Item {
+	if settings.ItemUsed && at == 0 {
+		if len(steps) > 0 && steps[0].Item != NoItem {
+			return []Item{NoItem, steps[0].Item}
+		}
+		return []Item{NoItem}
+	}
 	var items []Item
 	for _, item := range Items() {
 		taken := item.isPeach() && (settings.ate(item) || slices.ContainsFunc(steps, func(s Step) bool { return s.Item == item && s.Action != Freeze }))

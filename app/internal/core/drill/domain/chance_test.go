@@ -43,10 +43,7 @@ func (c chanceCase) monster(d domain.Drill) monster.Monster {
 	if !d.Heavy && d.Primary != monster.Defense {
 		m.Growth[d.Primary+1] = c.Nag
 	}
-	m.Stats[d.Primary] = [...]int{0, 300, 700}[c.Level-1]
-	if d.Heavy {
-		m.Stats[d.Primary] = [...]int{0, 450, 1100}[c.Level-1]
-	}
+	m.DrillLevel[d.Slot] = c.Level
 	return m
 }
 
@@ -71,24 +68,11 @@ var _ = Describe("the chances of a drill, worked out the way the Drill Calculato
 		}
 	})
 
-	DescribeTable("gives a light drill two stars at 300 of its stat and three at 700",
-		func(stat, want int) {
-			var m monster.Monster
-			m.Stats[monster.Pow] = stat
-			Expect(drillNamed("Domino").Level(m)).To(Equal(want))
-		},
-		Entry("299", 299, 1), Entry("300", 300, 2), Entry("699", 699, 2), Entry("700", 700, 3),
-	)
-
-	DescribeTable("gives a hard drill two stars once its stat and half its second stat reach 450, and three once they pass 1050",
-		func(pow, life, want int) {
-			var m monster.Monster
-			m.Stats[monster.Pow], m.Stats[monster.Life] = pow, life
-			Expect(drillNamed("Pull").Level(m)).To(Equal(want))
-		},
-		Entry("449", 449, 0, 1), Entry("450", 450, 0, 2), Entry("400 and 100", 400, 100, 2),
-		Entry("1050", 1050, 0, 2), Entry("1000 and 102", 1000, 102, 3),
-	)
+	It("takes the stars of each drill from the game, by its slot", func() {
+		var m monster.Monster
+		m.DrillLevel[0], m.DrillLevel[6] = 3, 2
+		Expect([]int{drillNamed("Domino").Level(m), drillNamed("Pull").Level(m)}).To(Equal([]int{3, 2}))
+	})
 
 	It("works the chances out for each drill of the monster", func() {
 		m := monster.Monster{Fatigue: 30, Nature: 20}

@@ -34,10 +34,11 @@ var _ = Describe("PlannerService", func() {
 	})
 
 	It("starts the plan from the monster and the items of the game, with what each genus feels about food", func() {
-		monsters.EXPECT().Current(ctx).Return(monster.Monster{Genus: 35, SubGenus: 7, Fatigue: 20, LifeStage: 2}, nil)
+		monsters.EXPECT().Current(ctx).Return(monster.Monster{Genus: 35, SubGenus: 7, Fatigue: 20, LifeStage: 2, ItemUsed: true}, nil)
 		var items [player.ItemSlots]int
 		items[0] = 7
 		ranch := player.Ranch{Known: true}.InWeek(4, 3)
+		ranch.Acted = ranch.Date
 		players.EXPECT().Player(ctx).Return(player.Player{Items: items, Ranch: ranch}, nil)
 		repo.EXPECT().ListFoodReactions(ctx).Return([]domain.FoodReaction{
 			{Genus: 35, Food: domain.Potato, Stage: domain.AnyStage, Reaction: domain.Dislike},
@@ -46,10 +47,10 @@ var _ = Describe("PlannerService", func() {
 
 		got, err := svc.Current(ctx)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(got.Settings).To(Equal(domain.SettingsOf(monster.Monster{Genus: 35, SubGenus: 7, Fatigue: 20, LifeStage: 2}, items).In(ranch)))
+		Expect(got.Settings).To(Equal(domain.SettingsOf(monster.Monster{Genus: 35, SubGenus: 7, Fatigue: 20, LifeStage: 2, ItemUsed: true}, items).In(ranch)))
 		Expect([]int{got.Settings.Month, got.Settings.Week}).To(Equal([]int{4, 3}))
-		Expect([]any{got.Date, got.Dated}).To(Equal([]any{ranch.Date, true}))
-		Expect(got.Who).To(Equal(domain.WhoOf(monster.Monster{Genus: 35, SubGenus: 7, Fatigue: 20, LifeStage: 2})))
+		Expect([]any{got.Date, got.Dated, got.Settings.ItemUsed, got.Acting}).To(Equal([]any{ranch.Date, true, true, true}))
+		Expect(got.Who).To(Equal(domain.WhoOf(monster.Monster{Genus: 35, SubGenus: 7, Fatigue: 20, LifeStage: 2, ItemUsed: true})))
 		Expect(got.Who.Main).To(Equal(monster.Genus(35)))
 		Expect(got.Settings.Pots).To(Equal(1))
 		Expect(got.Reactions.Of(35, domain.Potato, 3)).To(Equal(domain.Dislike))

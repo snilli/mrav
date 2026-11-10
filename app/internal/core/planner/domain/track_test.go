@@ -36,11 +36,12 @@ var _ = Describe("following the game while the plan is played", func() {
 			Expect([]int{passed.Step, passed.Month}).To(Equal([]int{3, 2}))
 		})
 
-		It("leaves the food of a month to come while the game is on the first week of that month, as it is given in that week", func() {
+		It("takes the food of the month that the game has come to, as the game gives it at the start of that week", func() {
 			p := build(drill, drill, drill)
 			passed, ok := p.Passed(2)
 			Expect(ok).To(BeTrue())
-			Expect(passed.Rows).To(Equal(p.Rows[:2]))
+			Expect(passed.Rows).To(Equal(p.Rows[:3]))
+			Expect(passed.Rows[2].Kind).To(Equal(domain.FoodRow))
 			Expect([]int{passed.Step, passed.Month}).To(Equal([]int{2, 2}))
 		})
 
@@ -54,43 +55,81 @@ var _ = Describe("following the game while the plan is played", func() {
 			Expect(passed.Step).To(Equal(2))
 		})
 
+		It("takes the item out of the week that the game played without one, and leaves the plan as it was", func() {
+			p := build(domain.Step{Item: domain.NutsOil, Action: domain.LightDrill}, drill)
+			passed, _ := p.Passed(1)
+			Expect(passed.Played(false, domain.Settings{}).Rows[0].Item).To(Equal(domain.NoItem))
+			Expect(passed.Played(true, domain.Settings{}).Rows[0].Item).To(Equal(domain.NutsOil))
+			Expect(p.Rows[0].Item).To(Equal(domain.NutsOil))
+		})
+
+		It("ends the last week played where the game is now, as the game is the truth of what the week did", func() {
+			p := build(drill, drill, drill)
+			passed, _ := p.Passed(2)
+			was := p.Rows[1]
+			after := domain.Settings{Fatigue: 25, Stress: 19, Form: -86, Lifespan: was.Life - 3}
+			last := passed.Played(true, after).Rows[1]
+			Expect([]int{last.Fatigue, last.Stress, last.LI, last.Form}).To(Equal([]int{25, 19, 63, -86}))
+			Expect([]int{last.Life, last.Lost, last.Total}).To(Equal([]int{was.Life, was.Lost, was.Total}))
+			Expect(p.Rows[1].Fatigue).NotTo(Equal(25))
+		})
+
+		It("ages a week played by the lifespan that the game takes off a moment after the date turns, once it has", func() {
+			r := domain.Row{Life: 99, Lost: 0, Total: 0, ShowLife: true}
+			aged, ok := r.Aged(100, 98)
+			Expect([]any{aged, ok}).To(Equal([]any{domain.Row{Life: 98, Lost: -1, Total: -1, ShowLife: true}, true}))
+			aged, ok = r.Aged(100, 100)
+			Expect([]any{aged, ok}).To(Equal([]any{r, false}))
+			aged, ok = domain.Row{Life: 99}.Aged(100, 98)
+			Expect([]any{aged, ok}).To(Equal([]any{domain.Row{Life: 99}, true}))
+		})
+
 		It("takes every week of the plan when more weeks passed than it has, leaving the empty week for the next step", func() {
 			passed, ok := build(drill, drill).Passed(9)
 			Expect(ok).To(BeTrue())
 			Expect(passed.Step).To(Equal(2))
-			Expect(passed.Rows).To(HaveLen(2))
+			Expect(passed.Rows).To(HaveLen(3))
 		})
 	})
 
 	Describe("the weeks since the plan was begun", func() {
 		who := domain.WhoOf(monster.Monster{Genus: 34, SubGenus: 34, Name: "Rocky", InitialLifespan: 350})
-		begun := domain.Tracking{Started: true, Date: 100, Who: who}
+		begun := domain.Tracking{Started: true, Start: 100, Date: 102, Who: who}
 		now := func(date int, w domain.Who) domain.Current { return domain.Current{Date: date, Dated: true, Who: w} }
 
-		It("counts the weeks that the game has gone on since then", func() {
-			weeks, reset := begun.Weeks(now(103, who))
-			Expect([]any{weeks, reset}).To(Equal([]any{3, false}))
+		It("counts the weeks that the game has gone on since the plan last followed it", func() {
+			weeks, ok := begun.Weeks(now(105, who))
+			Expect([]any{weeks, ok}).To(Equal([]any{3, true}))
 		})
 
-		It("starts again when the monster in the game is another one", func() {
+		It("counts back when a save from a week of the plan is loaded", func() {
+			weeks, ok := begun.Weeks(now(100, who))
+			Expect([]any{weeks, ok}).To(Equal([]any{-2, true}))
+		})
+
+		It("does not count for another monster in the game, which the plan is not for", func() {
 			other := domain.WhoOf(monster.Monster{Genus: 34, SubGenus: 34, Name: "Rocky", InitialLifespan: 300})
-			_, reset := begun.Weeks(now(103, other))
-			Expect(reset).To(BeTrue())
+			_, ok := begun.Weeks(now(105, other))
+			Expect(ok).To(BeFalse())
+			Expect(begun.Another(now(105, other))).To(BeTrue())
+			Expect(begun.Another(now(105, who))).To(BeFalse())
+			Expect(begun.Another(domain.Current{})).To(BeFalse())
+			Expect(domain.Tracking{}.Another(now(105, other))).To(BeFalse())
 		})
 
-		It("starts again when the game goes back in time, as a save that was loaded", func() {
-			_, reset := begun.Weeks(now(99, who))
-			Expect(reset).To(BeTrue())
+		It("waits while the game is before the week the plan began", func() {
+			_, ok := begun.Weeks(now(99, who))
+			Expect(ok).To(BeFalse())
 		})
 
-		It("starts again when the date of the game cannot be read", func() {
-			_, reset := begun.Weeks(domain.Current{Who: who})
-			Expect(reset).To(BeTrue())
+		It("waits while the date of the game cannot be read", func() {
+			_, ok := begun.Weeks(domain.Current{Who: who})
+			Expect(ok).To(BeFalse())
 		})
 
 		It("has nothing to count before a plan is begun", func() {
-			weeks, reset := domain.Tracking{}.Weeks(now(103, who))
-			Expect([]any{weeks, reset}).To(Equal([]any{0, false}))
+			_, ok := domain.Tracking{}.Weeks(now(103, who))
+			Expect(ok).To(BeFalse())
 		})
 	})
 })

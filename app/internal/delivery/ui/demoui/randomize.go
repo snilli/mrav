@@ -41,6 +41,7 @@ func randomize(rng *rand.Rand, genera []domain.Genus, m *monster.Monster, p *pla
 	m.GoldPeach, m.SilverPeach, m.ItemUsed = flag(), flag(), flag()
 	for d := range m.Motivation {
 		m.Motivation[d] = rng.IntN(101)
+		m.DrillLevel[d] = 1 + rng.IntN(3)
 	}
 	m.ItemLike, m.ItemDislike = rng.IntN(item.EmptyFrom), rng.IntN(item.EmptyFrom)
 	m.Drug, m.DrugWeeks = 0, 0

@@ -474,7 +474,7 @@ var _ = Describe("Screen", func() {
 			Expect(s.tracking.Text).To(Equal("Plan from Apr wk 3 · 1 week done"))
 		})
 
-		It("keeps the food chosen for a month that is still to come", func() {
+		It("keeps the food chosen for a month that is still to come, and has none to choose for the month the game has come to", func() {
 			light(7)
 			june := weeks()[7]
 			Expect(june.week.Text).To(Equal("food"))
@@ -483,6 +483,82 @@ var _ = Describe("Screen", func() {
 			s.apply(at(102, 1, rocky), nil)
 			Expect(s.foods).To(Equal(map[int]domain.Food{2: domain.Tablet}))
 			Expect(weeks()[7].food.Selected).To(Equal("Tablet"))
+
+			s.apply(at(106, 1, rocky), nil)
+			Expect(s.plan.Rows[0].Kind).NotTo(Equal(domain.FoodRow))
+			Expect(done()[len(done())-1].away.Text).To(Equal("Tablet"))
+			Expect(s.foods).To(Equal(map[int]domain.Food{1: domain.Tablet}))
+		})
+
+		It("marks a week done without its item when the game played it without one", func() {
+			choose(0, "Nuts Oil", "Light Drill")
+			choose(1, "Nuts Oil", "Rest")
+			next := at(101, 4, rocky)
+			next.Settings.Fatigue, next.Settings.Stress = 25, 19
+			s.apply(next, nil)
+			Expect(done()[0].away.Text).To(Equal("Light Drill"))
+			Expect([]string{done()[0].ftg.Text, done()[0].str.Text, done()[0].li.Text}).To(Equal([]string{"25", "19", "63"}))
+
+			fed := at(101, 4, rocky)
+			fed.Settings.ItemUsed = true
+			s.apply(fed, nil)
+			s.apply(at(102, 1, rocky), nil)
+			Expect(done()[1].away.Text).To(Equal("Nuts Oil, Rest"))
+		})
+
+		It("lets no item be chosen for the week the game is in once the monster has had one", func() {
+			choose(0, "Nuts Oil", "Light Drill")
+			fed := at(100, 3, rocky)
+			fed.Settings.ItemUsed = true
+			s.apply(fed, nil)
+			Expect(s.steps).To(Equal([]domain.Step{{Item: domain.NutsOil, Action: domain.LightDrill}}))
+			Expect(weeks()[0].item.Options).To(Equal([]string{"No item", "Nuts Oil"}))
+
+			weeks()[0].item.SetSelected("No item")
+			Expect(weeks()[0].item.Options).To(Equal([]string{"No item"}))
+		})
+
+		It("ages the week just played once the game takes its week of life off, a moment after the date turns", func() {
+			choose(0, "No item", "Light Drill")
+			choose(1, "No item", "Rest")
+			s.apply(at(101, 4, rocky), nil)
+			Expect([]string{done()[0].life.Text, done()[0].lost.Text}).To(Equal([]string{"99", "0"}))
+
+			aged := at(101, 4, rocky)
+			aged.Settings.Lifespan = 98
+			s.apply(aged, nil)
+			Expect([]string{done()[0].life.Text, done()[0].lost.Text}).To(Equal([]string{"98", "-1"}))
+
+			aged.Settings.Lifespan, aged.Settings.Stress = 99, 3
+			s.apply(aged, nil)
+			Expect(done()[0].life.Text).To(Equal("98"))
+		})
+
+		It("holds the week as it began once the game has begun its action, as the game writes what the action did before the date turns", func() {
+			choose(0, "No item", "Light Drill")
+			acting := at(100, 3, rocky)
+			acting.Acting = true
+			acting.Settings.Fatigue, acting.Settings.Stress = 40, 30
+			s.apply(acting, nil)
+			Expect([]int{s.settings.Fatigue, s.settings.Stress}).To(Equal([]int{0, 0}))
+		})
+
+		It("starts from the game even while it acts, when it has had nothing from the game before", func() {
+			other := NewScreen(svc)
+			acting := at(100, 3, rocky)
+			acting.Acting = true
+			acting.Settings.Fatigue = 40
+			other.apply(acting, nil)
+			Expect([]int{other.settings.Fatigue, other.settings.Month}).To(Equal([]int{40, 4}))
+		})
+
+		It("takes up what the game does within a week, as the food of a month is given once the week has begun", func() {
+			choose(0, "No item", "Light Drill")
+			fed := at(100, 3, rocky)
+			fed.Settings.Stress = 5
+			s.apply(fed, nil)
+			Expect(s.settings.Stress).To(Equal(5))
+			Expect(s.steps).To(Equal([]domain.Step{{Action: domain.LightDrill}}))
 		})
 
 		It("greys the weeks of an errantry that has begun, and goes on once it is over", func() {
@@ -498,16 +574,99 @@ var _ = Describe("Screen", func() {
 			Expect(done()).To(HaveLen(4))
 		})
 
-		It("starts again with another monster, or a game that went back in time", func() {
+		It("goes back with a save from a week of the plan, keeping the weeks changed since", func() {
+			choose(0, "No item", "Light Drill")
+			choose(1, "No item", "Rest")
+			light(2)
+			s.apply(at(101, 4, rocky), nil)
+			s.apply(at(102, 1, rocky), nil)
+			Expect(weeks()[3].action.Selected).To(Equal("Light Drill"))
+			weeks()[3].action.SetSelected("Rest")
+
+			s.apply(at(100, 3, rocky), nil)
+			Expect(done()).To(BeEmpty())
+			Expect(s.steps).To(Equal([]domain.Step{{Action: domain.LightDrill}, {Action: domain.Rest}, {Action: domain.Rest}, {Action: domain.LightDrill}}))
+			Expect(s.tracking.Text).To(Equal("Plan from Apr wk 3 · 0 weeks done"))
+
+			s.apply(at(101, 4, rocky), nil)
+			Expect(done()).To(HaveLen(1))
+			Expect(s.steps).To(Equal([]domain.Step{{Action: domain.Rest}, {Action: domain.Rest}, {Action: domain.LightDrill}}))
+		})
+
+		It("keeps the food of a month when a save goes back past it", func() {
+			light(7)
+			weeks()[7].food.SetSelected("Tablet")
+			s.apply(at(102, 1, rocky), nil)
+			s.apply(at(101, 4, rocky), nil)
+			Expect(s.foods).To(Equal(map[int]domain.Food{3: domain.Tablet}))
+		})
+
+		It("starts the week gone back to from the game as the save has it", func() {
 			choose(0, "No item", "Light Drill")
 			s.apply(at(101, 4, rocky), nil)
-			s.apply(at(101, 4, domain.WhoOf(monster.Monster{Genus: 1})), nil)
-			Expect(s.steps).To(BeEmpty())
+			s.apply(at(102, 1, rocky), nil)
+
+			again := at(101, 4, rocky)
+			again.Settings.Stress = 77
+			s.apply(again, nil)
+			Expect(s.settings.Stress).To(Equal(77))
+		})
+
+		It("keeps the item given in the week an errantry began, however the weeks away read", func() {
+			choose(0, "Nuts Oil", "Errantry")
+			light(1)
+			fed := at(100, 3, rocky)
+			fed.Settings.ItemUsed = true
+			s.apply(fed, nil)
+			s.apply(at(102, 1, rocky), nil)
+			s.apply(at(104, 3, rocky), nil)
+			Expect(done()[0].away.Text).To(Equal("Nuts Oil, Errantry"))
+		})
+
+		It("waits with the plan while the date of the game cannot be read, as on the title screen", func() {
+			choose(0, "No item", "Light Drill")
+			choose(1, "No item", "Rest")
+			s.apply(at(101, 4, rocky), nil)
+			s.apply(domain.Current{}, nil)
+			Expect(done()).To(HaveLen(1))
+			Expect(s.tracking.Text).To(Equal("Plan from Apr wk 3 · 1 week done · waiting for Rocky"))
+
+			s.apply(at(102, 1, rocky), nil)
+			Expect(done()).To(HaveLen(3))
+			Expect(s.tracking.Text).To(Equal("Plan from Apr wk 3 · 2 weeks done"))
+		})
+
+		It("waits with the plan while a save from before it began is loaded", func() {
+			choose(0, "No item", "Light Drill")
+			s.apply(at(101, 4, rocky), nil)
+			s.apply(at(99, 2, rocky), nil)
+			Expect(done()).To(HaveLen(1))
+			Expect(s.tracking.Text).To(Equal("Plan from Apr wk 3 · 1 week done · waiting for Rocky"))
+		})
+
+		It("puts the plan aside while the game shows another monster, and takes it back when the monster is back", func() {
+			choose(0, "No item", "Light Drill")
+			choose(1, "No item", "Rest")
+			s.apply(at(101, 4, rocky), nil)
+			s.apply(at(50, 2, domain.WhoOf(monster.Monster{Genus: 1})), nil)
 			Expect(done()).To(BeEmpty())
+			Expect(s.steps).To(BeEmpty())
 			Expect(s.tracking.Visible()).To(BeFalse())
 
+			s.apply(at(102, 1, rocky), nil)
+			Expect(done()).To(HaveLen(3))
+			Expect(s.tracking.Text).To(Equal("Plan from Apr wk 3 · 2 weeks done"))
+		})
+
+		It("drops the plan put aside once a week is chosen for the other monster", func() {
 			choose(0, "No item", "Light Drill")
-			s.apply(at(90, 1, domain.WhoOf(monster.Monster{Genus: 1})), nil)
+			s.apply(at(101, 4, rocky), nil)
+			s.apply(at(50, 2, domain.WhoOf(monster.Monster{Genus: 1})), nil)
+			choose(0, "No item", "Rest")
+			Expect(s.tracking.Text).To(Equal("Plan from Apr wk 2 · 0 weeks done"))
+
+			s.apply(at(102, 1, rocky), nil)
+			Expect(done()).To(BeEmpty())
 			Expect(s.steps).To(BeEmpty())
 		})
 

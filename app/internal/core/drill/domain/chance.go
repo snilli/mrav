@@ -28,25 +28,7 @@ func (c Chances) Of(r Result) float64 {
 	return c.Success
 }
 
-func (d Drill) Level(m monster.Monster) int {
-	if d.Heavy {
-		v := m.Stats[d.Primary] + m.Stats[d.Secondary]/2
-		switch {
-		case v > 1050:
-			return 3
-		case v >= 450:
-			return 2
-		}
-		return 1
-	}
-	switch v := m.Stats[d.Primary]; {
-	case v >= 700:
-		return 3
-	case v >= 300:
-		return 2
-	}
-	return 1
-}
+func (d Drill) Level(m monster.Monster) int { return max(1, m.DrillLevel[d.Slot]) }
 
 func ChancesOf(m monster.Monster, d Drill) Chances {
 	nature := max(-100, min(100, m.Nature))

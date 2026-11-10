@@ -29,6 +29,7 @@ type Settings struct {
 	Lifespan    int
 	GoldPeach   bool
 	SilverPeach bool
+	ItemUsed    bool
 	Month, Week int
 }
 
@@ -53,7 +54,7 @@ func SettingsOf(m monster.Monster, items [player.ItemSlots]int) Settings {
 		Like: foodOfItem(m.ItemLike), Dislike: foodOfItem(m.ItemDislike),
 		LifeStage: min(max(m.LifeStage+1, 1), 10),
 		Form:      m.Form, Fatigue: m.Fatigue, Stress: m.Stress, Lifespan: m.Lifespan,
-		GoldPeach: m.GoldPeach, SilverPeach: m.SilverPeach,
+		GoldPeach: m.GoldPeach, SilverPeach: m.SilverPeach, ItemUsed: m.ItemUsed,
 	}
 	for _, code := range items {
 		switch code {

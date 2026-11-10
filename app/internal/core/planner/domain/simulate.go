@@ -7,6 +7,8 @@ import (
 	profile "app/internal/core/profile/domain"
 )
 
+func lifeIndex(ftg, str int) int { return ftg + 2*str }
+
 func clamp(v int) int { return max(0, min(100, v)) }
 
 func ceil(v float64) int { return int(math.Ceil(v)) }
@@ -26,8 +28,12 @@ func simulate(rows []Row, reactions Reactions, effects Effects, s Settings) (wee
 			frozen++
 		default:
 			var lost int
-			ftg, str, lost = week(rows, i, ftg, str, s, effects)
-			form = clampForm(form + effects.of(itemSubject(r.Item), s).Form)
+			item := r.Item
+			if s.ItemUsed && r.Kind == StepRow && r.Step == 0 {
+				item = NoItem
+			}
+			ftg, str, lost = week(rows, i, item, ftg, str, s, effects)
+			form = clampForm(form + effects.of(itemSubject(item), s).Form)
 			form = clampForm(form + effects.of(actionSubject(r.Action), s).Form)
 			r.Form = form
 			weeks += lost
@@ -64,10 +70,10 @@ func monthly(food Food, ftg, str int, s Settings, reactions Reactions) (int, int
 	return clamp(ftg), clamp(str + FoodStress(food, reaction))
 }
 
-func week(rows []Row, at, ftg, str int, s Settings, effects Effects) (int, int, int) {
+func week(rows []Row, at int, given Item, ftg, str int, s Settings, effects Effects) (int, int, int) {
 	r := &rows[at]
 	dx := s.Version == monster.MR2DX
-	item, action := effects.of(itemSubject(r.Item), s), effects.of(actionSubject(r.Action), s)
+	item, action := effects.of(itemSubject(given), s), effects.of(actionSubject(r.Action), s)
 	ftg, str = item.apply(ftg, str, s.Form)
 	ftg, str = clamp(ftg), clamp(str)
 	ftg, str = action.apply(ftg, str, s.Form)
@@ -75,7 +81,7 @@ func week(rows []Row, at, ftg, str int, s Settings, effects Effects) (int, int, 
 	lost := item.Lost + action.Lost
 
 	r.Shown, r.Fatigue, r.Stress = true, ftg, str
-	r.LI = ftg + 2*str
+	r.LI = lifeIndex(ftg, str)
 	away := (dx && r.Action == Away) || r.Action == Freeze
 	r.ShowLI = !away
 
