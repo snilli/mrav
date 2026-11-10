@@ -92,6 +92,22 @@ var _ = Describe("following the game while the plan is played", func() {
 		})
 	})
 
+	Describe("whether the game is acting out its week", func() {
+		now := func(date, acted int) domain.Current { return domain.Current{Date: date, Dated: true, Acted: acted} }
+
+		It("is acting once the game is seen to mark this week, where it marked the one before, and stays so until the date turns", func() {
+			Expect(domain.Acting(false, now(865, 864), now(865, 865))).To(BeTrue())
+			Expect(domain.Acting(true, now(865, 865), now(865, 0))).To(BeTrue())
+			Expect(domain.Acting(true, now(865, 865), now(866, 865))).To(BeFalse())
+			Expect(domain.Acting(false, now(865, 864), now(865, 864))).To(BeFalse())
+		})
+
+		It("is not acting when the mark comes from further back, as on the week an errantry comes home, or before anything was read", func() {
+			Expect(domain.Acting(false, now(868, 864), now(868, 868))).To(BeFalse())
+			Expect(domain.Acting(false, domain.Current{}, now(868, 868))).To(BeFalse())
+		})
+	})
+
 	Describe("the weeks since the plan was begun", func() {
 		who := domain.WhoOf(monster.Monster{Genus: 34, SubGenus: 34, Name: "Rocky", InitialLifespan: 350})
 		begun := domain.Tracking{Started: true, Start: 100, Date: 102, Who: who}

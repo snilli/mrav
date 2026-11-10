@@ -49,7 +49,7 @@ var _ = Describe("PlannerService", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(got.Settings).To(Equal(domain.SettingsOf(monster.Monster{Genus: 35, SubGenus: 7, Fatigue: 20, LifeStage: 2, ItemUsed: true}, items).In(ranch)))
 		Expect([]int{got.Settings.Month, got.Settings.Week}).To(Equal([]int{4, 3}))
-		Expect([]any{got.Date, got.Dated, got.Settings.ItemUsed, got.Acting}).To(Equal([]any{ranch.Date, true, true, true}))
+		Expect([]any{got.Date, got.Dated, got.Settings.ItemUsed, got.Acted}).To(Equal([]any{ranch.Date, true, true, ranch.Date}))
 		Expect(got.Who).To(Equal(domain.WhoOf(monster.Monster{Genus: 35, SubGenus: 7, Fatigue: 20, LifeStage: 2, ItemUsed: true})))
 		Expect(got.Who.Main).To(Equal(monster.Genus(35)))
 		Expect(got.Settings.Pots).To(Equal(1))

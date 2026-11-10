@@ -35,7 +35,7 @@ type Screen struct {
 	live     domain.Settings
 	aside    *tracked
 	waiting  bool
-	read     bool
+	acting   bool
 
 	status *widget.Label
 	body   fyne.CanvasObject
@@ -108,6 +108,7 @@ func (s *Screen) apply(current domain.Current, err error) {
 	s.body.Show()
 	s.content.Refresh()
 
+	s.acting = domain.Acting(s.acting, s.current, current)
 	s.reactions, s.effects, s.current, s.live = current.Reactions, current.Effects, current, current.Settings
 	if s.track.Another(current) {
 		aside := s.tracked
@@ -126,8 +127,8 @@ func (s *Screen) apply(current domain.Current, err error) {
 	case weeks > 0:
 		s.follow(weeks)
 	}
-	if (!current.Acting || !s.read) && (!s.track.Started || ok && s.track.Date == current.Date) {
-		s.settings, s.used, s.read = current.Settings, current.Settings.ItemUsed, true
+	if !s.acting && (!s.track.Started || ok && s.track.Date == current.Date) {
+		s.settings, s.used = current.Settings, current.Settings.ItemUsed
 		s.age()
 	}
 	s.recompute()
@@ -291,12 +292,7 @@ func (s *Screen) render() {
 
 	s.tracking.Hide()
 	if s.track.Started {
-		weeks := s.passing
-		for _, d := range s.done {
-			if d.row.Kind != domain.FoodRow {
-				weeks++
-			}
-		}
+		weeks := s.track.Date - s.track.Start + s.passing
 		unit := "weeks"
 		if weeks == 1 {
 			unit = "week"

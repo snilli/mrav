@@ -8,12 +8,6 @@ import (
 )
 
 var _ = Describe("Ranch", func() {
-	It("is acting once the game has begun the week's action, which it marks with the week before the date turns", func() {
-		Expect(domain.Ranch{Known: true, Date: 865, Acted: 864}.Acting()).To(BeFalse())
-		Expect(domain.Ranch{Known: true, Date: 865, Acted: 865}.Acting()).To(BeTrue())
-		Expect(domain.Ranch{Date: 865, Acted: 865}.Acting()).To(BeFalse())
-	})
-
 	at := func(weeks int) domain.Ranch { return domain.Ranch{Known: true, Date: weeks} }
 
 	DescribeTable("reads the date as the game counts it: from April of the year 1000, four weeks to a month, twelve to a year",

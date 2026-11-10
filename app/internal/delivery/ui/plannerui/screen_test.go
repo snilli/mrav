@@ -536,17 +536,38 @@ var _ = Describe("Screen", func() {
 
 		It("holds the week as it began once the game has begun its action, as the game writes what the action did before the date turns", func() {
 			choose(0, "No item", "Light Drill")
+			ranch := at(100, 3, rocky)
+			ranch.Acted = 99
+			s.apply(ranch, nil)
 			acting := at(100, 3, rocky)
-			acting.Acting = true
+			acting.Acted = 100
 			acting.Settings.Fatigue, acting.Settings.Stress = 40, 30
 			s.apply(acting, nil)
 			Expect([]int{s.settings.Fatigue, s.settings.Stress}).To(Equal([]int{0, 0}))
 		})
 
+		It("takes up the week an errantry comes home on, whose mark the game left from further back", func() {
+			choose(0, "No item", "Light Drill")
+			away := at(100, 3, rocky)
+			away.Acted = 96
+			s.apply(away, nil)
+			home := at(100, 3, rocky)
+			home.Acted = 100
+			home.Settings.Fatigue = 40
+			s.apply(home, nil)
+			Expect(s.settings.Fatigue).To(Equal(40))
+		})
+
+		It("counts the weeks done by the game's date, past the end of the plan too", func() {
+			choose(0, "No item", "Light Drill")
+			s.apply(at(103, 2, rocky), nil)
+			Expect(s.tracking.Text).To(Equal("Plan from Apr wk 3 · 3 weeks done"))
+		})
+
 		It("starts from the game even while it acts, when it has had nothing from the game before", func() {
 			other := NewScreen(svc)
 			acting := at(100, 3, rocky)
-			acting.Acting = true
+			acting.Acted = 100
 			acting.Settings.Fatigue = 40
 			other.apply(acting, nil)
 			Expect([]int{other.settings.Fatigue, other.settings.Month}).To(Equal([]int{40, 4}))

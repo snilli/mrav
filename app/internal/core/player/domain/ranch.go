@@ -75,8 +75,6 @@ func (d Date) String() string {
 	return fmt.Sprintf("Y%d %s wk %d", d.Year, MonthNames[d.Month-1], d.Week)
 }
 
-func (r Ranch) Acting() bool { return r.Known && r.Acted == r.Date }
-
 func (r Ranch) Calendar() Date {
 	w := r.Date + startWeek
 	return Date{

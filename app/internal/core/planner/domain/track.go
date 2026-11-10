@@ -68,6 +68,13 @@ func WhoOf(m monster.Monster) Who {
 	return Who{Main: m.Genus, Sub: m.SubGenus, Name: m.Name, Lifespan: m.InitialLifespan}
 }
 
+func Acting(was bool, before, now Current) bool {
+	if !now.Dated || !before.Dated || before.Date != now.Date {
+		return false
+	}
+	return was || before.Acted == now.Date-1 && now.Acted == now.Date
+}
+
 type Tracking struct {
 	Started     bool
 	Start, Date int
