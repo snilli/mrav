@@ -91,7 +91,7 @@ var _ = Describe("newWindow", func() {
 			mockprofile.NewMockProfileService(GinkgoT()), mockmove.NewMockMoveService(GinkgoT()),
 			mockdrill.NewMockDrillService(GinkgoT()), mockitem.NewMockItemService(GinkgoT()), mockplanner.NewMockPlannerService(GinkgoT()), nil)
 
-		w := newWindow(a, p, nil)
+		w := newWindow(a, p, nil, newUpdateBar(a))
 		Expect(w.Content()).NotTo(BeNil())
 		Expect(w.Content()).NotTo(BeAssignableToTypeOf(&container.AppTabs{}))
 	})
@@ -102,7 +102,7 @@ var _ = Describe("newWindow", func() {
 			mockprofile.NewMockProfileService(GinkgoT()), mockmove.NewMockMoveService(GinkgoT()),
 			mockdrill.NewMockDrillService(GinkgoT()), mockitem.NewMockItemService(GinkgoT()), mockplanner.NewMockPlannerService(GinkgoT()), nil)
 
-		w := newWindow(a, p, nil)
+		w := newWindow(a, p, nil, newUpdateBar(a))
 		Expect(w.Canvas().Size()).To(Equal(startSize))
 	})
 
@@ -112,7 +112,7 @@ var _ = Describe("newWindow", func() {
 			mockprofile.NewMockProfileService(GinkgoT()), mockmove.NewMockMoveService(GinkgoT()),
 			mockdrill.NewMockDrillService(GinkgoT()), mockitem.NewMockItemService(GinkgoT()), mockplanner.NewMockPlannerService(GinkgoT()), nil)
 
-		w := newWindow(a, p, nil)
+		w := newWindow(a, p, nil, newUpdateBar(a))
 		Expect(w.Content().MinSize().Height).To(BeNumerically(">=", minHeight))
 		Expect(minHeight).To(BeNumerically("<", startSize.Height))
 	})
@@ -134,3 +134,27 @@ var _ = Describe("the dependency graph", func() {
 		Expect(fx.ValidateApp(options(), fx.Populate(new(fyne.Window)))).To(Succeed())
 	})
 })
+
+var _ = Describe("the release check", func() {
+	It("puts the new-version bar above the pages", func() {
+		a := test.NewTempApp(GinkgoTB())
+		p := newParts(a,
+			mockprofile.NewMockProfileService(GinkgoT()), mockmove.NewMockMoveService(GinkgoT()),
+			mockdrill.NewMockDrillService(GinkgoT()), mockitem.NewMockItemService(GinkgoT()), mockplanner.NewMockPlannerService(GinkgoT()), nil)
+		bar := newUpdateBar(a)
+
+		w := newWindow(a, p, nil, bar)
+		Expect(w.Content().(*fyne.Container).Objects).To(ContainElement(bar.Object()))
+	})
+
+	It("never asks GitHub from a dev build", func() {
+		Expect(version).To(Equal("dev"))
+		lc := fxtestLifecycle{}
+		checkRelease(&lc, nil)
+		Expect(lc.hooks).To(BeEmpty())
+	})
+})
+
+type fxtestLifecycle struct{ hooks []fx.Hook }
+
+func (l *fxtestLifecycle) Append(h fx.Hook) { l.hooks = append(l.hooks, h) }

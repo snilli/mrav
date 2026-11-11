@@ -30,6 +30,7 @@ import (
 	"app/internal/core/profile"
 	"app/internal/core/profile/repository/db/profilerepo"
 	"app/internal/core/profile/service/profilesvc"
+	release "app/internal/core/release/domain"
 	"app/internal/delivery/ui/demoui"
 	"app/internal/delivery/ui/drillui"
 	"app/internal/delivery/ui/errantryui"
@@ -39,10 +40,12 @@ import (
 	"app/internal/delivery/ui/profileui"
 	"app/internal/delivery/ui/routeui"
 	"app/internal/delivery/ui/shellui"
+	"app/internal/delivery/ui/updateui"
 	"app/internal/infrastructure/database"
 	"app/internal/infrastructure/fakemonster"
 	"app/internal/infrastructure/fakeplayer"
 	"app/internal/infrastructure/gamememory"
+	"app/internal/infrastructure/github"
 	"app/internal/infrastructure/icons"
 	"app/internal/port"
 )
@@ -56,8 +59,8 @@ func options() fx.Option {
 		fx.Provide(plannerrepo.New, plannersvc.New),
 		fx.Provide(itemrepo.New, itemsvc.New),
 		fx.Provide(newSource),
-		fx.Provide(newFyneApp, newParts, newDemo, newWindow),
-		fx.Invoke(refreshLoops),
+		fx.Provide(newFyneApp, newParts, newDemo, newUpdateBar, newWindow),
+		fx.Invoke(refreshLoops, checkRelease),
 	)
 }
 
@@ -151,12 +154,39 @@ var (
 	minHeight = float32(640)
 )
 
-func newWindow(a fyne.App, p shellui.Parts, demo *demoui.Panel) fyne.Window {
+func newUpdateBar(a fyne.App) *updateui.Bar {
+	return updateui.New(a.OpenURL)
+}
+
+const releaseWait = 3 * time.Second
+
+func checkRelease(lc fx.Lifecycle, bar *updateui.Bar) {
+	if !release.IsRelease(version) {
+		return
+	}
+	lc.Append(fx.Hook{OnStart: func(context.Context) error {
+		go func() {
+			ctx, cancel := context.WithTimeout(context.Background(), releaseWait)
+			defer cancel()
+			latest, err := github.Latest(ctx, github.API)
+			if err != nil {
+				log.Debug().Err(err).Msg("no release check")
+				return
+			}
+			if release.Newer(version, latest.Tag) {
+				bar.Offer(latest)
+			}
+		}()
+		return nil
+	}})
+}
+
+func newWindow(a fyne.App, p shellui.Parts, demo *demoui.Panel, bar *updateui.Bar) fyne.Window {
 	w := a.NewWindow("mrav " + version + " - Monster Rancher 2 Viewer")
 	p.Demo = demo
 	floor := canvas.NewRectangle(color.Transparent)
 	floor.SetMinSize(fyne.NewSize(0, minHeight))
-	w.SetContent(container.NewStack(floor, shellui.New(w, p).Content()))
+	w.SetContent(container.NewBorder(bar.Object(), nil, nil, nil, container.NewStack(floor, shellui.New(w, p).Content())))
 	w.Resize(startSize)
 	return w
 }
