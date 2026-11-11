@@ -18,9 +18,6 @@ printf '1 ICON "%s"\nGLFW_ICON ICON "%s"\n' "$PWD/icon.ico" "$PWD/icon.ico" > "$
 ${WINDRES:-x86_64-w64-mingw32-windres} -O coff --input-format rc -i "$rc" -o "$syso"
 
 CC=${CC:-x86_64-w64-mingw32-gcc} GOOS=windows GOARCH=amd64 CGO_ENABLED=1 \
-	go build -trimpath -tags embeddb,no_emoji -ldflags "-s -w -H windowsgui -X main.version=$version" -o "$out/mrav.exe" ./cmd/mrav
+	go build -trimpath -tags embeddb,no_emoji -ldflags "-H windowsgui -X main.version=$version" -o "$out/mrav.exe" ./cmd/mrav
 
-if command -v upx >/dev/null; then
-	upx --best --lzma --force -q -o "$out/mrav-upx.exe" "$out/mrav.exe" >/dev/null
-fi
-ls -l "$out"/mrav*.exe
+ls -l "$out"/mrav.exe

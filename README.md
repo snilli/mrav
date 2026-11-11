@@ -33,8 +33,6 @@ Open several pages side by side with **+ Col**.
 Grab `mrav.exe` (Windows) or `mrav-mac-arm64.dmg` (Mac) from [Releases](https://github.com/snilli/mrav/releases),
 start the game, then open it. With no game running you get a demo monster to play with.
 
-On Windows there's also the smaller `mrav-upx.exe`; if your antivirus complains about it, use `mrav.exe`.
-
 On a Mac, open the dmg and drag mrav into Applications. The app isn't from a registered Apple developer, so the
 first time macOS will refuse to open it: right-click it and choose Open, or go to System Settings > Privacy &
 Security and click Open Anyway.
