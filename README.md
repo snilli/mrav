@@ -33,6 +33,9 @@ Open several pages side by side with **+ Col**.
 Grab `mrav.exe` (Windows) or `mrav-mac-arm64.dmg` (Mac) from [Releases](https://github.com/snilli/mrav/releases),
 start the game, then open it. With no game running you get a demo monster to play with.
 
+When a newer release is out, mrav says so at the top of the window; click Download to get it. That one check at
+start is the only time it goes online. What changed is in [CHANGELOG.md](CHANGELOG.md).
+
 On a Mac, open the dmg and drag mrav into Applications. The app isn't from a registered Apple developer, so the
 first time macOS will refuse to open it: right-click it and choose Open, or go to System Settings > Privacy &
 Security and click Open Anyway.
