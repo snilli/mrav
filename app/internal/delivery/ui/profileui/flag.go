@@ -56,7 +56,7 @@ func (f *Flag) Set(on bool) {
 	switch fill, ok := toneColors[f.tone]; {
 	case on && ok:
 		f.bg.FillColor, f.txt.Color = fill, color.Black
-		if f.tone == ToneGray || f.tone == ToneBlack {
+		if f.tone == ToneBlack {
 			f.txt.Color = color.White
 		}
 	default:

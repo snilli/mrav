@@ -1,6 +1,8 @@
 package profileui
 
 import (
+	"image/color"
+
 	"fyne.io/fyne/v2/test"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -26,5 +28,17 @@ var _ = Describe("ToneBox", func() {
 		compact := NewToneBox().Compact()
 		compact.Set(box)
 		Expect(compact.Box()).To(Equal(box))
+	})
+})
+
+var _ = Describe("ToneBox text on grey", func() {
+	BeforeEach(func() { test.NewTempApp(GinkgoTB()) })
+
+	It("writes black on grey, which white would barely show on, and white on black", func() {
+		b := NewToneBox()
+		b.Set(Box{Text: "-26 (Bad)", Tone: ToneGray})
+		Expect(b.txt.Color).To(Equal(color.Black))
+		b.Set(Box{Text: "-80 (Worst)", Tone: ToneBlack})
+		Expect(b.txt.Color).To(Equal(color.White))
 	})
 })

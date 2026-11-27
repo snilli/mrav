@@ -67,7 +67,7 @@ func (b *ToneBox) Set(box Box) {
 	b.txt.Text = box.Text
 	if fill, ok := toneColors[box.Tone]; ok {
 		b.bg.FillColor, b.txt.Color = fill, color.Black
-		if box.Tone == ToneGray || box.Tone == ToneBlack {
+		if box.Tone == ToneBlack {
 			b.txt.Color = color.White
 		}
 	} else {

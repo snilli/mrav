@@ -28,7 +28,11 @@ var _ = Describe("Flag", func() {
 		Expect(f.bg.FillColor).To(Equal(toneColors[ToneOrange]))
 		Expect(f.txt.Color).To(Equal(color.Black))
 
-		dark := NewFlag("Silver Peach", ToneGray)
+		grey := NewFlag("Silver Peach", ToneGray)
+		grey.Set(true)
+		Expect(grey.txt.Color).To(Equal(color.Black))
+
+		dark := NewFlag("Dark", ToneBlack)
 		dark.Set(true)
 		Expect(dark.txt.Color).To(Equal(color.White))
 	})
