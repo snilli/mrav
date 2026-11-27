@@ -121,3 +121,15 @@ var _ = Describe("labels", func() {
 		})
 	})
 })
+
+var _ = DescribeTable("NatureRange is how far nature can move from its base",
+	func(base, low, high int) {
+		l, h := domain.NatureRange(base)
+		Expect([]int{l, h}).To(Equal([]int{low, high}))
+	},
+	Entry("a hundred either way", 0, -100, 100),
+	Entry("a good base cannot go past 100", 50, -50, 100),
+	Entry("a bad base cannot go below -100", -30, -100, 70),
+	Entry("the best base", 100, 0, 100),
+	Entry("the worst base", -100, -100, 0),
+)

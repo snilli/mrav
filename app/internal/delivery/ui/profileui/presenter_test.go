@@ -164,9 +164,10 @@ var _ = Describe("NewMonsterView", func() {
 		Entry("seven weeks", 280, 0, "280 (-7 Weeks)", profileui.ToneRed),
 	)
 
-	It("shows the nature base, and the effective nature with its label", func() {
+	It("shows the range nature can reach from its base, and the effective nature with its label", func() {
 		v := view(nil)
-		Expect(v.NatureBase).To(Equal("30"))
+		Expect(v.NatureHint).To(Equal("Min -70 · Base 30 · Max 100"))
+		Expect(v.Bars.NatureSpan).To(Equal(profileui.Span{Low: 0.15, Base: 0.65, High: 1, Zero: 0.5}))
 		Expect(v.Nature).To(Equal(profileui.Box{Text: "130 (Best)"}))
 		Expect(view(func(p *domain.Profile) { p.Monster.Nature = 0 }).Nature).To(Equal(profileui.Box{Text: "0 (Neutral)"}))
 		Expect(view(func(p *domain.Profile) { p.Monster.Nature = 30 }).Nature).To(Equal(profileui.Box{Text: "30 (Good)", Tone: profileui.ToneLightYellow}))

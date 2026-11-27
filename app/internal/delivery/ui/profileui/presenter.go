@@ -43,13 +43,18 @@ type Bar struct {
 	Tone  Tone
 }
 
+type Span struct {
+	Low, Base, High, Zero float64
+}
+
 type Bars struct {
-	Stats     [monster.StatCount]float64
-	Fatigue   Bar
-	Stress    Bar
-	Nature    Bar
-	Lifespan  Bar
-	LifeIndex Bar
+	Stats      [monster.StatCount]float64
+	Fatigue    Bar
+	Stress     Bar
+	Nature     Bar
+	NatureSpan Span
+	Lifespan   Bar
+	LifeIndex  Bar
 }
 
 type CocoonView struct {
@@ -79,7 +84,7 @@ type MonsterView struct {
 	Fatigue         string
 	LifeIndex       Box
 	Form            string
-	NatureBase      string
+	NatureHint      string
 	Nature          Box
 	GutsRate        Box
 	ArenaSpeed      Box
@@ -143,7 +148,7 @@ func NewMonsterView(p domain.Profile, o Options) MonsterView {
 		Fatigue:         strconv.Itoa(m.Fatigue),
 		LifeIndex:       lifeIndexBox(m),
 		Form:            fmt.Sprintf("%d (%s)", m.Form, domain.FormLabel(m.Form)),
-		NatureBase:      strconv.Itoa(m.NatureBase),
+		NatureHint:      natureHint(m.NatureBase),
 		Nature:          natureBox(m.Nature),
 		GutsRate:        Box{Text: domain.GutsText(m.GutsRate, o.GutsPerSecond)},
 		ArenaSpeed:      Box{Text: domain.ArenaGrade(m.ArenaSpeed), Tone: arenaTone(m.ArenaSpeed)},
@@ -184,11 +189,12 @@ func NewMonsterView(p domain.Profile, o Options) MonsterView {
 	}
 
 	v.Bars = Bars{
-		Fatigue:   Bar{Ratio: fraction(m.Fatigue, 100), Tone: conditionTone(m.Fatigue)},
-		Stress:    Bar{Ratio: fraction(m.Stress, 100), Tone: conditionTone(m.Stress)},
-		Nature:    Bar{Ratio: fraction(m.Nature+100, 200)},
-		Lifespan:  Bar{Ratio: fraction(m.Lifespan, m.InitialLifespan), Tone: lifespanTone(m.Lifespan, m.InitialLifespan)},
-		LifeIndex: Bar{Ratio: fraction(domain.LifeIndexOf(m.Fatigue, m.Stress).Value, 280), Tone: v.LifeIndex.Tone},
+		Fatigue:    Bar{Ratio: fraction(m.Fatigue, 100), Tone: conditionTone(m.Fatigue)},
+		Stress:     Bar{Ratio: fraction(m.Stress, 100), Tone: conditionTone(m.Stress)},
+		Nature:     Bar{Ratio: fraction(m.Nature+100, 200)},
+		NatureSpan: natureSpan(m.NatureBase),
+		Lifespan:   Bar{Ratio: fraction(m.Lifespan, m.InitialLifespan), Tone: lifespanTone(m.Lifespan, m.InitialLifespan)},
+		LifeIndex:  Bar{Ratio: fraction(domain.LifeIndexOf(m.Fatigue, m.Stress).Value, 280), Tone: v.LifeIndex.Tone},
 	}
 	total := 0
 	for s, stat := range m.Stats {
@@ -299,4 +305,14 @@ func lifeIndexBox(m monster.Monster) Box {
 		tone = ToneLightYellow
 	}
 	return Box{Text: fmt.Sprintf("%d (-%d %s)", index.Value, index.WeeksLost, weeks), Tone: tone}
+}
+
+func natureHint(base int) string {
+	low, high := domain.NatureRange(base)
+	return fmt.Sprintf("Min %d · Base %d · Max %d", low, base, high)
+}
+
+func natureSpan(base int) Span {
+	low, high := domain.NatureRange(base)
+	return Span{Low: fraction(low+100, 200), Base: fraction(base+100, 200), High: fraction(high+100, 200), Zero: fraction(100, 200)}
 }

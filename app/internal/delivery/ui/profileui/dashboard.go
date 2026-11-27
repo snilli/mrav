@@ -61,23 +61,23 @@ type Dashboard struct {
 	lifespanBar, lifeIndexBar                     *Meter
 	lifeIndex                                     *ToneBox
 
-	stats                                               [monster.StatCount]*widget.Label
-	statBars                                            [monster.StatCount]*Meter
-	statNames                                           [monster.StatCount]*ColorText
-	growth                                              [monster.StatCount]*ToneBox
-	statTotal                                           *widget.Label
-	fatigue, stress                                     *widget.Label
-	fatigueBar, stressBar, natureGauge                  *Meter
-	nature                                              *ToneBox
-	loyalty, rank, form, natureBase, lifeType, playType *widget.Label
-	prize, nextSale, drug, drugTip                      *widget.Label
-	tournament                                          *widget.Label
-	tournamentRow                                       fyne.CanvasObject
-	fame, guts, arena, specials, like, dislike          *ToneBox
-	goldPeach, silverPeach, itemUsed, errantry          *Flag
-	cocoon                                              fyne.CanvasObject
-	cupJellies                                          *ToneBox
-	cocoonDone                                          *Flag
+	stats                                      [monster.StatCount]*widget.Label
+	statBars                                   [monster.StatCount]*Meter
+	statNames                                  [monster.StatCount]*ColorText
+	growth                                     [monster.StatCount]*ToneBox
+	statTotal                                  *widget.Label
+	fatigue, stress                            *widget.Label
+	fatigueBar, stressBar, natureGauge         *Meter
+	nature                                     *ToneBox
+	loyalty, rank, form, lifeType, playType    *widget.Label
+	prize, nextSale, drug, drugTip             *widget.Label
+	tournament                                 *widget.Label
+	tournamentRow                              fyne.CanvasObject
+	fame, guts, arena, specials, like, dislike *ToneBox
+	goldPeach, silverPeach, itemUsed, errantry *Flag
+	cocoon                                     fyne.CanvasObject
+	cupJellies                                 *ToneBox
+	cocoonDone                                 *Flag
 
 	date                         *widget.Label
 	fatigueWord, record, history *widget.Label
@@ -134,7 +134,7 @@ func NewDashboard(svc profile.ProfileService) *Dashboard {
 	}
 	d.statTotal, d.fatigue, d.stress = label(), label(), label()
 	d.fatigueBar, d.stressBar, d.natureGauge, d.nature = NewMeter(), NewMeter(), NewGauge(), box()
-	d.loyalty, d.rank, d.form, d.natureBase, d.lifeType, d.playType = label(), label(), label(), label(), label(), label()
+	d.loyalty, d.rank, d.form, d.lifeType, d.playType = label(), label(), label(), label(), label()
 	d.prize, d.nextSale, d.drug, d.drugTip = label(), label(), label(), label()
 	d.tournament = label()
 	d.tournamentRow = fact("IMA-FIMBA", d.tournament)
@@ -221,7 +221,7 @@ func (d *Dashboard) buildVitals() fyne.CanvasObject {
 		pair(fact("Loyalty", d.loyalty), fact("Rank", d.rank)),
 		pair(fact("Fame", d.fame), fact("Form", d.form)),
 		pair(fact("Guts Rate", container.NewHBox(d.guts, d.gutsPerSecond)), fact("Arena SPD", d.arena)),
-		pair(fact("Base Nature", d.natureBase), fact("Play Type", d.playType)),
+		fact("Play Type", d.playType),
 		pair(fact("Desired", d.like), fact("Undesired", d.dislike)),
 		pair(fact("Prize Money", d.prize), fact("Shop Sale in", d.nextSale)),
 		d.tournamentRow,
@@ -374,13 +374,14 @@ func (d *Dashboard) show(v MonsterView) {
 	d.stress.SetText(v.Stress)
 	d.stressBar.Set(v.Bars.Stress.Ratio, v.Bars.Stress.Tone)
 	d.nature.Set(v.Nature)
+	d.natureGauge.SetSpan(v.Bars.NatureSpan)
 	d.natureGauge.Set(v.Bars.Nature.Ratio, ToneNone)
 
 	d.loyalty.SetText(v.Loyalty + " (spoil " + v.Spoil + " / fear " + v.Fear + ")")
 	d.rank.SetText(v.Rank)
 	d.fame.Set(v.Fame)
 	d.form.SetText(v.Form)
-	d.natureBase.SetText(v.NatureBase)
+	d.natureGauge.Hint(v.NatureHint)
 	d.guts.Set(v.GutsRate)
 	d.arena.Set(v.ArenaSpeed)
 	d.specials.Set(v.Specials)

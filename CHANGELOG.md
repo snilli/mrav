@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.5.2
+
+- **Nature**: the bar shows how far nature can go from its base (base minus 100 to base plus 100, never past -100 or
+  100) as a lighter band, the base as a thin white line, and fills from the base to the current nature, red below 0
+  and green above. Hover it for the min, base and max. The Base Nature line is gone.
+- **Easier to read**: grey boxes ("Bad" nature, Silver Peach, the Ranch altar) have black text now, not white.
+
 ## v0.5.1
 
 - **New version notice**: when a newer release is out, a bar at the top of the window says so. Download opens the

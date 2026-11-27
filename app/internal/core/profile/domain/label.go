@@ -136,3 +136,7 @@ func GenusLabel(code int, main bool, names map[monster.Genus]string) string {
 	}
 	return "---"
 }
+
+func NatureRange(base int) (low, high int) {
+	return max(base-100, -100), min(base+100, 100)
+}
